@@ -382,6 +382,8 @@ mobiel (360 px) én desktop is nagelopen en de tests groen zijn.
 
 ### Stap 2 — Offertewizard `/offerte` (frontend + fallbacks)
 
+> **Gebouwd op 3 okt 2026** (`feature/fase-2-offertewizard`), met de stappen uit Bobs feedback van die dag: 1 wat (badkamer, toilet, vloer, keuken, XXL, anders; meerdere keuzes, vervolgvragen per ruimte), 2 oppervlak (m² of "weet ik nog niet", lengte × breedte), 3 tegels (ja / nee / oriënteren, formaat, tegelfoto), 4 foto's (Maak foto / Kies uit foto's), 5 plattegrond (optioneel, privacymelding erbij), 6 contact (naam, telefoon, e-mail, postcode, periode, toelichting, privacy). PDOK-adresaanvulling is niet gebouwd: de CSP (`connect-src 'self'`) staat geen verzoek naar PDOK toe; dat kan via de backend in stap 3.
+
 - Zes stappen, één vraag per scherm op mobiel, voortgang "Stap 1 van 6", grote
   keuzekaarten, vloeiende overgangen (uit bij reduced motion), terug-knop behoudt antwoorden.
 - **Progressive disclosure** volledig uit `data/wizard.json`: per gekozen ruimte alleen de

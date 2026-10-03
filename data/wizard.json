@@ -1,0 +1,23 @@
+{
+  "_uitleg": [
+    "Keuzes van de offertewizard op /offerte/ (plan stap 2). service/cli/genereer.mjs zet ze als HTML in offerte/index.html (gen:wizard); js/wizard.js toont per gekozen ruimte alleen de vragen die erbij horen. Na een wijziging: node service/cli/genereer.mjs",
+    "ruimtes: id (vast, gebruikt in de samenvatting), label en omschrijving op de keuzekaart, wand: true vraagt in stap 2 ook naar het wandoppervlak, extra: aanvullende werkzaamheden (meerdere keuzes), vrij: true geeft een vrij tekstveld.",
+    "Geen prijzen in dit bestand: de calculatie komt in stap 4 (beheer)."
+  ],
+  "ruimtes": [
+    { "id": "badkamer", "label": "Badkamer", "omschrijving": "Vloer en wanden", "wand": true, "extra": ["Inloopdouche", "Nis", "Bestaande tegels verwijderen", "Alleen de vloer"] },
+    { "id": "toilet", "label": "Toilet", "omschrijving": "Vloer en wanden", "wand": true, "extra": ["Bestaande tegels verwijderen", "Alleen de vloer"] },
+    { "id": "vloer", "label": "Vloer", "omschrijving": "Woonkamer, hal of benedenverdieping", "wand": false, "extra": ["Bestaande vloer verwijderen", "Egaliseren", "Plinten", "Vloerverwarming aanwezig"] },
+    { "id": "keuken", "label": "Keuken", "omschrijving": "Vloer of achterwand", "wand": true, "extra": ["Vloer", "Achterwand"] },
+    { "id": "xxl", "label": "XXL-tegels", "omschrijving": "Grote platen op vloer of wand", "wand": true, "extra": ["Vloer", "Wand"] },
+    { "id": "anders", "label": "Anders", "omschrijving": "Vertel het in je eigen woorden", "wand": false, "vrij": true }
+  ],
+  "tegelStatus": [
+    ["ja", "Ja, die heb ik al"],
+    ["nee", "Nee, nog niet"],
+    ["orienteren", "Ik ben nog aan het oriënteren"]
+  ],
+  "tegelFormaten": ["30 × 60 cm", "60 × 60 cm", "60 × 120 cm", "80 × 80 cm", "120 × 120 cm", "Groter (XXL)", "Visgraat", "Mozaïek", "Natuursteen", "Anders", "Weet ik nog niet"],
+  "fotoTips": ["Overzicht van de ruimte", "De vloer", "De wanden", "Hoeken en aansluitingen", "Bestaande tegels", "De ondergrond"],
+  "maxFotos": 12
+}

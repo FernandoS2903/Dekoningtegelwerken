@@ -18,6 +18,7 @@
 //       <!-- gen:eind -->         contact-CTA-sectie (_sjablonen/eind.html)
 //       <!-- gen:dienstkaarten --> de zes specialismen als kaarten
 //       <!-- gen:projecten uitgelicht|alle|categorie=<c> [filters] -->
+//       <!-- gen:wizard -->       de stappen van de offertewizard (data/wizard.json)
 //       <!-- gen:beeld id=<id> [maat=<preset>] [klasse=a+b] [mobiel=<id>] [prioriteit] [donker] [sfeer] [label=Tekst_met_underscores] -->
 //                                 één beeld uit data/beelden.json (of een placeholdervlak als het ontbreekt)
 //     Alles tussen <!-- gen:x --> en <!-- /gen:x --> wordt overschreven:
@@ -211,6 +212,77 @@ function dienstkaartenBlok() {
   }).join('') + `</ul>`;
 }
 
+// -- offertewizard (plan stap 2) ---------------------------------------------
+// Alle stappen staan als gewone HTML in de pagina; js/wizard.js toont er één
+// tegelijk, regelt de vervolgvragen per ruimte (data-voor) en de uploads.
+function wizardBlok() {
+  const w = leesJson('data/wizard.json');
+  const stap = (nr, kop, inhoud, hulp = '') => `<fieldset class="wizard__stap" data-stap="${nr}">`
+    + `<legend class="wizard__legend"><span class="wizard__kop" tabindex="-1">${esc(kop)}</span></legend>`
+    + (hulp ? `<p class="wizard__hulp">${hulp}</p>` : '') + inhoud + `<p class="wizard__fout" role="alert" data-fout></p></fieldset>`;
+  const chip = (naam, waarde, label, type = 'checkbox') => `<label class="chip"><input type="${type}" name="${esc(naam)}" value="${esc(waarde)}"><span>${esc(label)}</span></label>`;
+  const veld = (id, label, attrs, hint = '') => `<div class="veld"><label for="${id}">${label}</label>${hint ? `<span class="veld__hint" id="${id}-hint">${hint}</span>` : ''}<input id="${id}" ${attrs}${hint ? ` aria-describedby="${id}-hint"` : ''}></div>`;
+  const upload = (naam, { accept, capture = false, meerdere = true, knoppen }) => `<div class="upload" data-upload="${naam}" data-accept="${accept}">`
+    + `<div class="upload__knoppen">${knoppen.map(([label, ico, extra]) => `<label class="knop knop--lijn upload__knop">${icoon(ico)} ${esc(label)}<input class="visueel-verborgen" type="file" accept="${accept}"${meerdere ? ' multiple' : ''}${extra || ''} data-upload-invoer></label>`).join('')}</div>`
+    + `<ul class="upload__lijst" role="list" data-upload-lijst></ul><p class="upload__status" aria-live="polite" data-upload-status></p></div>`;
+
+  const s1 = `<div class="keuzekaarten">${w.ruimtes.map((r) => `<label class="keuze"><input type="checkbox" name="ruimte" value="${esc(r.id)}"><span class="keuze__label">${esc(r.label)}</span><span class="keuze__sub">${esc(r.omschrijving)}</span><span class="keuze__vink" aria-hidden="true">${icoon('vink')}</span></label>`).join('')}</div>`
+    + w.ruimtes.map((r) => {
+      if (r.vrij) return `<div class="wizard__verdieping" data-voor="${esc(r.id)}" hidden><label class="wizard__subvraag" for="anders-tekst">Wat wil je laten tegelen?</label><textarea id="anders-tekst" name="anders" rows="3" maxlength="600"></textarea></div>`;
+      if (!r.extra?.length) return '';
+      return `<div class="wizard__verdieping" data-voor="${esc(r.id)}" hidden><p class="wizard__subvraag">${esc(r.label)}: wat komt erbij? <span class="wizard__optioneel">(optioneel)</span></p><div class="chips">${r.extra.map((e) => chip(`extra-${r.id}`, e, e)).join('')}</div></div>`;
+    }).join('');
+
+  const s2 = w.ruimtes.filter((r) => !r.vrij).map((r) => `<div class="maatblok" data-voor="${esc(r.id)}" hidden>`
+    + `<p class="maatblok__kop">${esc(r.label)}</p>`
+    + `<div class="maatblok__velden">`
+    + veld(`m2-${r.id}`, 'Vloer', `name="m2-${r.id}" type="text" inputmode="decimal" autocomplete="off" placeholder="bijv. 8" data-m2`, 'in m²')
+    + (r.wand ? veld(`wand-${r.id}`, 'Wanden', `name="wand-${r.id}" type="text" inputmode="decimal" autocomplete="off" placeholder="als je het weet" data-m2`, 'in m², optioneel') : '')
+    + `</div>`
+    + `<details class="maatblok__reken"><summary>Reken uit met lengte × breedte</summary><div class="maatblok__velden">`
+    + veld(`l-${r.id}`, 'Lengte', `type="text" inputmode="decimal" autocomplete="off" data-lengte="${esc(r.id)}"`, 'in meter')
+    + veld(`b-${r.id}`, 'Breedte', `type="text" inputmode="decimal" autocomplete="off" data-breedte="${esc(r.id)}"`, 'in meter')
+    + `</div></details>`
+    + `<label class="vink"><input type="checkbox" name="onbekend-${r.id}" value="ja" data-onbekend><span>Weet ik nog niet</span></label>`
+    + `</div>`).join('')
+    + `<p class="wizard__tip">Weet je het niet precies? Geen probleem. In stap 5 kun je een plattegrond meesturen; dan rekenen wij het na.</p>`;
+
+  const s3 = `<div class="keuzelijst">${w.tegelStatus.map(([k, l]) => `<label class="keuze keuze--rij"><input type="radio" name="tegels" value="${k}"><span class="keuze__label">${esc(l)}</span><span class="keuze__vink" aria-hidden="true">${icoon('vink')}</span></label>`).join('')}</div>`
+    + `<div class="wizard__verdieping" data-tegels-meer hidden><p class="wizard__subvraag">Welk formaat of soort? <span class="wizard__optioneel">(optioneel, meerdere keuzes)</span></p><div class="chips">${w.tegelFormaten.map((f) => chip('formaat', f, f)).join('')}</div></div>`
+    + `<div class="wizard__verdieping" data-tegels-foto hidden><p class="wizard__subvraag">Foto van de tegel <span class="wizard__optioneel">(optioneel)</span></p>${upload('tegelfoto', { accept: 'image/*', meerdere: false, knoppen: [['Foto toevoegen', 'camera']] })}</div>`;
+
+  const s4 = upload('fotos', { accept: 'image/*', knoppen: [['Maak foto', 'camera', ' capture="environment"'], ['Kies uit foto\'s', 'foto']] })
+    + `<div class="wizard__tips"><p>Handig om te laten zien:</p><ul role="list">${w.fotoTips.map((t) => `<li>${icoon('vink')}${esc(t)}</li>`).join('')}</ul></div>`;
+
+  const s5 = upload('plattegrond', { accept: 'image/*,application/pdf', meerdere: false, knoppen: [['Plattegrond toevoegen', 'plattegrond']] })
+    + `<p class="wizard__privacy">${icoon('afspraak')}<span>Je plattegrond gebruiken we alleen om deze aanvraag te beoordelen. Aanvragen waar geen opdracht uit volgt, verwijderen we na 12 maanden. Zie de <a href="/privacy/">privacyverklaring</a>.</span></p>`;
+
+  const s6 = `<div class="velden">`
+    + veld('naam', 'Naam', 'name="naam" type="text" autocomplete="name" required')
+    + veld('telefoon', 'Telefoonnummer', 'name="telefoon" type="tel" autocomplete="tel" inputmode="tel" required')
+    + veld('email', 'E-mailadres', 'name="email" type="email" autocomplete="email" inputmode="email" required')
+    + veld('postcode', 'Postcode', 'name="postcode" type="text" autocomplete="postal-code" autocapitalize="characters" maxlength="7" placeholder="1234 AB" required')
+    + `<div class="veld"><label for="periode">Wanneer wil je het laten uitvoeren?</label><select id="periode" name="periode" data-periode><option value="">Kies een periode</option><option>Zo snel mogelijk</option><option>Nog niet bekend</option></select></div>`
+    + `<div class="veld"><label for="toelichting">Toelichting <span class="wizard__optioneel">(optioneel)</span></label><textarea id="toelichting" name="toelichting" rows="3" maxlength="1500"></textarea></div>`
+    + `</div><label class="vink vink--privacy"><input type="checkbox" name="privacy" value="ja" required><span>Ik ga akkoord met de <a href="/privacy/">privacyverklaring</a>.</span></label>`
+    + `<input class="wizard__honing" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">`;
+
+  return `<form class="wizard" data-wizard data-max-fotos="${Number(w.maxFotos) || 12}" novalidate>
+  <div class="wizard__voortgang"><p class="wizard__stapnr" aria-live="polite" data-wizard-stapnr>Stap 1 van 6</p><div class="wizard__balk" aria-hidden="true"><span data-wizard-balk></span></div></div>
+  ${stap(1, 'Wat wil je laten tegelen?', s1, 'Meerdere keuzes mogelijk.')}
+  ${stap(2, 'Hoe groot is de ruimte?', s2, 'Een schatting is genoeg.')}
+  ${stap(3, 'Heb je al tegels?', s3)}
+  ${stap(4, 'Laat de huidige situatie zien.', s4, 'Met een paar foto\'s kunnen we veel beter inschatten wat er nodig is.')}
+  ${stap(5, 'Heb je een plattegrond?', s5, 'Een foto, PDF of bouwtekening. Dit is optioneel.')}
+  ${stap(6, 'Waar kunnen we je bereiken?', s6, 'Alleen wat we nodig hebben om contact op te nemen.')}
+  <div class="wizard__nav">
+    <button class="knop knop--lijn wizard__terug" type="button" data-terug>Terug</button>
+    <button class="knop wizard__verder" type="button" data-volgende>Volgende ${icoon('pijl')}</button>
+    <button class="knop wizard__verder" type="submit" data-verstuur hidden>Verstuur mijn aanvraag ${icoon('pijl')}</button>
+  </div>
+</form>`;
+}
+
 const PARTIALS = {
   header: lees('_sjablonen/header.html'),
   footer: lees('_sjablonen/footer.html'),
@@ -255,6 +327,7 @@ function blok(naam, args, paginaPad) {
     case 'dienstkaarten': return dienstkaartenBlok();
     case 'projecten': return projectenBlok(args);
     case 'beeld': return beeldBlok(args);
+    case 'wizard': return wizardBlok();
     case 'voorna': {
       const o = Object.fromEntries(args.map((a) => a.split('=')));
       return voorNaSlider(o.voor, o.na);

@@ -1,6 +1,6 @@
 # Geheugen — stand van zaken dekoningtegelwerken.nl
 
-Bijgewerkt: 3 oktober 2026, na fase B (stap 1) plus sfeerbeelden en logo.
+Bijgewerkt: 3 oktober 2026, na de mobiele herziening (1b) en de offertewizard (stap 2).
 Werk dit bestand bij aan het eind van elke fase.
 
 ## Waar staan we
@@ -8,10 +8,11 @@ Werk dit bestand bij aan het eind van elke fase.
 | Fase / stap | Status |
 |---|---|
 | A — inventaris en plan | Klaar, goedgekeurd door Bob op 3 okt 2026. Besluiten staan bovenaan `docs/PLAN.md`. |
-| B — stap 1: design system, homepage, projecten, diensten, contact | **Klaar op branch `feature/fase-1-frontend`**, gepusht naar origin, **nog niet gemerged**. Wacht op beoordeling van Bob via de preview. |
+| B — stap 1: design system, homepage, projecten, diensten, contact | Klaar; op uitdrukkelijk besluit van Bob via `main` live gezet (zie "Live sinds"). |
 | B+ — sfeerbeelden en logo | Klaar op dezelfde branch: 29 AI-sfeerbeelden overal waar placeholdervlakken stonden, en het logo in header, menu, footer, favicon en og-image. |
-| Stap 2 — offertewizard `/offerte` | Niet begonnen. Nu een placeholderpagina ("de online aanvraag volgt binnenkort"). |
-| Stap 3 — backend | Niet begonnen. |
+| 1b — mobiel leidend (feedback Bob, 3 okt 2026) | Klaar op `feature/fase-1b-mobiel`: 390 px als ontwerpbreedte, koppen 38–44 px, klikvlakken ≥ 48 px, header = logo + menuknop, sticky balk WhatsApp + Offerte, nieuwe hero (specialismen, "Vakwerk in IJmuiden en omgeving."), drie bevestigde vertrouwenspunten, compacte specialismen op mobiel, projectpagina met galerij (6–12) en lichtbak, reviewscore. Op de preview, nog niet live. |
+| Stap 2 — offertewizard `/offerte` | Klaar op `feature/fase-2-offertewizard` (bovenop 1b): zes stappen uit `data/wizard.json` (ruimte → oppervlak → tegels → foto's → plattegrond → contact), vervolgvragen per ruimte, lengte × breedte, uploads met miniaturen, sessionStorage, samenvatting in het formaat "Nieuwe aanvraag – Badkamer, 1971 RA / Badkamer: vloer ±8 m², wanden ±31 m² · Inloopdouche …". **Zonder backend verstuurt hij niets**: de bezoeker krijgt de samenvatting om via WhatsApp/e-mail door te sturen of te kopiëren. Op de preview, nog niet live. |
+| Stap 3 — backend | Niet begonnen. De wizard is er klaar voor: `data-endpoint` op het formulier zetten, dan gaan antwoorden + bestanden als multipart naar die URL. |
 | Stap 4 — beheer, calculatie, offertes, project-CMS | Niet begonnen. |
 | Stap 5 — plattegrondanalyse, AI-conceptcalculatie | Niet begonnen. |
 
@@ -83,6 +84,10 @@ Preview zichtbaar maken: stappen in `deploy/README.md` (DNS-record `preview`, ma
 ```bash
 cd /root/dekoning-tegelwerken && deploy/preview-deploy.sh feature/fase-1-frontend
 ```
+
+## Wizard live zetten: eerst één ontvangstkanaal
+
+Zonder backend én zonder WhatsApp-nummer, e-mailadres of telefoon in `data/site.json` eindigt de wizard op de live site bij "Kopieer samenvatting": er is dan geen plek om de aanvraag heen te sturen. Vóór de wizard live gaat minimaal één van: e-mailadres of WhatsApp-nummer in `site.json`, of stap 3 (aanvraagdienst, `data-endpoint`).
 
 ## Nog aan te leveren (blokkeert "af", niet het bouwen)
 
