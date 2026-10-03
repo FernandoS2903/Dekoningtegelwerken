@@ -1,0 +1,15 @@
+# macOS en editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Dependencies (bewust geen; mocht er ooit tooling bij komen)
+node_modules/
+
+# Lokale Claude-instellingen
+.claude/settings.local.json
+
+# Logs en losse werkbestanden
+*.log
+/schermafdrukken/
