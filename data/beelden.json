@@ -1,0 +1,809 @@
+{
+  "_uitleg": [
+    "Manifest van de sfeerbeelden. service/cli/kie-beelden.mjs genereert ze via KIE.AI (nano-banana-pro) en zet ze met cwebp om naar assets/beelden/<id>-<breedte>.webp. De generator (service/cli/genereer.mjs) plaatst ze daarna op de site.",
+    "ALLE beelden zijn AI-gegenereerde SFEERBEELDEN (soort: sfeerbeeld), geen werk van De Koning Tegelwerken. Vóór livegang vervangen door echte projectfoto's, of alleen laten staan waar ze niet als eigen werk worden gepresenteerd (zie docs/PLAN.md).",
+    "stijl wordt achter elke prompt geplakt. referentie: id van een eerder beeld dat als image_input meegaat (voor/na met hetzelfde standpunt).",
+    "afmeting en gegenereerd worden door het script ingevuld; niet met de hand aanpassen."
+  ],
+  "model": "nano-banana-pro",
+  "resolutie": "2K",
+  "stijl": "Photorealistic architectural interior photography for a premium tiling company, shot on a full-frame camera with a tilt-shift lens, verticals perfectly straight. Warm soft natural daylight, calm and airy, generous negative space. Colour palette of warm sand, off-white, warm light grey, anthracite and subtle bronze accents. Crisp, perfectly straight and even grout lines, precise tile layout, realistic natural material textures, subtle realistic reflections. No people, no faces, no hands, no text, no letters, no logos, no brand names, no watermarks, no clutter, no CGI or 3D render look, no excessive gloss, no oversaturation.",
+  "beelden": [
+    {
+      "id": "hero",
+      "soort": "sfeerbeeld",
+      "verhouding": "16:9",
+      "breedtes": [
+        960,
+        1600,
+        2400
+      ],
+      "prompt": "Wide view of a serene luxury bathroom with large-format porcelain wall tiles in warm light grey with a subtle sand tone, 120 x 260 cm slabs with barely visible 2 mm joints, a walk-in shower behind a minimal frameless glass panel, a long slim linear shower drain in the floor, matching large floor tiles, a floating oak vanity on the right, soft daylight falling from a tall window on the left, lots of calm empty wall space on the left half of the frame for text overlay.",
+      "alt": "Sfeerbeeld: rustige badkamer met grootformaat wandtegels in warm lichtgrijs, inloopdouche met strakke douchegoot en zacht daglicht",
+      "afmeting": {
+        "hoogte": 1536,
+        "breedte": 2752
+      },
+      "varianten": [
+        960,
+        1600,
+        2400
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "e81755c82b6050469280d8a017179838",
+        "credits": 18
+      }
+    },
+    {
+      "id": "hero-mobiel",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1080
+      ],
+      "prompt": "Vertical view of a serene luxury bathroom with large-format porcelain wall tiles in warm light grey with a subtle sand tone, barely visible 2 mm joints, a walk-in shower with a frameless glass panel and a slim linear shower drain, matching large floor tiles, soft daylight from a window, calm empty wall area in the upper part of the frame.",
+      "alt": "Sfeerbeeld: badkamer met grootformaat wandtegels en inloopdouche in zacht daglicht",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1080
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "fb3b7e408bcc79beed0dfbd69f86debb",
+        "credits": 18
+      }
+    },
+    {
+      "id": "project-badkamer-xxl",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:3",
+      "breedtes": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "prompt": "Bathroom seen from the doorway, walls and floor finished in XXL porcelain slabs with a soft travertine look in warm sand tone, continuous joints running from floor to wall, recessed shower niche, walk-in shower, wall-hung toilet, warm daylight.",
+      "alt": "Sfeerbeeld: badkamer met XXL-tegels in zandtint, gezien vanaf de deur, met doorlopende voegen van vloer naar wand",
+      "afmeting": {
+        "hoogte": 1792,
+        "breedte": 2400
+      },
+      "varianten": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "354c46552dda2898d842fa80923ee48d",
+        "credits": 18
+      }
+    },
+    {
+      "id": "project-keukenvloer",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Open kitchen and living area with a floor of 60 x 60 cm matte porcelain tiles in warm light grey, straight joints running continuously from the kitchen into the living room, low camera position close to the floor, minimal anthracite kitchen island, soft daylight.",
+      "alt": "Sfeerbeeld: keuken en woonkamer met een doorlopende vloer van 60 × 60 cm tegels in warm lichtgrijs",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "07a892f91ca8b9f90249e530f170e75d",
+        "credits": 18
+      }
+    },
+    {
+      "id": "project-toilet",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Small guest toilet finished in large-format tiles in warm greige, wall-hung toilet on a tiled pre-wall, the flush plate centred exactly on a grout joint, small floating washbasin, floor and wall joints aligned, soft indirect light.",
+      "alt": "Sfeerbeeld: klein toilet met grootformaat tegels, de bedieningsplaat precies op de voeg",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "1fec8dce187ed1eb179de8aec45a8a9f",
+        "credits": 18
+      }
+    },
+    {
+      "id": "project-visgraat",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:3",
+      "breedtes": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "prompt": "Living room with a herringbone floor of long narrow ceramic wood-look tiles in warm natural oak tone, the herringbone pattern perfectly centred in the room, slightly elevated camera angle, linen sofa and low oak furniture at the edge of the frame, soft daylight.",
+      "alt": "Sfeerbeeld: woonkamer met een visgraatvloer van keramische tegels in houtlook",
+      "afmeting": {
+        "hoogte": 1792,
+        "breedte": 2400
+      },
+      "varianten": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "062f3fdd5c71c1e237a0c21a5e3cd08d",
+        "credits": 18
+      }
+    },
+    {
+      "id": "project-natuursteen",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:3",
+      "breedtes": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "prompt": "Hallway with a natural stone floor of honed limestone tiles in warm beige, visible natural veining varying from tile to tile, tight joints, a bronze-framed door at the end, daylight raking across the stone surface.",
+      "alt": "Sfeerbeeld: hal met een vloer van natuursteen in warm beige met zichtbare tekening in de steen",
+      "afmeting": {
+        "hoogte": 1792,
+        "breedte": 2400
+      },
+      "varianten": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "6d637d838b293c7aae32951a2355633a",
+        "credits": 18
+      }
+    },
+    {
+      "id": "project-badkamer-nis",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Shower wall with a long recessed tiled niche, the grout lines of the niche continuing seamlessly into the wall tiles, mitred corners at the niche edges, matte sand-coloured tiles, brushed bronze shower mixer, soft daylight.",
+      "alt": "Sfeerbeeld: douchewand met een inbouwnis waarvan de voegen doorlopen in de wand",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "804b6f1791c74f29b28335ac57058136",
+        "credits": 18
+      }
+    },
+    {
+      "id": "projectdetail-hero",
+      "soort": "sfeerbeeld",
+      "verhouding": "16:9",
+      "breedtes": [
+        800,
+        1200,
+        1600,
+        2400
+      ],
+      "prompt": "Panoramic view of a complete luxury bathroom finished with large-format porcelain tiles in warm sand-grey, walk-in shower with linear drain, freestanding bathtub, floating vanity in oak, recessed niche, everything calm and uncluttered, soft daylight.",
+      "alt": "Sfeerbeeld: complete badkamer met grootformaat tegels, inloopdouche, vrijstaand bad en badmeubel",
+      "afmeting": {
+        "hoogte": 1536,
+        "breedte": 2752
+      },
+      "varianten": [
+        800,
+        1200,
+        1600,
+        2400
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "99efff49fcdde6142a1fc66876d06df3",
+        "credits": 18
+      }
+    },
+    {
+      "id": "projectdetail-douchezone",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Walk-in shower area with large-format wall tiles in warm light grey, floor tiles sloping towards a slim linear shower drain along the wall, frameless glass panel, brushed bronze rain shower, calm daylight.",
+      "alt": "Sfeerbeeld: douchezone met inloopdouche en een strakke douchegoot langs de wand",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "c41aeef2ca0481ed90f3a27e8d33c2ae",
+        "credits": 18
+      }
+    },
+    {
+      "id": "projectdetail-badmeubel",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Floating oak vanity with a stone washbasin in front of a wall of large-format tiles, the grout lines aligned exactly with the top and sides of the vanity and the mirror, soft daylight from the side.",
+      "alt": "Sfeerbeeld: badmeubel voor een tegelwand waarvan de voegen gelijk lopen met de rand van het meubel",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "4af109881a640799b8d6694204148fd4",
+        "credits": 18
+      }
+    },
+    {
+      "id": "detail-verstek",
+      "soort": "sfeerbeeld",
+      "verhouding": "1:1",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Macro close-up of an external wall corner where two porcelain tiles meet in a crisp 45 degree mitred edge, no metal tile trim, razor-sharp corner line, raking side light showing the precision of the edge.",
+      "alt": "Sfeerbeeld: close-up van een buitenhoek met 45° verstek, zonder tegelprofiel",
+      "afmeting": {
+        "hoogte": 2048,
+        "breedte": 2048
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "f5bfccf26e8ed65d0878aae850a6bbb1",
+        "credits": 18
+      }
+    },
+    {
+      "id": "detail-voeg",
+      "soort": "sfeerbeeld",
+      "verhouding": "1:1",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Extreme macro close-up of a 2 mm grout joint between two large matte porcelain tiles in warm grey, the grout colour matched to the tile, perfectly level tile edges, shallow depth of field, raking light.",
+      "alt": "Sfeerbeeld: macro van een voeg van 2 mm tussen twee grootformaat tegels",
+      "afmeting": {
+        "hoogte": 2048,
+        "breedte": 2048
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "0ea59a28684a37ab71c96f1d6c1e36f5",
+        "credits": 18
+      }
+    },
+    {
+      "id": "detail-nis",
+      "soort": "sfeerbeeld",
+      "verhouding": "1:1",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Close-up of a tiled shower niche, the horizontal and vertical grout lines of the niche continuing exactly into the surrounding wall, mitred inner edges, matte sand-coloured tiles, soft light.",
+      "alt": "Sfeerbeeld: betegelde nis met voegen die precies doorlopen in de wand",
+      "afmeting": {
+        "hoogte": 2048,
+        "breedte": 2048
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "e01af1716c8d7286c27e0a2e781d1f8c",
+        "credits": 18
+      }
+    },
+    {
+      "id": "detail-douchegoot",
+      "soort": "sfeerbeeld",
+      "verhouding": "1:1",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Close-up of a slim stainless steel linear shower drain set into a tiled floor, the tiles cut cleanly and sloping towards the drain, tight even joints, a few water droplets, soft daylight.",
+      "alt": "Sfeerbeeld: douchegoot met tegels die op afschot strak aansluiten",
+      "afmeting": {
+        "hoogte": 2048,
+        "breedte": 2048
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "7dab7b2e874ab5647093361e215c1aac",
+        "credits": 18
+      }
+    },
+    {
+      "id": "detail-overgang",
+      "soort": "sfeerbeeld",
+      "verhouding": "1:1",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Close-up of the junction between a tiled floor and a tiled wall, the vertical wall joints aligned exactly with the floor joints, a neat silicone joint in the corner, large-format warm grey tiles, raking light.",
+      "alt": "Sfeerbeeld: overgang van vloer naar wand met voegen die op elkaar aansluiten",
+      "afmeting": {
+        "hoogte": 2048,
+        "breedte": 2048
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "98ee133a4e23c297057dd3dbc13a2807",
+        "credits": 18
+      }
+    },
+    {
+      "id": "detail-kitwerk",
+      "soort": "sfeerbeeld",
+      "verhouding": "1:1",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Close-up of a perfectly straight smooth silicone sealant joint in the inside corner between a tiled wall and a bathtub edge, colour matched to the grout, clean edges, soft daylight.",
+      "alt": "Sfeerbeeld: strakke kitvoeg in de hoek tussen tegelwand en bad",
+      "afmeting": {
+        "hoogte": 2048,
+        "breedte": 2048
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "7660829524038e9f40f54c8d544433de",
+        "credits": 18
+      }
+    },
+    {
+      "id": "detail-tegelverdeling",
+      "soort": "sfeerbeeld",
+      "verhouding": "1:1",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Frontal view of a tiled bathroom wall where the tile layout is perfectly symmetrical around a recessed niche and a wall-mounted brushed bronze mixer, equal cut tiles on both sides, straight joints, soft even daylight.",
+      "alt": "Sfeerbeeld: tegelwand met een symmetrische tegelverdeling rond een nis en de kraan",
+      "afmeting": {
+        "hoogte": 2048,
+        "breedte": 2048
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "d0df6943d9e94b6ea99ed82a4e8a5d3d",
+        "credits": 18
+      }
+    },
+    {
+      "id": "detail-grootformaat",
+      "soort": "sfeerbeeld",
+      "verhouding": "1:1",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "A large porcelain slab lying on a lifting frame with suction cups on a construction floor, next to a freshly combed bed of tile adhesive, professional tiling tools neatly placed, no people, soft daylight from a window.",
+      "alt": "Sfeerbeeld: grote keramische plaat op een draagframe met zuignappen, naast een lijmbed",
+      "afmeting": {
+        "hoogte": 2048,
+        "breedte": 2048
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "f28782603cbe66b533a4224cb120723d",
+        "credits": 18
+      }
+    },
+    {
+      "id": "voorna-voor",
+      "soort": "sfeerbeeld",
+      "verhouding": "3:2",
+      "breedtes": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "prompt": "Dated 1990s bathroom seen straight from the doorway at eye level: small 15 x 15 cm glossy white wall tiles with yellowed grout, a white built-in bathtub with a tiled front, a pastel border tile strip, small beige floor tiles, a simple white washbasin, chrome fittings, flat slightly cool light. Realistic, ordinary, not dirty or broken.",
+      "alt": "Sfeerbeeld voor de vergelijking: gedateerde badkamer uit de jaren negentig met kleine witte tegels en een bad",
+      "afmeting": {
+        "hoogte": 1696,
+        "breedte": 2528
+      },
+      "varianten": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "0ebbc3b1e3ee00f6411280bff058c621",
+        "credits": 18
+      }
+    },
+    {
+      "id": "voorna-na",
+      "soort": "sfeerbeeld",
+      "verhouding": "3:2",
+      "referentie": "voorna-voor",
+      "breedtes": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "prompt": "Renovate exactly this bathroom while keeping the identical room geometry, camera position, perspective, window and door positions: replace all small tiles with large-format porcelain tiles in warm light grey on walls and floor with thin joints, replace the bathtub with a walk-in shower with frameless glass and a linear drain, add a floating oak vanity with a recessed niche above it, warm soft daylight. Same framing as the reference image.",
+      "alt": "Sfeerbeeld voor de vergelijking: dezelfde badkamer na renovatie met grootformaat tegels en een inloopdouche",
+      "afmeting": {
+        "hoogte": 1696,
+        "breedte": 2528
+      },
+      "varianten": [
+        480,
+        800,
+        1200,
+        1600
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "7e73e884722fbffd5404a60440c50132",
+        "credits": 18
+      }
+    },
+    {
+      "id": "dienst-badkamer",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Finished bathroom with a walk-in shower, recessed niche, wall and floor tiles in the same warm sand colour, slim shower drain, brushed bronze fittings, calm soft daylight.",
+      "alt": "Sfeerbeeld: badkamer met inloopdouche, inbouwnis en wand- en vloertegels in dezelfde kleur",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "1e2f7bea52597e6c2afc7ce7588508d6",
+        "credits": 18
+      }
+    },
+    {
+      "id": "dienst-vloer",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Light warm-grey tiled floor running continuously from a living room into an open kitchen, shot low near the floor, long perspective of straight joints, minimal furniture, soft daylight from large windows.",
+      "alt": "Sfeerbeeld: lichte tegelvloer die doorloopt van de woonkamer naar de keuken",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "bcb611533237c4032c790e6e7191925d",
+        "credits": 18
+      }
+    },
+    {
+      "id": "dienst-grootformaat",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Two very large matte porcelain floor tiles being laid side by side with a thin even joint, red plastic tile levelling clips in the joint, a bed of combed adhesive visible at the edge, no people, soft daylight.",
+      "alt": "Sfeerbeeld: twee grote vloertegels met een smalle voeg en een nivelleersysteem",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "845d0336ebf735c90a551f1a6b2af2d7",
+        "credits": 18
+      }
+    },
+    {
+      "id": "dienst-toilet",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Elegant small toilet room with a tiled pre-wall and wall-hung toilet, anthracite large-format tiles on the back wall and warm sand tiles on the floor, flush plate exactly between joints, small round mirror, soft warm light.",
+      "alt": "Sfeerbeeld: klein toilet met voorzetwand en zwevend toilet, de bedieningsplaat tussen de voegen",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "845ab072eb1ea33bee1905eb0ccef400",
+        "credits": 18
+      }
+    },
+    {
+      "id": "dienst-visgraat",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Top-down view of a herringbone tiled floor in warm natural tones, the point of the pattern exactly in the middle of a doorway threshold, crisp joints, soft daylight.",
+      "alt": "Sfeerbeeld: visgraatvloer van bovenaf, de punt van het patroon midden in de deuropening",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "380be4eff77145ae2e660abaeb6f5e66",
+        "credits": 18
+      }
+    },
+    {
+      "id": "dienst-natuursteen",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Close-up of natural stone tiles in honed travertine and limestone tones with visible natural veining and texture, tight joints, warm raking sunlight across the surface.",
+      "alt": "Sfeerbeeld: close-up van natuursteen tegels met zichtbare tekening, in strijklicht",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "6ab432eb1b24df13d617814d5a4f7a1f",
+        "credits": 18
+      }
+    },
+    {
+      "id": "dienst-xxl",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Shower wall made of a single XXL porcelain slab with a soft warm marble look, no visible joints, slim linear drain, frameless glass, brushed bronze shower head, calm daylight.",
+      "alt": "Sfeerbeeld: douchewand van één XXL-plaat met marmerlook, zonder zichtbare voegen",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "341e87ab0312765ebba5a88cdb701739",
+        "credits": 18
+      }
+    },
+    {
+      "id": "vak-gereedschap",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:5",
+      "breedtes": [
+        480,
+        800,
+        1200
+      ],
+      "prompt": "Still life of tiling craftsmanship on a half-tiled floor: a notched trowel with adhesive, a long spirit level, small tile spacers, a rubber mallet and a pencil resting on large matte tiles in warm grey, the untiled screed visible next to the finished part, no people, soft daylight from a window.",
+      "alt": "Sfeerbeeld: tegelzettersgereedschap (lijmkam, waterpas, tegelkruisjes) op een half betegelde vloer",
+      "afmeting": {
+        "hoogte": 2304,
+        "breedte": 1856
+      },
+      "varianten": [
+        480,
+        800,
+        1200
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-03",
+        "model": "nano-banana-pro",
+        "taak": "a344edb360920080753cd0c13c25184a",
+        "credits": 18
+      }
+    }
+  ]
+}
