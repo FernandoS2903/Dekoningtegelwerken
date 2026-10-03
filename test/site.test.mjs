@@ -61,13 +61,17 @@ test('elke srcset-variant bestaat', () => {
   assert.deepEqual(ontbreekt, []);
 });
 
-test('elke afbeelding heeft afmetingen en een alt-tekst die zegt dat het een sfeerbeeld is', () => {
+test('elke afbeelding heeft afmetingen; sfeerbeelden zeggen dat in de alt, het logo heet De Koning Tegelwerken', () => {
   // Zolang er alleen AI-sfeerbeelden zijn, moet dat ook in de alt-tekst staan.
   // Pas deze test aan zodra er echte projectfoto's van De Koning bij komen.
   for (const { rel, html } of alle) {
     for (const [tag] of html.matchAll(/<img\s[^>]*>/g)) {
       assert.match(tag, /\swidth="\d+" height="\d+"/, rel + ': ' + tag.slice(0, 80));
-      assert.match(tag, /\salt="Sfeerbeeld[^"]{10,}"/, rel + ': ' + tag.slice(0, 80));
+      if (/src="\/assets\/brand\//.test(tag)) {
+        assert.match(tag, /\salt="De Koning Tegelwerken"/, rel + ': logo zonder juiste alt');
+      } else {
+        assert.match(tag, /\salt="Sfeerbeeld[^"]{10,}"/, rel + ': ' + tag.slice(0, 80));
+      }
     }
   }
 });

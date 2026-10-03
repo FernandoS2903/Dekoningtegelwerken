@@ -425,7 +425,7 @@ h3 {
 @supports (backdrop-filter: blur(1px)) {
   .kop--over-hero.kop--vast { background: rgba(243, 238, 230, 0.82); backdrop-filter: saturate(1.2) blur(14px); }
 }
-.kop--vast { --kop-hoogte: 4rem; }
+.kop--vast { --kop-hoogte: 4.25rem; }
 .kop--over-hero.kop--vast :focus-visible { --focus: var(--brons); }
 
 .kop__binnen {
@@ -436,28 +436,39 @@ h3 {
   height: 100%;
 }
 
-/* PLACEHOLDER: woordmerk in tekst tot het echte logo (SVG) er is. */
+/* Logo (assets/brand/logo.svg, ruitvormig beeld- en woordmerk). Boven de
+   donkere hero staat de lichte variant groter; na scrollen het origineel,
+   compact. --logo-h is de hoogte; de breedte volgt uit de verhouding. */
 .logo {
+  --logo-h: 3.6rem;
   display: inline-flex;
-  flex-direction: column;
+  align-items: center;
+  flex: none;
   min-height: 2.75rem;
-  justify-content: center;
   text-decoration: none;
-  line-height: 1;
 }
-.logo__naam {
-  font-family: var(--font-kop);
-  font-size: 1.6rem;
-  letter-spacing: -0.01em;
+.logo__beeld {
+  display: block;
+  width: auto;
+  height: var(--logo-h);
+  transition: height var(--duur) var(--ease);
 }
-.logo__sub {
-  margin-top: 0.2rem;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  opacity: 0.75;
+.logo__beeld--licht { display: none; }
+.kop--over-hero:not(.kop--vast) .logo__beeld--licht { display: block; }
+.kop--over-hero:not(.kop--vast) .logo__beeld--origineel { display: none; }
+.kop--over-hero:not(.kop--vast) { --kop-hoogte: 5.75rem; }
+.kop--over-hero:not(.kop--vast) .logo { --logo-h: 4.75rem; }
+.kop--vast .logo { --logo-h: 3.25rem; }
+@media (min-width: 40em) {
+  .kop { --kop-hoogte: 5rem; }
+  .logo { --logo-h: 4.1rem; }
+  .kop--vast { --kop-hoogte: 4.25rem; }
+  .kop--vast .logo { --logo-h: 3.5rem; }
+  .kop--over-hero:not(.kop--vast) { --kop-hoogte: 7rem; }
+  .kop--over-hero:not(.kop--vast) .logo { --logo-h: 6rem; }
 }
+.mobielmenu .logo { --logo-h: 3.4rem; }
+.voet .logo { --logo-h: 7.5rem; }
 
 .hoofdnav { display: none; }
 .hoofdnav > ul {

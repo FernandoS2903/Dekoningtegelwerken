@@ -29,6 +29,9 @@ export async function startBrowser(chromePad, poort = 9333) {
     for (const fn of luisteraars.get(d.method) || []) fn(d.params);
     if (d.method === 'Runtime.exceptionThrown') fouten.push(d.params.exceptionDetails.exception?.description || d.params.exceptionDetails.text);
     if (d.method === 'Runtime.consoleAPICalled' && d.params.type === 'error') fouten.push(d.params.args.map((a) => a.value).join(' '));
+    // 404's en mislukte verzoeken (beelden, fonts, css, js) tellen als fout
+    if (d.method === 'Network.responseReceived' && d.params.response.status >= 400) fouten.push(`HTTP ${d.params.response.status}: ${d.params.response.url}`);
+    if (d.method === 'Network.loadingFailed' && !d.params.canceled) fouten.push(`laden mislukt (${d.params.errorText}): ${d.params.requestId}`);
   });
   const stuur = (method, params = {}, sessionId) => new Promise((res, rej) => {
     const id = ++volgnr;
@@ -41,6 +44,7 @@ export async function startBrowser(chromePad, poort = 9333) {
   const s = (m, p) => stuur(m, p, sessionId);
   await s('Page.enable');
   await s('Runtime.enable');
+  await s('Network.enable');
 
   return {
     s,

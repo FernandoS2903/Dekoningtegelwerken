@@ -225,13 +225,23 @@ const HEAD = `<meta charset="utf-8">
 <link rel="preload" href="/assets/fonts/manrope-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/site.css">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:image" content="${SITE_URL}/assets/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Logo van De Koning Tegelwerken met de tekst Tegelwerk tot in detail, op een sfeerbeeld van een badkamer">
 <script type="module" src="/js/site.js"></script>`;
 
 function blok(naam, args, paginaPad) {
   switch (naam) {
     case 'head': return HEAD;
     case 'header': {
-      let h = vul(PARTIALS.header, { kopKlasse: args.includes('over-hero') ? ' kop--over-hero' : '' });
+      const overHero = args.includes('over-hero');
+      // Boven de donkere hero de lichte logovariant; die wordt alleen hier geladen.
+      let h = vul(PARTIALS.header, {
+        kopKlasse: overHero ? ' kop--over-hero' : '',
+        logoLicht: overHero ? '<img class="logo__beeld logo__beeld--licht" src="/assets/brand/logo-licht.svg" alt="De Koning Tegelwerken" width="542" height="442">' : '',
+      });
       // actieve pagina markeren; de Diensten-groep ook als je op een dienstpagina zit
       h = h.split(`href="${paginaPad}">`).join(`href="${paginaPad}" aria-current="page">`);
       if (dienstPerSlug[paginaPad.replace(/\//g, '')]) {
