@@ -6,7 +6,7 @@
     "Telefoon- en WhatsApp-nummer internationaal noteren zonder spaties, bijv. +31612345678; telefoonWeergave is hoe het nummer op de site staat.",
     "Reviews: alleen echte, handmatig gekozen Google-reviews met toestemming. Velden: naam, sterren (1-5), tekst, projecttype, datum (JJJJ-MM-DD), bron (link naar de review of het profiel). Geen review-structured data (besluit Bob, 3 okt 2026)."
   ],
-  "placeholdersTonen": true,
+  "placeholdersTonen": false,
   "bedrijf": {
     "naam": "De Koning Tegelwerken",
     "telefoon": "",

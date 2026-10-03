@@ -4,6 +4,8 @@
 #
 #   sudo deploy/live-deploy.sh            main uitrollen
 #   deploy/live-deploy.sh --droog         alleen laten zien wat er zou gebeuren
+#   sudo deploy/live-deploy.sh --forceer  uitrollen ondanks een mislukte voorcontrole
+#                                         (alleen op uitdrukkelijk besluit van Bob)
 #
 # Veilig door opzet:
 #  - Alleen main, nooit een featurebranch: wat live staat is door Bob gemerged.
@@ -28,7 +30,15 @@ DOEL="/var/www/dekoningtegelwerken"
 EIGENAAR="${LIVE_EIGENAAR:-}"
 
 droog=0
-if [[ "${1:-}" == "--droog" ]]; then droog=1; shift; fi
+forceer=0
+while [[ "${1:-}" == --* ]]; do
+  case "$1" in
+    --droog) droog=1 ;;
+    --forceer) forceer=1 ;;
+    *) echo "Onbekende optie: $1" >&2; exit 1 ;;
+  esac
+  shift
+done
 
 repo="$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel)"
 branch="main"
@@ -90,8 +100,12 @@ if (fouten.length) { console.error('Nog niet klaar voor livegang:\n  - ' + foute
 console.log('Voorcontrole geslaagd.');
 JS
 then
-  echo "Niet uitgerold." >&2
-  exit 1
+  if (( forceer )); then
+    echo "LET OP: voorcontrole mislukt, toch doorgaan wegens --forceer." >&2
+  else
+    echo "Niet uitgerold (--forceer gaat door ondanks deze punten)." >&2
+    exit 1
+  fi
 fi
 
 rsync_opties=(

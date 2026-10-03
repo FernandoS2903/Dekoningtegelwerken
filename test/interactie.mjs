@@ -6,6 +6,7 @@
 // Gebruikt alleen de lokale server; gegevens voor de vertrouwens-test worden
 // via Fetch-interceptie in de browser vervangen, data/site.json blijft onaangeroerd.
 
+import { readFileSync } from 'node:fs';
 import { startBrowser, wacht } from './cdp.mjs';
 
 const BASIS = process.env.BASIS || 'http://127.0.0.1:8099';
@@ -52,8 +53,13 @@ controleer('slider via invoer verschuift de lijn', (await b.evalueer(`document.q
 
 // -- placeholders zonder gegevens -------------------------------------------------
 controleer('vertrouwenselementen weg zonder data', await b.evalueer(`document.querySelector('[data-vertrouwen]').hidden`));
-controleer('placeholders zichtbaar in preview', await b.evalueer(`document.querySelectorAll('.ph').length > 5`));
-controleer('reviews-placeholder staat er', await b.evalueer(`!!document.querySelector('[data-reviews-placeholder]')`));
+// Hangt af van placeholdersTonen in de echte site.json (preview: aan, live: uit).
+if (JSON.parse(readFileSync(new URL('../data/site.json', import.meta.url), 'utf8')).placeholdersTonen !== false) {
+  controleer('placeholders zichtbaar in preview', await b.evalueer(`document.querySelectorAll('.ph').length > 5`));
+  controleer('reviews-placeholder staat er', await b.evalueer(`!!document.querySelector('[data-reviews-placeholder]')`));
+} else {
+  controleer('productiemodus: geen reviewsectie zonder reviews', await b.evalueer(`!document.querySelector('[data-reviews-sectie]')`));
+}
 
 // -- met gegevens (onderschept, niet op schijf) -----------------------------------
 await b.s('Fetch.enable', { patterns: [{ urlPattern: '*/data/site.json*' }] });
