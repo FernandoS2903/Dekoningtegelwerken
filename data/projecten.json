@@ -1,9 +1,9 @@
 {
   "_uitleg": [
     "Projectdata voor de projectgrids en de projectpagina's. Na een wijziging: node service/cli/genereer.mjs",
-    "Tot het project-CMS er is (stap 4) staan hier alleen placeholders. placeholder: true geeft een herkenbare kaart met het label 'Voorbeeldkaart'.",
+    "Tot het project-CMS er is (stap 4) staan hier alleen VOORBEELDPROJECTEN: geen echte klanten, plaatsen of cases. placeholder: true geeft een herkenbare kaart met het label 'Voorbeeldkaart'.",
     "pagina: true maakt projecten/<slug>/index.html aan. categorieen bepaalt de filters: badkamer, vloer, toilet, xxl, visgraat, natuursteen.",
-    "Foto's: zolang er geen bestand is, is elke foto een placeholdervlak met 'beoogd' als beschrijving van de gewenste foto (wordt later de alt-tekst)."
+    "Beelden verwijzen naar id's in data/beelden.json. Dat zijn AI-gegenereerde SFEERBEELDEN, geen werk van De Koning; ze krijgen op de site het label 'Sfeerbeeld' en moeten vóór livegang vervangen worden door echte projectfoto's. Ontbreekt een beeld, dan toont de generator een placeholdervlak."
   ],
   "projecten": [
     {
@@ -11,42 +11,79 @@
       "placeholder": true,
       "pagina": true,
       "uitgelicht": true,
-      "naam": "Badkamer met grootformaat tegels",
+      "naam": "Voorbeeldproject: badkamer met grootformaat tegels",
       "plaats": "[PLAATS]",
       "type": "Badkamer",
-      "categorieen": ["badkamer", "xxl"],
+      "categorieen": [
+        "badkamer",
+        "xxl"
+      ],
       "metaOmschrijving": "Voorbeeld van een projectpagina: een badkamer met grootformaat tegels. Echte projectgegevens en foto's volgen.",
       "omschrijving": [
         "[KORTE UITLEG VAN DE WERKZAAMHEDEN — door De Koning aan te leveren. Bijvoorbeeld: wat de situatie was, wat er gevraagd werd en hoe het is aangepakt.]",
         "[EVENTUELE BIJZONDERHEID — bijvoorbeeld een lastige aansluiting, een nis of de keuze voor verstekhoeken.]"
       ],
       "info": [
-        ["Ruimte", "Badkamer"],
-        ["Tegels", "[TEGELFORMAAT]"],
-        ["Wanden", "[MATERIAAL WANDEN]"],
-        ["Vloer", "[FORMAAT VLOER]"],
-        ["Afwerking", "[AFWERKING, bijv. verstek]"],
-        ["Bijzonderheden", "[BIJZONDERHEDEN, bijv. inbouwnis en douchegoot]"]
+        [
+          "Ruimte",
+          "Badkamer"
+        ],
+        [
+          "Tegels",
+          "[TEGELFORMAAT]"
+        ],
+        [
+          "Wanden",
+          "[MATERIAAL WANDEN]"
+        ],
+        [
+          "Vloer",
+          "[FORMAAT VLOER]"
+        ],
+        [
+          "Afwerking",
+          "[AFWERKING, bijv. verstek]"
+        ],
+        [
+          "Bijzonderheden",
+          "[BIJZONDERHEDEN, bijv. inbouwnis en douchegoot]"
+        ]
       ],
-      "kaartBeoogd": "Overzicht van de badkamer vanaf de deur, met grootformaat wandtegels en doorlopende voegen",
-      "hero": "Brede foto van de complete badkamer met grootformaat tegels, rustig daglicht, geen spullen in beeld",
       "na": [
-        "Overzicht van de douchezone met inloopdouche en douchegoot",
-        "Badmeubel met de tegelverdeling erachter, voegen in lijn met de rand van het meubel",
-        "Vloer en wand die op elkaar aansluiten, voegen doorlopend van vloer naar wand"
+        "projectdetail-douchezone",
+        "projectdetail-badmeubel",
+        "project-badkamer-xxl"
       ],
-      "voor": "Uitgangssituatie: de oude badkamer vóór het slopen, vanuit hetzelfde standpunt als de na-foto",
-      "voorNa": "Dezelfde hoek na oplevering, voor de voor/na-vergelijking",
       "details": [
-        ["Hoeken", "Close-up van een buitenhoek in 45° verstek, zonder tegelprofiel"],
-        ["Voegen", "Macro van een smalle voeg tussen twee grootformaat tegels"],
-        ["Nis", "Betegelde inbouwnis waarvan de voegen doorlopen in de wand"],
-        ["Aansluitingen", "Aansluiting van de tegels op kraan of thermostaat, netjes uitgeboord"],
-        ["Tegelverdeling", "Wand waarop te zien is dat de voegen symmetrisch om het midden vallen"],
-        ["Kitwerk", "Strakke kitvoeg in de hoek tussen wand en vloer"],
-        ["Douchegoot", "Douchegoot met de tegels op afschot er naartoe"],
-        ["Overgangen", "Overgang van de badkamervloer naar de gang onder de deur"]
-      ]
+        [
+          "Hoeken",
+          "detail-verstek"
+        ],
+        [
+          "Voegen",
+          "detail-voeg"
+        ],
+        [
+          "Nis",
+          "detail-nis"
+        ],
+        [
+          "Douchegoot",
+          "detail-douchegoot"
+        ],
+        [
+          "Overgangen",
+          "detail-overgang"
+        ],
+        [
+          "Kitwerk",
+          "detail-kitwerk"
+        ]
+      ],
+      "kaartBeeld": "project-badkamer-xxl",
+      "heroBeeld": "projectdetail-hero",
+      "voorBeeld": "voorna-voor",
+      "naBeeld": "voorna-na"
     },
     {
       "slug": "kaart-vloer",
@@ -56,8 +93,11 @@
       "naam": "[PROJECTNAAM]",
       "plaats": "[PLAATS]",
       "type": "Tegelvloer",
-      "categorieen": ["vloer", "xxl"],
-      "kaartBeoogd": "Woonkamer en keuken met een doorlopende tegelvloer in groot formaat, gefotografeerd laag bij de vloer"
+      "categorieen": [
+        "vloer",
+        "xxl"
+      ],
+      "kaartBeeld": "project-keukenvloer"
     },
     {
       "slug": "kaart-toilet",
@@ -67,8 +107,10 @@
       "naam": "[PROJECTNAAM]",
       "plaats": "[PLAATS]",
       "type": "Toilet",
-      "categorieen": ["toilet"],
-      "kaartBeoogd": "Betegeld toilet met voorzetwand, de bedieningsplaat precies op de voeg"
+      "categorieen": [
+        "toilet"
+      ],
+      "kaartBeeld": "project-toilet"
     },
     {
       "slug": "kaart-visgraat",
@@ -78,8 +120,11 @@
       "naam": "[PROJECTNAAM]",
       "plaats": "[PLAATS]",
       "type": "Visgraatvloer",
-      "categorieen": ["vloer", "visgraat"],
-      "kaartBeoogd": "Visgraatvloer van bovenaf, met de middellijn van het patroon in het midden van de ruimte"
+      "categorieen": [
+        "vloer",
+        "visgraat"
+      ],
+      "kaartBeeld": "project-visgraat"
     },
     {
       "slug": "kaart-natuursteen",
@@ -89,8 +134,11 @@
       "naam": "[PROJECTNAAM]",
       "plaats": "[PLAATS]",
       "type": "Natuursteen",
-      "categorieen": ["natuursteen", "badkamer"],
-      "kaartBeoogd": "Natuursteen wand in een badkamer, met de tekening van de steen zichtbaar over meerdere platen"
+      "categorieen": [
+        "natuursteen",
+        "badkamer"
+      ],
+      "kaartBeeld": "project-natuursteen"
     },
     {
       "slug": "kaart-badkamer",
@@ -100,8 +148,10 @@
       "naam": "[PROJECTNAAM]",
       "plaats": "[PLAATS]",
       "type": "Badkamer",
-      "categorieen": ["badkamer"],
-      "kaartBeoogd": "Complete badkamer met wand- en vloertegels, inbouwnis en inloopdouche, recht van voren"
+      "categorieen": [
+        "badkamer"
+      ],
+      "kaartBeeld": "project-badkamer-nis"
     }
   ]
 }

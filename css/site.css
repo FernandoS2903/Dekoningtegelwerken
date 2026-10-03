@@ -331,11 +331,29 @@ h3 {
   aspect-ratio: var(--ratio, 4 / 3);
   background: var(--zand-diep);
 }
+.foto > picture { display: block; width: 100%; height: 100%; }
 .foto > img,
 .foto > picture img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform var(--duur-lang) var(--ease);
+}
+/* AI-sfeerbeeld op een plek waar het als project gelezen kan worden: altijd
+   zichtbaar gelabeld (eerlijkheid, briefing §34). Vervalt bij echte foto's. */
+.foto--sfeer::after {
+  content: "Sfeerbeeld";
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  background: rgba(251, 248, 243, 0.88);
+  color: var(--inkt-zacht);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 .foto__vlak {
   position: absolute;
@@ -664,7 +682,7 @@ h3 {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(30, 29, 27, 0.15) 0%, rgba(30, 29, 27, 0.15) 40%, rgba(30, 29, 27, 0.7) 100%);
+  background: linear-gradient(180deg, rgba(30, 29, 27, 0.55) 0%, rgba(30, 29, 27, 0.12) 22%, rgba(30, 29, 27, 0.18) 45%, rgba(30, 29, 27, 0.78) 100%);
   pointer-events: none;
 }
 .hero__inhoud {

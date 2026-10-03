@@ -2,7 +2,8 @@
   "_uitleg": [
     "Inhoud van de dienstpagina's (§22 van de briefing). Na een wijziging: node service/cli/genereer.mjs",
     "Dit zijn CONCEPTTEKSTEN over wat er bij elk soort tegelwerk komt kijken. De Koning moet ze controleren en aanvullen met de eigen werkwijze. Er staan bewust geen bedrijfsclaims in (geen jaren, garanties, aantallen of prijzen).",
-    "categorie koppelt de pagina aan de projectfilter voor 'Bekijk vergelijkbaar werk'. Lokale pagina's per plaats komen pas als het werkgebied bekend is."
+    "categorie koppelt de pagina aan de projectfilter voor 'Bekijk vergelijkbaar werk'. Lokale pagina's per plaats komen pas als het werkgebied bekend is.",
+    "beeld verwijst naar een id in data/beelden.json (AI-sfeerbeeld, vóór livegang vervangen of alleen als algemeen sfeerbeeld laten staan)."
   ],
   "diensten": [
     {
@@ -14,18 +15,34 @@
       "metaOmschrijving": "De Koning Tegelwerken: badkamers, tegelvloeren, toiletten, grootformaat en XXL, visgraat en natuursteen. Strak geplaatst en zorgvuldig afgewerkt.",
       "eyebrow": "Tegelzetter",
       "intro": "Van complete badkamers en tegelvloeren tot grootformaat en specialistisch tegelwerk. Strak geplaatst en zorgvuldig afgewerkt.",
-      "hero": "Tegelzetter aan het werk: handen die een grote tegel op een lijmbed leggen, met een waterpas ernaast",
       "serviceType": "Tegelwerk",
       "categorie": null,
       "toonDienstkaarten": true,
       "puntenKop": "Waar goed tegelwerk op aankomt.",
       "punten": [
-        ["Tegelverdeling vooraf", "Waar komen de voegen, waar de snijlijnen, hoe valt de verdeling rond deuren, ramen en sanitair? Dat wordt bepaald voordat de eerste tegel ligt, niet halverwege."],
-        ["Eerst de ondergrond", "Een tegel is zo vlak als wat eronder zit. Egaliseren, primeren of een wand rechtzetten is onzichtbaar werk dat het eindresultaat bepaalt."],
-        ["Waterdicht waar het moet", "In douche en badkamer zit de waterdichting onder de tegels: kimband in de hoeken en een waterdichte laag in de natte zone."],
-        ["Afwerking die je ziet", "Verstekhoeken, nissen, kitwerk en overgangen naar andere vloeren. Juist in die details zie je het verschil."]
+        [
+          "Tegelverdeling vooraf",
+          "Waar komen de voegen, waar de snijlijnen, hoe valt de verdeling rond deuren, ramen en sanitair? Dat wordt bepaald voordat de eerste tegel ligt, niet halverwege."
+        ],
+        [
+          "Eerst de ondergrond",
+          "Een tegel is zo vlak als wat eronder zit. Egaliseren, primeren of een wand rechtzetten is onzichtbaar werk dat het eindresultaat bepaalt."
+        ],
+        [
+          "Waterdicht waar het moet",
+          "In douche en badkamer zit de waterdichting onder de tegels: kimband in de hoeken en een waterdichte laag in de natte zone."
+        ],
+        [
+          "Afwerking die je ziet",
+          "Verstekhoeken, nissen, kitwerk en overgangen naar andere vloeren. Juist in die details zie je het verschil."
+        ]
       ],
-      "verwant": ["badkamer-tegelen", "vloer-betegelen", "grootformaat-tegels"]
+      "verwant": [
+        "badkamer-tegelen",
+        "vloer-betegelen",
+        "grootformaat-tegels"
+      ],
+      "beeld": "vak-gereedschap"
     },
     {
       "slug": "badkamer-tegelen",
@@ -37,17 +54,33 @@
       "metaOmschrijving": "Complete betegeling van badkamervloer en -wanden, met aandacht voor tegelverdeling, aansluitingen, nissen en een waterdichte afwerking.",
       "eyebrow": "Badkamers",
       "intro": "Complete betegeling van vloer en wanden met aandacht voor tegelverdeling, aansluitingen en waterdichte afwerking.",
-      "hero": "Afgewerkte badkamer met inloopdouche, inbouwnis en wand- en vloertegels in dezelfde kleur",
       "serviceType": "Badkamer betegelen",
       "categorie": "badkamer",
       "puntenKop": "Waar het in een badkamer op aankomt.",
       "punten": [
-        ["Waterdicht vanaf de basis", "In de douchezone komt eerst een waterdichte laag, met kimband in de hoeken en rond de doorvoeren. Tegels en voegen zijn de afwerking, niet de waterdichting."],
-        ["Afschot naar de goot", "De vloer loopt onder afschot naar de douchegoot of put, zodat er geen water blijft staan. Bij grote tegels vraagt dat een goed plan, want die laten zich niet buigen."],
-        ["Verdeling rond het sanitair", "Voegen die netjes uitkomen op de nis, de kraan en de rand van het badmeubel. Dat wordt vooraf uitgetekend."],
-        ["Nissen en verstekhoeken", "Een inbouwnis of een buitenhoek in verstek maakt het verschil tussen netjes en af, zonder standaard tegelprofiel waar de situatie dat toelaat."]
+        [
+          "Waterdicht vanaf de basis",
+          "In de douchezone komt eerst een waterdichte laag, met kimband in de hoeken en rond de doorvoeren. Tegels en voegen zijn de afwerking, niet de waterdichting."
+        ],
+        [
+          "Afschot naar de goot",
+          "De vloer loopt onder afschot naar de douchegoot of put, zodat er geen water blijft staan. Bij grote tegels vraagt dat een goed plan, want die laten zich niet buigen."
+        ],
+        [
+          "Verdeling rond het sanitair",
+          "Voegen die netjes uitkomen op de nis, de kraan en de rand van het badmeubel. Dat wordt vooraf uitgetekend."
+        ],
+        [
+          "Nissen en verstekhoeken",
+          "Een inbouwnis of een buitenhoek in verstek maakt het verschil tussen netjes en af, zonder standaard tegelprofiel waar de situatie dat toelaat."
+        ]
       ],
-      "verwant": ["toilet-betegelen", "grootformaat-tegels", "natuursteen"]
+      "verwant": [
+        "toilet-betegelen",
+        "grootformaat-tegels",
+        "natuursteen"
+      ],
+      "beeld": "dienst-badkamer"
     },
     {
       "slug": "vloer-betegelen",
@@ -59,17 +92,33 @@
       "metaOmschrijving": "Tegelvloeren voor woonkamer, keuken, hal of de complete benedenverdieping. Vlak gelegd, met doorlopende lijnen en nette overgangen.",
       "eyebrow": "Tegelvloeren",
       "intro": "Van woonkamers en keukens tot complete benedenverdiepingen.",
-      "hero": "Lichte tegelvloer die doorloopt van de woonkamer naar de keuken, gefotografeerd laag bij de vloer",
       "serviceType": "Tegelvloer leggen",
       "categorie": "vloer",
       "puntenKop": "Waar het bij een tegelvloer op aankomt.",
       "punten": [
-        ["Een vlakke ondergrond", "Hoogteverschillen in de dekvloer zie je terug als tegels die niet gelijk liggen. Egaliseren vooraf voorkomt dat, zeker bij grote formaten."],
-        ["Vloerverwarming", "Met vloerverwarming hoort de dekvloer eerst volgens protocol opgestookt te zijn. Daarna een flexibele lijm en ruimte voor uitzetting."],
-        ["Doorlopende lijnen", "In een benedenverdieping lopen de voegen door van kamer naar kamer. Het startpunt komt uit de belangrijkste zichtlijn, niet uit een toevallige hoek."],
-        ["Overgangen en plinten", "Naar de voordeur, de trap of een andere vloer, en plinten die aansluiten op de tegelverdeling."]
+        [
+          "Een vlakke ondergrond",
+          "Hoogteverschillen in de dekvloer zie je terug als tegels die niet gelijk liggen. Egaliseren vooraf voorkomt dat, zeker bij grote formaten."
+        ],
+        [
+          "Vloerverwarming",
+          "Met vloerverwarming hoort de dekvloer eerst volgens protocol opgestookt te zijn. Daarna een flexibele lijm en ruimte voor uitzetting."
+        ],
+        [
+          "Doorlopende lijnen",
+          "In een benedenverdieping lopen de voegen door van kamer naar kamer. Het startpunt komt uit de belangrijkste zichtlijn, niet uit een toevallige hoek."
+        ],
+        [
+          "Overgangen en plinten",
+          "Naar de voordeur, de trap of een andere vloer, en plinten die aansluiten op de tegelverdeling."
+        ]
       ],
-      "verwant": ["grootformaat-tegels", "visgraat-tegels", "natuursteen"]
+      "verwant": [
+        "grootformaat-tegels",
+        "visgraat-tegels",
+        "natuursteen"
+      ],
+      "beeld": "dienst-vloer"
     },
     {
       "slug": "toilet-betegelen",
@@ -81,17 +130,33 @@
       "metaOmschrijving": "Strakke afwerking van kleine ruimtes: tegelverdeling rond voorzetwand, bedieningsplaat en fontein, met vloer en wand in één lijn.",
       "eyebrow": "Toiletten",
       "intro": "Strakke afwerking van kleine ruimtes waar ieder detail zichtbaar is.",
-      "hero": "Klein toilet met voorzetwand en zwevend toilet, de bedieningsplaat precies tussen de voegen",
       "serviceType": "Toilet betegelen",
       "categorie": "toilet",
       "puntenKop": "Waar het in een toilet op aankomt.",
       "punten": [
-        ["Klein, dus alles zichtbaar", "In een kleine ruimte valt elke snede op. De verdeling wordt zo gekozen dat er geen smalle reepjes in de hoeken overblijven."],
-        ["Voorzetwand en bedieningsplaat", "De tegels worden rond de bedieningsplaat en de afvoer gepland, zodat de plaat op een logische plek in de verdeling valt."],
-        ["Fontein en leidingen", "Doorvoeren netjes uitgeboord, rozetten die passen en kitwerk dat strak blijft."],
-        ["Vloer en wand in één lijn", "Voegen van vloer en wand die op elkaar aansluiten. In een ruimte van een paar vierkante meter zie je dat meteen."]
+        [
+          "Klein, dus alles zichtbaar",
+          "In een kleine ruimte valt elke snede op. De verdeling wordt zo gekozen dat er geen smalle reepjes in de hoeken overblijven."
+        ],
+        [
+          "Voorzetwand en bedieningsplaat",
+          "De tegels worden rond de bedieningsplaat en de afvoer gepland, zodat de plaat op een logische plek in de verdeling valt."
+        ],
+        [
+          "Fontein en leidingen",
+          "Doorvoeren netjes uitgeboord, rozetten die passen en kitwerk dat strak blijft."
+        ],
+        [
+          "Vloer en wand in één lijn",
+          "Voegen van vloer en wand die op elkaar aansluiten. In een ruimte van een paar vierkante meter zie je dat meteen."
+        ]
       ],
-      "verwant": ["badkamer-tegelen", "natuursteen", "grootformaat-tegels"]
+      "verwant": [
+        "badkamer-tegelen",
+        "natuursteen",
+        "grootformaat-tegels"
+      ],
+      "beeld": "dienst-toilet"
     },
     {
       "slug": "grootformaat-tegels",
@@ -103,17 +168,33 @@
       "metaOmschrijving": "Specialistisch plaatsen van grote tegelformaten op vloer en wand, met minimale voegen, volle verlijming en een vlakke ondergrond.",
       "eyebrow": "Grootformaat",
       "intro": "Specialistisch plaatsen van grote tegelformaten met minimale voegen en nauwkeurige verwerking.",
-      "hero": "Twee grote vloertegels die naast elkaar worden gelegd, met een smalle voeg en een nivelleersysteem",
       "serviceType": "Grootformaat tegels plaatsen",
       "categorie": "xxl",
       "puntenKop": "Waar het bij grootformaat op aankomt.",
       "punten": [
-        ["Vlakheid van de ondergrond", "Hoe groter de tegel, hoe strenger de eis aan de ondergrond. Een kleine oneffenheid wordt bij een tegel van een meter of meer direct zichtbaar."],
-        ["Volle verlijming", "Lijm op de ondergrond én op de tegel, zodat er geen holle plekken overblijven. Dat voorkomt breuk en tikkende tegels."],
-        ["Geen overzetten", "Met een nivelleersysteem komen de randen van naastliggende tegels precies gelijk te liggen, ook bij een smalle voeg."],
-        ["Transport en snijden", "Grote tegels zijn zwaar en breekbaar. Ze worden met zuignappen gedragen en op maat gesneden met gereedschap dat daarvoor gemaakt is."]
+        [
+          "Vlakheid van de ondergrond",
+          "Hoe groter de tegel, hoe strenger de eis aan de ondergrond. Een kleine oneffenheid wordt bij een tegel van een meter of meer direct zichtbaar."
+        ],
+        [
+          "Volle verlijming",
+          "Lijm op de ondergrond én op de tegel, zodat er geen holle plekken overblijven. Dat voorkomt breuk en tikkende tegels."
+        ],
+        [
+          "Geen overzetten",
+          "Met een nivelleersysteem komen de randen van naastliggende tegels precies gelijk te liggen, ook bij een smalle voeg."
+        ],
+        [
+          "Transport en snijden",
+          "Grote tegels zijn zwaar en breekbaar. Ze worden met zuignappen gedragen en op maat gesneden met gereedschap dat daarvoor gemaakt is."
+        ]
       ],
-      "verwant": ["xxl-tegels", "vloer-betegelen", "badkamer-tegelen"]
+      "verwant": [
+        "xxl-tegels",
+        "vloer-betegelen",
+        "badkamer-tegelen"
+      ],
+      "beeld": "dienst-grootformaat"
     },
     {
       "slug": "xxl-tegels",
@@ -125,17 +206,33 @@
       "metaOmschrijving": "Keramische XXL-platen voor wanden en vloeren met zo min mogelijk voegen. Vooraf ingemeten, met een snijplan en zorgvuldig transport.",
       "eyebrow": "XXL",
       "intro": "Keramische platen van ruim twee meter of meer, voor wanden en vloeren met zo min mogelijk voegen.",
-      "hero": "Douchewand van één keramische XXL-plaat met de tekening van marmer, zonder zichtbare voegen",
       "serviceType": "XXL-tegels plaatsen",
       "categorie": "xxl",
       "puntenKop": "Waar het bij XXL-platen op aankomt.",
       "punten": [
-        ["Inmeten en snijplan", "Bij platen van deze maat telt elke plaat. Een snijplan vooraf bepaalt waar de naden komen en hoeveel platen er nodig zijn."],
-        ["Bereikbaarheid", "Past de plaat door de voordeur, het trappenhuis of de lift? Dat wordt gecontroleerd voordat er besteld wordt."],
-        ["Dunne platen, eigen verwerking", "Veel XXL-platen zijn maar enkele millimeters dik. Ze vragen een passende lijm, volle verlijming en ondersteuning tijdens het plaatsen."],
-        ["Een wand als één vlak", "Een douchewand, keukenachterwand of vloer met nauwelijks voegen. Juist daar komt de tekening van het materiaal het best tot zijn recht."]
+        [
+          "Inmeten en snijplan",
+          "Bij platen van deze maat telt elke plaat. Een snijplan vooraf bepaalt waar de naden komen en hoeveel platen er nodig zijn."
+        ],
+        [
+          "Bereikbaarheid",
+          "Past de plaat door de voordeur, het trappenhuis of de lift? Dat wordt gecontroleerd voordat er besteld wordt."
+        ],
+        [
+          "Dunne platen, eigen verwerking",
+          "Veel XXL-platen zijn maar enkele millimeters dik. Ze vragen een passende lijm, volle verlijming en ondersteuning tijdens het plaatsen."
+        ],
+        [
+          "Een wand als één vlak",
+          "Een douchewand, keukenachterwand of vloer met nauwelijks voegen. Juist daar komt de tekening van het materiaal het best tot zijn recht."
+        ]
       ],
-      "verwant": ["grootformaat-tegels", "badkamer-tegelen", "vloer-betegelen"]
+      "verwant": [
+        "grootformaat-tegels",
+        "badkamer-tegelen",
+        "vloer-betegelen"
+      ],
+      "beeld": "dienst-xxl"
     },
     {
       "slug": "visgraat-tegels",
@@ -147,17 +244,33 @@
       "metaOmschrijving": "Visgraat, Hongaarse punt en andere patronen: nauwkeurige maatvoering vanaf de middellijn en een uitgebalanceerde tegelverdeling.",
       "eyebrow": "Visgraat",
       "intro": "Nauwkeurige maatvoering en een uitgebalanceerde tegelverdeling.",
-      "hero": "Visgraatvloer van bovenaf gefotografeerd, met de punt van het patroon precies in het midden van de deuropening",
       "serviceType": "Visgraat tegels leggen",
       "categorie": "visgraat",
       "puntenKop": "Waar het bij visgraat op aankomt.",
       "punten": [
-        ["De middellijn bepaalt alles", "Het patroon wordt uitgezet vanaf de as van de ruimte of de belangrijkste zichtlijn, zodat het aan beide kanten in balans uitkomt."],
-        ["Meer snijwerk", "Langs elke rand wordt gezaagd. Daardoor is het snijverlies hoger dan bij een recht patroon en kost het meer tijd."],
-        ["Strak over de hele lengte", "Een kleine afwijking loopt over een paar meter flink op. Met lijnen en regelmatig controleren blijft het patroon recht."],
-        ["Randen en overgangen", "Het patroon afsluiten met een rand of bies, of laten doorlopen tot de muur: een keuze die vooraf wordt gemaakt."]
+        [
+          "De middellijn bepaalt alles",
+          "Het patroon wordt uitgezet vanaf de as van de ruimte of de belangrijkste zichtlijn, zodat het aan beide kanten in balans uitkomt."
+        ],
+        [
+          "Meer snijwerk",
+          "Langs elke rand wordt gezaagd. Daardoor is het snijverlies hoger dan bij een recht patroon en kost het meer tijd."
+        ],
+        [
+          "Strak over de hele lengte",
+          "Een kleine afwijking loopt over een paar meter flink op. Met lijnen en regelmatig controleren blijft het patroon recht."
+        ],
+        [
+          "Randen en overgangen",
+          "Het patroon afsluiten met een rand of bies, of laten doorlopen tot de muur: een keuze die vooraf wordt gemaakt."
+        ]
       ],
-      "verwant": ["vloer-betegelen", "natuursteen", "grootformaat-tegels"]
+      "verwant": [
+        "vloer-betegelen",
+        "natuursteen",
+        "grootformaat-tegels"
+      ],
+      "beeld": "dienst-visgraat"
     },
     {
       "slug": "natuursteen",
@@ -169,17 +282,33 @@
       "metaOmschrijving": "Natuursteen voor vloer, wand en badkamer: platen sorteren op kleur en tekening, de juiste lijm en bescherming passend bij de steensoort.",
       "eyebrow": "Natuursteen",
       "intro": "Zorgvuldige verwerking passend bij het materiaal.",
-      "hero": "Close-up van natuursteen tegels met zichtbare tekening en een smalle voeg, in strijklicht",
       "serviceType": "Natuursteen leggen",
       "categorie": "natuursteen",
       "puntenKop": "Waar het bij natuursteen op aankomt.",
       "punten": [
-        ["Elke steen is anders", "Kleur en tekening verschillen per plaat. Door de platen vooraf te sorteren en uit te leggen, ontstaat een rustig geheel."],
-        ["De juiste lijm", "Lichte steensoorten kunnen verkleuren door de lijm. Daarom een lijm die bij de steen past, vaak wit en snelhardend."],
-        ["Beschermen en onderhouden", "Impregneren beschermt tegen vlekken. Marmer en kalksteen zijn gevoelig voor zuur; daar hoort uitleg over onderhoud bij."],
-        ["Dikte en maatvoering", "Natuursteen is niet altijd even dik. Het lijmbed wordt daarop aangepast, zodat het oppervlak toch vlak wordt."]
+        [
+          "Elke steen is anders",
+          "Kleur en tekening verschillen per plaat. Door de platen vooraf te sorteren en uit te leggen, ontstaat een rustig geheel."
+        ],
+        [
+          "De juiste lijm",
+          "Lichte steensoorten kunnen verkleuren door de lijm. Daarom een lijm die bij de steen past, vaak wit en snelhardend."
+        ],
+        [
+          "Beschermen en onderhouden",
+          "Impregneren beschermt tegen vlekken. Marmer en kalksteen zijn gevoelig voor zuur; daar hoort uitleg over onderhoud bij."
+        ],
+        [
+          "Dikte en maatvoering",
+          "Natuursteen is niet altijd even dik. Het lijmbed wordt daarop aangepast, zodat het oppervlak toch vlak wordt."
+        ]
       ],
-      "verwant": ["badkamer-tegelen", "vloer-betegelen", "toilet-betegelen"]
+      "verwant": [
+        "badkamer-tegelen",
+        "vloer-betegelen",
+        "toilet-betegelen"
+      ],
+      "beeld": "dienst-natuursteen"
     }
   ]
 }

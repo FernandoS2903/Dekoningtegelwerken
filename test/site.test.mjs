@@ -48,6 +48,35 @@ test('interne links en assets bestaan', () => {
   assert.deepEqual(ontbreekt, []);
 });
 
+test('elke srcset-variant bestaat', () => {
+  const ontbreekt = [];
+  for (const { rel, html } of alle) {
+    for (const [, set] of html.matchAll(/srcset="([^"]+)"/g)) {
+      for (const deel of set.split(',')) {
+        const url = deel.trim().split(/\s+/)[0];
+        if (!existsSync(path.join(ROOT, url))) ontbreekt.push(rel + ' -> ' + url);
+      }
+    }
+  }
+  assert.deepEqual(ontbreekt, []);
+});
+
+test('elke afbeelding heeft afmetingen en een alt-tekst die zegt dat het een sfeerbeeld is', () => {
+  // Zolang er alleen AI-sfeerbeelden zijn, moet dat ook in de alt-tekst staan.
+  // Pas deze test aan zodra er echte projectfoto's van De Koning bij komen.
+  for (const { rel, html } of alle) {
+    for (const [tag] of html.matchAll(/<img\s[^>]*>/g)) {
+      assert.match(tag, /\swidth="\d+" height="\d+"/, rel + ': ' + tag.slice(0, 80));
+      assert.match(tag, /\salt="Sfeerbeeld[^"]{10,}"/, rel + ': ' + tag.slice(0, 80));
+    }
+  }
+});
+
+test('elk beeld in data/beelden.json is gemarkeerd als sfeerbeeld', () => {
+  const { beelden } = JSON.parse(readFileSync(path.join(ROOT, 'data/beelden.json'), 'utf8'));
+  for (const b of beelden) assert.equal(b.soort, 'sfeerbeeld', b.id);
+});
+
 test('ankers op de homepage bestaan', () => {
   const home = readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   for (const id of ['werk', 'werkwijze', 'over', 'inhoud']) assert.match(home, new RegExp(`id="${id}"`), id);

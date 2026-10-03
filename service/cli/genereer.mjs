@@ -18,6 +18,8 @@
 //       <!-- gen:eind -->         contact-CTA-sectie (_sjablonen/eind.html)
 //       <!-- gen:dienstkaarten --> de zes specialismen als kaarten
 //       <!-- gen:projecten uitgelicht|alle|categorie=<c> [filters] -->
+//       <!-- gen:beeld id=<id> [maat=<preset>] [klasse=a+b] [mobiel=<id>] [prioriteit] [donker] [sfeer] [label=Tekst_met_underscores] -->
+//                                 één beeld uit data/beelden.json (of een placeholdervlak als het ontbreekt)
 //     Alles tussen <!-- gen:x --> en <!-- /gen:x --> wordt overschreven:
 //     daar niet met de hand in werken.
 //  4. sitemap.xml
@@ -63,11 +65,86 @@ function vul(sjabloon, waarden) {
 
 const icoon = (naam) => `<svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#${naam}"/></svg>`;
 
-/** Fotoplaceholder; wordt later een <picture> met dezelfde verhouding. */
+/** Fotoplaceholder: neutraal vlak met de beoogde foto-inhoud. */
 function foto(beoogd, { klasse = '', label = 'Foto volgt', donker = false } = {}) {
   const k = ['foto', 'foto--ph', donker ? 'foto--donker' : '', klasse].filter(Boolean).join(' ');
   return `<div class="${k}"><div class="foto__vlak" role="img" aria-label="Placeholder, beoogde foto: ${esc(beoogd)}">`
     + `<span class="foto__label">${esc(label)}</span><span class="foto__beoogd">${esc(beoogd)}</span></div></div>`;
+}
+
+// -- beelden ----------------------------------------------------------------
+// Sfeerbeelden uit data/beelden.json (AI-gegenereerd, soort: sfeerbeeld). Een
+// beeld telt alleen als de WebP-varianten echt in assets/beelden/ staan; anders
+// valt de generator terug op het placeholdervlak, zodat er nooit een 404 ontstaat.
+const BEELDEN = Object.fromEntries(leesJson('data/beelden.json').beelden.map((b) => [b.id, b]));
+const beeldPad = (id, w) => `/assets/beelden/${id}-${w}.webp`;
+const beschikbaar = (id) => {
+  const b = BEELDEN[id];
+  return !!(b && b.afmeting && b.varianten?.length
+    && b.varianten.every((w) => existsSync(path.join(ROOT, beeldPad(id, w).slice(1)))));
+};
+
+/** sizes per plek in de layout; houd ze gelijk met de breakpoints in css/site.css. */
+const MATEN = {
+  vol: '100vw',
+  wrap: '(min-width: 90em) 84rem, calc(100vw - 2.5rem)',
+  kaart: '(min-width: 60em) 55vw, (min-width: 40em) 50vw, 100vw',
+  dienstkaart: '(min-width: 64em) 30vw, (min-width: 40em) 50vw, 100vw',
+  half: '(min-width: 60em) 45vw, 100vw',
+  galerij: '(min-width: 40em) 50vw, 100vw',
+  kwart: '(min-width: 60em) 22vw, (min-width: 40em) 50vw, 100vw',
+};
+
+function srcset(b) {
+  return b.varianten.map((w) => `${beeldPad(b.id, w)} ${w}w`).join(', ');
+}
+
+/** Hoogte van een variant, afgeleid van de echte afmeting van het bronbeeld. */
+const hoogteBij = (b, w) => Math.round((w * b.afmeting.hoogte) / b.afmeting.breedte);
+
+/**
+ * Eén beeld als <img> met srcset/sizes in een .foto-container, of een
+ * placeholdervlak als het beeld (nog) niet bestaat. Met mobiel wordt het een
+ * <picture> met een eigen uitsnede onder 40em (art direction).
+ */
+function beeld(id, { maat = 'vol', klasse = '', prioriteit = false, mobiel = null, donker = false, sfeer = false, label = 'Foto volgt' } = {}) {
+  const b = BEELDEN[id];
+  if (!beschikbaar(id)) {
+    const beoogd = b ? b.alt.replace(/^Sfeerbeeld[^:]*:\s*/, '') : id;
+    return foto(beoogd.charAt(0).toUpperCase() + beoogd.slice(1), { klasse, label, donker });
+  }
+  const groot = b.varianten[b.varianten.length - 1];
+  const standaard = b.varianten[Math.min(1, b.varianten.length - 1)];
+  const laden = prioriteit ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"';
+  const k = ['foto', donker ? 'foto--donker' : '', sfeer ? 'foto--sfeer' : '', klasse].filter(Boolean).join(' ');
+  let img;
+  if (mobiel && beschikbaar(mobiel)) {
+    const m = BEELDEN[mobiel];
+    const mGroot = m.varianten[m.varianten.length - 1];
+    img = `<picture><source media="(min-width: 40em)" srcset="${srcset(b)}" sizes="${MATEN[maat]}" width="${groot}" height="${hoogteBij(b, groot)}">`
+      + `<img src="${beeldPad(m.id, m.varianten[Math.min(1, m.varianten.length - 1)])}" srcset="${srcset(m)}" sizes="100vw" width="${mGroot}" height="${hoogteBij(m, mGroot)}" alt="${esc(b.alt)}" ${laden} decoding="async"></picture>`;
+  } else {
+    img = `<img src="${beeldPad(id, standaard)}" srcset="${srcset(b)}" sizes="${MATEN[maat]}" width="${groot}" height="${hoogteBij(b, groot)}" alt="${esc(b.alt)}" ${laden} decoding="async">`;
+  }
+  return `<div class="${k}" data-soort="${esc(b.soort)}">${img}</div>`;
+}
+
+function beeldBlok(args) {
+  const opties = {};
+  for (const a of args) {
+    const [k, v] = a.split('=');
+    opties[k] = v === undefined ? true : v;
+  }
+  if (!opties.id) throw new Error('gen:beeld zonder id');
+  return beeld(opties.id, {
+    maat: opties.maat || 'vol',
+    klasse: (opties.klasse || '').replace(/\+/g, ' '),
+    prioriteit: !!opties.prioriteit,
+    mobiel: opties.mobiel || null,
+    donker: !!opties.donker,
+    sfeer: !!opties.sfeer,
+    label: (opties.label || 'Foto volgt').replace(/_/g, ' '),
+  });
 }
 
 const FILTERS = [
@@ -91,7 +168,7 @@ const dienstPerSlug = Object.fromEntries(diensten.map((d) => [d.slug, d]));
 // -- blokken ---------------------------------------------------------------
 function projectkaart(p, vorm) {
   const meta = [p.plaats, p.type].filter(Boolean).map(tekstOfPh).join(' · ');
-  const inhoud = foto(p.kaartBeoogd || p.hero || p.naam, { label: 'Projectfoto volgt' })
+  const inhoud = beeld(p.kaartBeeld, { maat: 'kaart', sfeer: true, label: 'Projectfoto volgt' })
     + `<div class="projectkaart__info">`
     + (p.placeholder ? `<span class="projectkaart__badge">Voorbeeldkaart</span>` : '')
     + `<h3 class="projectkaart__naam">${tekstOfPh(p.naam)}</h3>`
@@ -129,7 +206,7 @@ function dienstkaartenBlok() {
   return `<ul class="dienstkaarten" role="list">` + volgorde.map((slug, i) => {
     const d = dienstPerSlug[slug];
     return `<li class="dienstkaart reveal" data-vertraging="${i % 3}"><a href="/${slug}/">`
-      + foto(d.hero, { label: 'Foto volgt' })
+      + beeld(d.beeld, { maat: 'dienstkaart' })
       + `<h3>${esc(d.kaartTitel)} ${icoon('pijl')}</h3><p>${esc(d.kaartTekst)}</p></a></li>`;
   }).join('') + `</ul>`;
 }
@@ -167,6 +244,11 @@ function blok(naam, args, paginaPad) {
     case 'eind': return PARTIALS.eind;
     case 'dienstkaarten': return dienstkaartenBlok();
     case 'projecten': return projectenBlok(args);
+    case 'beeld': return beeldBlok(args);
+    case 'voorna': {
+      const o = Object.fromEntries(args.map((a) => a.split('=')));
+      return voorNaSlider(o.voor, o.na);
+    }
     default: throw new Error('onbekend gen-blok: ' + naam);
   }
 }
@@ -194,13 +276,13 @@ const kruimelHtml = (items) => `<nav aria-label="Kruimelpad"><ol class="kruimels
 function projectPagina(p) {
   const pad = `/projecten/${p.slug}/`;
   const items = [['Home', '/'], ['Projecten', '/projecten/'], [p.naam, pad]];
-  const na = (p.na || []).map((b) => `<figure>${foto(b, { label: 'Projectfoto volgt' })}</figure>`).join('');
-  const details = (p.details || []).map(([kop, b]) => `<figure>${foto(b, { label: 'Detailfoto volgt', klasse: 'foto--klein' })}<figcaption>${esc(kop)}</figcaption></figure>`).join('');
-  const voorNa = p.voor ? `
+  const na = (p.na || []).map((id) => `<figure>${beeld(id, { maat: 'galerij', sfeer: true, label: 'Projectfoto volgt' })}</figure>`).join('');
+  const details = (p.details || []).map(([kop, id]) => `<figure>${beeld(id, { maat: 'kwart', sfeer: true, label: 'Detailfoto volgt', klasse: 'foto--klein' })}<figcaption>${esc(kop)}</figcaption></figure>`).join('');
+  const voorNa = p.voorBeeld ? `
   <section class="sectie sectie--compact" aria-labelledby="voorna-kop">
     <div class="wrap">
       <div class="subkop"><span class="eyebrow">Voor en na</span><h2 class="kop-3" id="voorna-kop">Van voorbereiding tot eindresultaat.</h2></div>
-      ${voorNaSlider(p.voor, p.voorNa || p.hero)}
+      ${voorNaSlider(p.voorBeeld, p.naBeeld)}
     </div>
   </section>` : '';
   return vul(lees('_sjablonen/project.html'), {
@@ -215,7 +297,7 @@ function projectPagina(p) {
     voorbeeldmelding: p.placeholder
       ? `<p class="ph-blok"><strong>Voorbeeldpagina.</strong> Zo komt een project eruit te zien. Echte projectgegevens en foto's volgen via het project-CMS.</p>`
       : '',
-    hero: foto(p.hero, { label: 'Projectfoto volgt' }),
+    hero: beeld(p.heroBeeld, { maat: 'wrap', sfeer: true, prioriteit: true, label: 'Projectfoto volgt' }),
     omschrijvingHtml: (p.omschrijving || []).map((t) => (isPh(t) ? `<p class="ph-blok">${esc(t)}</p>` : `<p>${esc(t)}</p>`)).join(''),
     specs: (p.info || []).map(([k, w]) => `<div><dt>${esc(k)}</dt><dd>${tekstOfPh(w)}</dd></div>`).join(''),
     na,
@@ -224,16 +306,21 @@ function projectPagina(p) {
   });
 }
 
+/** Voor/na-slider; de toelichting zegt eerlijk dat het (nog) sfeerbeelden zijn. */
 function voorNaSlider(voor, na) {
+  const sfeer = beschikbaar(voor) || beschikbaar(na);
   return `<div class="voorna" data-voorna>
-        <div class="voorna__voor">${foto(voor, { label: 'Voor' })}</div>
-        <div class="voorna__na">${foto(na, { label: 'Na', donker: true })}</div>
+        <div class="voorna__voor">${beeld(voor, { maat: 'wrap', label: 'Voor' })}</div>
+        <div class="voorna__na">${beeld(na, { maat: 'wrap', label: 'Na', donker: true })}</div>
         <span class="voorna__label voorna__label--voor" aria-hidden="true">Voor</span>
         <span class="voorna__label voorna__label--na" aria-hidden="true">Na</span>
         <input class="voorna__invoer visueel-verborgen" type="range" min="0" max="100" value="50" step="1" aria-label="Schuif tussen voor en na">
         <span class="voorna__lijn" aria-hidden="true"></span>
         <span class="voorna__greep" aria-hidden="true">${icoon('schuif')}</span>
-      </div>`;
+      </div>
+      <p class="voorna__toelichting">${sfeer
+    ? 'Sfeerbeelden ter illustratie, geen werk van De Koning Tegelwerken. Hier komt een echte badkamer- of toiletrenovatie.'
+    : 'Voorbeeld met placeholders. Hier komt een echte badkamer- of toiletrenovatie van De Koning.'}</p>`;
 }
 
 function dienstPagina(d) {
@@ -273,7 +360,7 @@ function dienstPagina(d) {
     eyebrow: d.eyebrow,
     h1: d.h1,
     intro: d.intro,
-    hero: foto(d.hero),
+    hero: beeld(d.beeld, { maat: 'half', prioriteit: true }),
     dienstkaarten,
     puntenKop: d.puntenKop,
     punten: d.punten.map(([kop, tekst], i) => `<li class="punt reveal" data-vertraging="${i % 2}"><h3>${esc(kop)}</h3><p>${esc(tekst)}</p></li>`).join(''),
