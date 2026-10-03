@@ -1,0 +1,75 @@
+<!doctype html>
+<!-- Gegenereerd door service/cli/genereer.mjs uit _sjablonen/project.html en data/projecten.json. Niet met de hand bewerken. -->
+<html lang="nl">
+<head>
+<!-- gen:head -->
+<!-- /gen:head -->
+<title>{{titel}}</title>
+<meta name="description" content="{{omschrijving}}">
+{{{robots}}}
+<link rel="canonical" href="{{canonical}}">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="nl_NL">
+<meta property="og:site_name" content="De Koning Tegelwerken">
+<meta property="og:title" content="{{titel}}">
+<meta property="og:description" content="{{omschrijving}}">
+<meta property="og:url" content="{{canonical}}">
+{{{jsonld}}}
+</head>
+<body>
+<!-- gen:header -->
+<!-- /gen:header -->
+
+<main id="inhoud">
+  <header class="wrap paginakop">
+    {{{kruimels}}}
+    <h1 class="kop-2">{{naam}}</h1>
+    <p class="project-plaats">{{{plaats}}}</p>
+  </header>
+
+  <div class="wrap project-hero">
+    {{{hero}}}
+  </div>
+
+  <section class="sectie" aria-labelledby="project-kop">
+    <div class="wrap project-intro">
+      <div class="project-intro__tekst">
+        {{{voorbeeldmelding}}}
+        <h2 class="kop-3" id="project-kop">Het project</h2>
+        {{{omschrijvingHtml}}}
+      </div>
+      <dl class="specs" aria-label="Projectinformatie">{{{specs}}}</dl>
+    </div>
+  </section>
+
+  <section class="sectie sectie--compact" aria-labelledby="fotos-kop">
+    <div class="wrap">
+      <div class="subkop"><span class="eyebrow">Resultaat</span><h2 class="kop-3" id="fotos-kop">Het eindresultaat.</h2></div>
+      <div class="galerij">{{{na}}}</div>
+    </div>
+  </section>
+{{{voorNa}}}
+  <section class="sectie sectie--compact" aria-labelledby="details-kop">
+    <div class="wrap">
+      <div class="subkop"><span class="eyebrow">In detail</span><h2 class="kop-3" id="details-kop">Hoeken, voegen en aansluitingen.</h2></div>
+      <div class="galerij galerij--details">{{{details}}}</div>
+    </div>
+  </section>
+
+  <section class="sectie donker" aria-labelledby="cta-kop">
+    <div class="wrap cta-band">
+      <div class="sectiekop sectiekop--los">
+        <h2 id="cta-kop">Iets vergelijkbaars in gedachten?</h2>
+      </div>
+      <div class="knoppen">
+        <a class="knop knop--licht" href="/offerte/">Offerte aanvragen <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
+        <a class="knop knop--lijn" href="/projecten/">Meer projecten</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- gen:footer -->
+<!-- /gen:footer -->
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "_uitleg": [
+    "Bedrijfsgegevens en vertrouwenselementen voor de hele site. js/site.js leest dit bestand en vult elk element met data-veld.",
+    "Vul ALLEEN echte gegevens in. Lege waarden (\"\" of null) blijven als gemarkeerde placeholder staan zolang placeholdersTonen true is; staat die op false (productie), dan verdwijnt het element.",
+    "De vertrouwenselementen in de hero (ervaring, Google-score, regio) worden altijd weggelaten als ze leeg zijn, ook in de preview.",
+    "Telefoon- en WhatsApp-nummer internationaal noteren zonder spaties, bijv. +31612345678; telefoonWeergave is hoe het nummer op de site staat.",
+    "Reviews: alleen echte, handmatig gekozen Google-reviews met toestemming. Velden: naam, sterren (1-5), tekst, projecttype, datum (JJJJ-MM-DD), bron (link naar de review of het profiel). Geen review-structured data (besluit Bob, 3 okt 2026)."
+  ],
+  "placeholdersTonen": true,
+  "bedrijf": {
+    "naam": "De Koning Tegelwerken",
+    "telefoon": "",
+    "telefoonWeergave": "",
+    "whatsapp": "",
+    "email": "",
+    "werkgebied": "",
+    "adres": "",
+    "kvk": "",
+    "btwId": ""
+  },
+  "vertrouwen": {
+    "ervaringSinds": null,
+    "jarenErvaring": null,
+    "googleScore": null,
+    "googleAantalReviews": null,
+    "googleProfielUrl": "",
+    "regio": ""
+  },
+  "whatsappTekst": "Hallo De Koning Tegelwerken, ik heb een vraag over tegelwerk.",
+  "reviews": []
+}

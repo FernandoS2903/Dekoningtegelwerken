@@ -1,0 +1,78 @@
+<!doctype html>
+<!-- Gegenereerd door service/cli/genereer.mjs uit _sjablonen/dienst.html en data/diensten.json. Niet met de hand bewerken. -->
+<html lang="nl">
+<head>
+<!-- gen:head -->
+<!-- /gen:head -->
+<title>{{titel}}</title>
+<meta name="description" content="{{omschrijving}}">
+<link rel="canonical" href="{{canonical}}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="nl_NL">
+<meta property="og:site_name" content="De Koning Tegelwerken">
+<meta property="og:title" content="{{titel}}">
+<meta property="og:description" content="{{omschrijving}}">
+<meta property="og:url" content="{{canonical}}">
+{{{jsonld}}}
+</head>
+<body>
+<!-- gen:header -->
+<!-- /gen:header -->
+
+<main id="inhoud">
+  <section class="wrap dienst-hero">
+    <div class="dienst-hero__tekst">
+      {{{kruimels}}}
+      <span class="eyebrow">{{eyebrow}}</span>
+      <h1 class="kop-2">{{h1}}</h1>
+      <p class="lead">{{intro}}</p>
+      <div class="knoppen">
+        <a class="knop" href="/offerte/">Vertel ons over jouw project <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
+        <a class="knop knop--lijn" href="#werk">Bekijk vergelijkbaar werk</a>
+      </div>
+    </div>
+    {{{hero}}}
+  </section>
+{{{dienstkaarten}}}
+  <section class="sectie" aria-labelledby="punten-kop">
+    <div class="wrap">
+      <div class="sectiekop"><h2 class="kop-3" id="punten-kop">{{puntenKop}}</h2></div>
+      <ul class="punten" role="list">{{{punten}}}</ul>
+    </div>
+  </section>
+
+  <section class="sectie sectie--compact lijn-boven" id="werk" aria-labelledby="werk-kop">
+    <div class="wrap">
+      <div class="sectiekop sectiekop--naast">
+        <div><span class="eyebrow">Projecten</span><h2 class="kop-3" id="werk-kop">Bekijk vergelijkbaar werk.</h2></div>
+        <p><a class="tekstlink" href="/projecten/">Alle projecten <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a></p>
+      </div>
+      <!-- gen:projecten {{werkArgs}} -->
+      <!-- /gen:projecten -->
+    </div>
+  </section>
+
+  <section class="sectie sectie--diep" aria-labelledby="werkwijze-kop">
+    <div class="wrap">
+      <div class="sectiekop"><span class="eyebrow">Werkwijze</span><h2 class="kop-3" id="werkwijze-kop">Van eerste idee tot laatste voeg.</h2></div>
+      <!-- gen:werkwijze -->
+      <!-- /gen:werkwijze -->
+      <div class="knoppen"><a class="knop" href="/offerte/">Start jouw aanvraag <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a></div>
+    </div>
+  </section>
+
+  <section class="sectie sectie--compact" aria-labelledby="verwant-kop">
+    <div class="wrap">
+      <h2 class="kop-3" id="verwant-kop">Ook interessant.</h2>
+      <ul class="verwant" role="list">{{{verwant}}}</ul>
+    </div>
+  </section>
+
+  <!-- gen:eind -->
+  <!-- /gen:eind -->
+</main>
+
+<!-- gen:footer -->
+<!-- /gen:footer -->
+</body>
+</html>
