@@ -112,6 +112,15 @@ dekoning-tegelwerken/
 └── .gitignore
 ```
 
+> **Zo is het in stap 1 gebouwd** (wijkt op een paar punten af van de schets hierboven):
+> één stylesheet `css/site.css` in plaats van `basis.css`/`site.css`/`wizard.css` (één
+> verzoek); sjablonen in `_sjablonen/` (header, footer, werkwijze, eindsectie, project,
+> dienst) in plaats van `projecten/_sjabloon.html`; projectdata in `data/projecten.json`;
+> dienstteksten in `data/diensten.json`; de generator `service/cli/genereer.mjs` houdt ook
+> header, footer en head in alle pagina's gelijk. Werkwijze en Over ons zijn in stap 1
+> secties op de homepage (`/#werkwijze`, `/#over`), nog geen eigen pagina's. Zie
+> `CLAUDE.md` en `docs/GEHEUGEN.md`.
+
 Navigatie (§2): Home, Diensten (uitklap: de zes specialismen + "Tegelzetter"), Projecten,
 Werkwijze, Over ons, Contact, plus de knop "Offerte aanvragen". Werkwijze en Over ons zijn
 zowel een homepagesectie als een korte eigen pagina, zodat de navigatie ook vanaf
