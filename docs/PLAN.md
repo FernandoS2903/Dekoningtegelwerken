@@ -22,6 +22,7 @@ Deze besluiten gaan vóór wat verderop in dit plan als voorstel of open vraag s
 | `appointment_requested` | De klant vraagt via de **klantpagina** (van de offerte) een inmeetafspraak aan. |
 | Preview | `preview.dekoningtegelwerken.nl`, root `/var/www/preview.dekoningtegelwerken`, met `noindex`-header en basic auth; voorbeeld-vhost en deploy-script in `deploy/`. |
 | Branches | Werk per fase op een featurebranch, pushen naar `origin`, nooit naar `main` pushen of mergen; Bob merget. |
+| Sfeerbeelden (3 okt 2026, na fase B) | "Overal mooie foto's": de placeholdervlakken worden vervangen door **AI-gegenereerde sfeerbeelden** via KIE.AI (`service/cli/kie-beelden.mjs`, manifest `data/beelden.json`). Voorwaarden: elk beeld staat als `"soort": "sfeerbeeld"` in het manifest, de alt-tekst begint met "Sfeerbeeld", projectbeelden dragen zichtbaar het label "Sfeerbeeld", voorbeeldprojecten houden placeholdernamen (geen verzonnen klanten, plaatsen of cases). **Vóór livegang worden alle sfeerbeelden vervangen door echte projectfoto's van De Koning, of blijven ze alleen staan waar ze niet als eigen werk worden gepresenteerd** (bijv. als algemeen sfeerbeeld bij een dienst). Dit vervangt voor beelden de eerdere regel "geen stock- of AI-beeld" uit §1.11; stockfoto's blijven uitgesloten. |
 
 Uitgangspunt is het bestaande Handsfree Digital-patroon uit `handsfree-digital-werk`:
 

@@ -1,6 +1,6 @@
 # Geheugen — stand van zaken dekoningtegelwerken.nl
 
-Bijgewerkt: 3 oktober 2026, einde fase B (stap 1 uit `docs/PLAN.md`).
+Bijgewerkt: 3 oktober 2026, na fase B (stap 1) plus sfeerbeelden en logo.
 Werk dit bestand bij aan het eind van elke fase.
 
 ## Waar staan we
@@ -9,6 +9,7 @@ Werk dit bestand bij aan het eind van elke fase.
 |---|---|
 | A — inventaris en plan | Klaar, goedgekeurd door Bob op 3 okt 2026. Besluiten staan bovenaan `docs/PLAN.md`. |
 | B — stap 1: design system, homepage, projecten, diensten, contact | **Klaar op branch `feature/fase-1-frontend`**, gepusht naar origin, **nog niet gemerged**. Wacht op beoordeling van Bob via de preview. |
+| B+ — sfeerbeelden en logo | Klaar op dezelfde branch: 29 AI-sfeerbeelden overal waar placeholdervlakken stonden, en het logo in header, menu, footer, favicon en og-image. |
 | Stap 2 — offertewizard `/offerte` | Niet begonnen. Nu een placeholderpagina ("de online aanvraag volgt binnenkort"). |
 | Stap 3 — backend | Niet begonnen. |
 | Stap 4 — beheer, calculatie, offertes, project-CMS | Niet begonnen. |
@@ -33,23 +34,48 @@ Werk dit bestand bij aan het eind van elke fase.
 5. Tests: statische controles en browsertests zonder dependencies
 6. Voorbeeld-vhost en deploy-script voor de preview
 7. CLAUDE.md voor deze repo en plan bijgewerkt
-8. Geheugen bijgewerkt na fase B (dit bestand)
+8. Geheugen bijgewerkt na fase B
+9. Sfeerbeelden genereren via KIE.AI
+10. Sfeerbeelden op de site verwerken
+11. Logo van De Koning Tegelwerken verwerken
+12. Geheugen en documentatie bijgewerkt na sfeerbeelden en logo
 
 ## Getest
 
-- `node --test test/*.test.mjs`: 8/8 geslaagd (generator actueel, links en assets bestaan, één h1 per pagina, geen inline styles/scripts, aria-labels op fotoplaceholders, geen review-structured data, lege site.json).
+- `node --test test/*.test.mjs`: 11/11 geslaagd (na sfeerbeelden en logo; o.a. ook srcset-bestanden, afmetingen, alt-teksten en sfeerbeeld-markering)
+- Eerder: 8/8 geslaagd (generator actueel, links en assets bestaan, één h1 per pagina, geen inline styles/scripts, aria-labels op fotoplaceholders, geen review-structured data, lege site.json).
 - `test/interactie.mjs`: 23/23 geslaagd (menu, Escape, focus, sticky CTA, filters + herverdeling, details, slider, placeholders; met onderschepte testgegevens ook vertrouwenselementen, WhatsApp-link met vooraf ingevulde tekst, telefoonlink en het weglaten van lege velden in productiemodus).
-- `test/schermafdruk.mjs`: 9 pagina's × 3 breedtes zonder overflow of JS-fouten; afdrukken visueel nagelopen.
+- `test/schermafdruk.mjs`: 9 pagina's × 3 breedtes zonder overflow, JS-fouten of 404's (de browsertests melden sinds de logo-commit ook mislukte verzoeken); logo gecontroleerd boven de hero, in de compacte header en in de footer.
 - `deploy/preview-deploy.sh` getest met een kopie die naar een tijdelijke map schreef: alleen publieke bestanden (± 0,5 MB), generatorcontrole werkt.
 - **Niet getest**: echte nginx-vhost (vereist DNS, certificaat en installatie door Bob), Safari/iOS en Firefox (alleen Chromium beschikbaar), Lighthouse-cijfers.
 
+## Sfeerbeelden (3 oktober 2026, op verzoek van Bob: "overal mooie foto's")
+
+- **29 beelden**, AI-gegenereerd via KIE.AI met `nano-banana-pro` (2K, `POST /api/v1/jobs/createTask`, pollen via `/api/v1/jobs/recordInfo`). 30 generaties in totaal: een eerste run op de achtergrond werd afgebroken (één taak ging daarbij verloren), daarna op de voorgrond in twee parallelle brokken. Geen enkel beeld mislukt. Verbruik 540 credits (18 per beeld); tegoed daarna 8453.
+- Manifest met prompts, verhoudingen, breedtes en alt-teksten: `data/beelden.json`; script: `service/cli/kie-beelden.mjs` (sleutel uit `/etc/dekoning/kie.env`, nooit in repo of logs). Het na-beeld van de voor/na is een image-to-image-bewerking van het voor-beeld (zelfde standpunt).
+- WebP via `cwebp` (q78) in 3 à 4 breedtes: 93 bestanden, samen 2,8 MB voor álle varianten; een bezoeker laadt alleen de passende breedte. Hero op mobiel 13 KB (800 px), hero desktop 43 KB (2400 px).
+- **Eerlijkheid:** elk beeld is `"soort": "sfeerbeeld"`, elke alt-tekst begint met "Sfeerbeeld", projectbeelden dragen zichtbaar het label "Sfeerbeeld", onder de voor/na staat "Sfeerbeelden ter illustratie, geen werk van De Koning Tegelwerken". Voorbeeldprojecten houden placeholdernamen (geen klanten, plaatsen of cases).
+- **Vóór livegang:** alle sfeerbeelden vervangen door echte projectfoto's van De Koning, of alleen laten staan waar ze niet als eigen werk worden gepresenteerd (bijv. algemeen sfeerbeeld bij een dienst). Vastgelegd in `docs/PLAN.md` (besluiten).
+
+## Logo (3 oktober 2026)
+
+- Bron: `https://versvanzee.nl/padel-sponsors/de-koning-tegelwerken.svg` (sponsorlogo op de site van Vers van Zee). Die URL zit achter een Cloudflare-controle (403 voor curl); het bestand is daarom **alleen-lezend van vps1** gehaald (`/home/versvanzee-vps1/live-storefront/public/padel-sponsors/`). Het is byte-gelijk aan `De_Koning_Tegelwerken_LOGO_DEF.svg` in de WordPress-uploads van staging.versvanzee.nl, een Illustrator-export.
+- Inhoud: ruit (tegel op de punt), "DE KONING" als paden in paars (#551B6B/#4D0E4F), zwarte onderhelft met "TEGELWERKEN" uitgespaard, kroon als **ingebed JPEG** (data-URI, met vectorknippad). Geen scripts, events of externe verwijzingen.
+- `assets/brand/logo.svg`: opgeschoond (geen `<style>` of `style`-attributen, strakke viewBox 542×442). `assets/brand/logo-licht.svg`: dezelfde vorm, alle kleuren `#ede6da` (kroon via kleurfilter), voor de donkere hero en de footer.
+- Favicon (`assets/favicon.svg`) en `assets/apple-touch-icon.png` (180 px): het vectorpad van de kroon uit het logo in het logopaars op zand, dus een uitsnede en geen nieuw merk. `assets/og-image.jpg` (1200×630): hero-sfeerbeeld met de lichte logovariant en "Tegelwerk tot in detail.".
+- **Nog nodig van De Koning:** een officieel bronbestand van het logo (SVG of AI, liefst met de kroon als vector in plaats van een ingebed JPEG), en een besluit of het logopaars ook als accentkleur op de site moet komen (nu gedempt brons).
+
 ## Wat Bob nu moet doen
 
-Preview zichtbaar maken: stappen in `deploy/README.md` (DNS-record `preview`, map, wachtwoordbestand, certificaat, vhost, `deploy/preview-deploy.sh feature/fase-1-frontend`). Daarna beoordelen en eventueel mergen.
+Preview zichtbaar maken: stappen in `deploy/README.md` (DNS-record `preview`, map, wachtwoordbestand, certificaat, vhost, `deploy/preview-deploy.sh feature/fase-1-frontend`). Daarna beoordelen en eventueel mergen. Bijwerken na nieuwe commits:
+
+```bash
+cd /root/dekoning-tegelwerken && deploy/preview-deploy.sh feature/fase-1-frontend
+```
 
 ## Nog aan te leveren (blokkeert "af", niet het bouwen)
 
-Zie `docs/PLAN.md` §3. Het belangrijkste voor de uitstraling: logo (SVG), echte projectfoto's (per project voor/na/detail), hero-beeld, eigenaarsfoto + kort verhaal. Daarnaast telefoon, WhatsApp, e-mail, werkgebied, KvK, jaren ervaring, Google-profiel + score, en controle van de conceptteksten in `data/diensten.json`.
+Zie `docs/PLAN.md` §3. Het belangrijkste voor de uitstraling: officieel logobestand, echte projectfoto's (per project voor/na/detail) ter vervanging van de sfeerbeelden, eigenaarsfoto + kort verhaal. Daarnaast telefoon, WhatsApp, e-mail, werkgebied, KvK, jaren ervaring, Google-profiel + score, en controle van de conceptteksten in `data/diensten.json`.
 
 Invullen kan direct in `data/site.json` (gegevens) en `data/projecten.json` (projecten) gevolgd door `node service/cli/genereer.mjs`; vóór livegang `placeholdersTonen` op `false` en de bewakingstest in `test/site.test.mjs` aanpassen.
 
