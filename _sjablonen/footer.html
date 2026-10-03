@@ -45,9 +45,11 @@
   </div>
 </footer>
 
+<!-- Mobiel: twee acties onderin, zodat niemand terug omhoog hoeft. De WhatsApp-knop
+     verdwijnt in productiemodus zolang er geen nummer in data/site.json staat. -->
 <div class="stickycta" data-stickycta>
-  <a class="knop" href="/offerte/">Offerte aanvragen</a>
-  <a class="stickycta__wa" data-veld="whatsapp" data-veld-tekst aria-label="Stuur een WhatsApp-bericht">
-    <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg>
+  <a class="knop knop--lijn stickycta__wa" data-veld="whatsapp" data-veld-tekst>
+    <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg> WhatsApp
   </a>
+  <a class="knop stickycta__offerte" href="/offerte/">Offerte aanvragen</a>
 </div>

@@ -286,7 +286,15 @@ const kruimelHtml = (items) => `<nav aria-label="Kruimelpad"><ol class="kruimels
 function projectPagina(p) {
   const pad = `/projecten/${p.slug}/`;
   const items = [['Home', '/'], ['Projecten', '/projecten/'], [p.naam, pad]];
-  const na = (p.na || []).map((id) => `<figure>${beeld(id, { maat: 'galerij', sfeer: true, label: 'Projectfoto volgt' })}</figure>`).join('');
+  // Galerij: 6–12 foto's, elk een link naar de grootste variant (zonder JS opent
+  // de foto gewoon; met JS in een lichtbak, zie initLichtbak in js/site.js).
+  const fotos = (p.fotos || []).slice(0, 12).map((id) => {
+    const f = beeld(id, { maat: 'galerij', sfeer: true, label: 'Projectfoto volgt' });
+    if (!beschikbaar(id)) return `<figure>${f}</figure>`;
+    const b = BEELDEN[id];
+    const groot = b.varianten[b.varianten.length - 1];
+    return `<figure><a class="galerij__link" href="${beeldPad(id, groot)}" data-lichtbak aria-label="Foto groot bekijken">${f}</a></figure>`;
+  }).join('');
   const details = (p.details || []).map(([kop, id]) => `<figure>${beeld(id, { maat: 'kwart', sfeer: true, label: 'Detailfoto volgt', klasse: 'foto--klein' })}<figcaption>${esc(kop)}</figcaption></figure>`).join('');
   const voorNa = p.voorBeeld ? `
   <section class="sectie sectie--compact" aria-labelledby="voorna-kop">
@@ -303,14 +311,14 @@ function projectPagina(p) {
     jsonld: jsonld({ '@context': 'https://schema.org', ...kruimel(items) }),
     kruimels: kruimelHtml(items),
     naam: p.naam,
-    plaats: tekstOfPh(p.plaats),
+    plaats: [p.plaats, p.type].filter(Boolean).map(tekstOfPh).join(' · '),
     voorbeeldmelding: p.placeholder
       ? `<p class="ph-blok"><strong>Voorbeeldpagina.</strong> Zo komt een project eruit te zien. Echte projectgegevens en foto's volgen via het project-CMS.</p>`
       : '',
     hero: beeld(p.heroBeeld, { maat: 'wrap', sfeer: true, prioriteit: true, label: 'Projectfoto volgt' }),
     omschrijvingHtml: (p.omschrijving || []).map((t) => (isPh(t) ? `<p class="ph-blok">${esc(t)}</p>` : `<p>${esc(t)}</p>`)).join(''),
-    specs: (p.info || []).map(([k, w]) => `<div><dt>${esc(k)}</dt><dd>${tekstOfPh(w)}</dd></div>`).join(''),
-    na,
+    specs: [['Plaats', p.plaats], ...(p.info || [])].map(([k, w]) => `<div><dt>${esc(k)}</dt><dd>${tekstOfPh(w)}</dd></div>`).join(''),
+    fotos,
     voorNa,
     details,
   });

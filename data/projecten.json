@@ -3,6 +3,7 @@
     "Projectdata voor de projectgrids en de projectpagina's. Na een wijziging: node service/cli/genereer.mjs",
     "Tot het project-CMS er is (stap 4) staan hier alleen VOORBEELDPROJECTEN: geen echte klanten, plaatsen of cases. placeholder: true geeft een herkenbare kaart met het label 'Voorbeeldkaart'.",
     "pagina: true maakt projecten/<slug>/index.html aan. categorieen bepaalt de filters: badkamer, vloer, toilet, xxl, visgraat, natuursteen.",
+    "Projectpagina: fotos = 6 tot 12 beeld-id's voor de galerij (de eerste groot), info = vaste gegevens in deze volgorde: Ruimte, Soort tegel, Formaat, Werkzaamheden, Bijzonderheden (plaats komt uit plaats), details = [kop, beeld-id] voor de close-ups, omschrijving = een paar korte alinea's.",
     "Beelden verwijzen naar id's in data/beelden.json. Dat zijn AI-gegenereerde SFEERBEELDEN, geen werk van De Koning; ze krijgen op de site het label 'Sfeerbeeld' en moeten vóór livegang vervangen worden door echte projectfoto's. Ontbreekt een beeld, dan toont de generator een placeholdervlak."
   ],
   "projecten": [
@@ -29,30 +30,21 @@
           "Badkamer"
         ],
         [
-          "Tegels",
+          "Soort tegel",
+          "[SOORT TEGEL]"
+        ],
+        [
+          "Formaat",
           "[TEGELFORMAAT]"
         ],
         [
-          "Wanden",
-          "[MATERIAAL WANDEN]"
-        ],
-        [
-          "Vloer",
-          "[FORMAAT VLOER]"
-        ],
-        [
-          "Afwerking",
-          "[AFWERKING, bijv. verstek]"
+          "Werkzaamheden",
+          "[WERKZAAMHEDEN, bijv. wanden en vloer, inloopdouche]"
         ],
         [
           "Bijzonderheden",
-          "[BIJZONDERHEDEN, bijv. inbouwnis en douchegoot]"
+          "[BIJZONDERHEDEN, bijv. verstekhoeken, inbouwnis, douchegoot]"
         ]
-      ],
-      "na": [
-        "projectdetail-douchezone",
-        "projectdetail-badmeubel",
-        "project-badkamer-xxl"
       ],
       "details": [
         [
@@ -83,7 +75,12 @@
       "kaartBeeld": "project-badkamer-xxl",
       "heroBeeld": "projectdetail-hero",
       "voorBeeld": "voorna-voor",
-      "naBeeld": "voorna-na"
+      "naBeeld": "voorna-na",
+      "fotos": [
+        "projectdetail-douchezone",
+        "projectdetail-badmeubel",
+        "project-badkamer-xxl"
+      ]
     },
     {
       "slug": "kaart-vloer",

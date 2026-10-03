@@ -65,7 +65,7 @@
       </a>
       <a class="knop kop__cta" href="/offerte/">Offerte aanvragen</a>
       <button class="menuknop" type="button" aria-expanded="false" aria-controls="mobielmenu" data-menu-open>
-        Menu <span class="menuknop__streep" aria-hidden="true"></span>
+        <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#menu"/></svg><span class="visueel-verborgen">Menu</span>
       </button>
     </div>
   </div>
@@ -75,7 +75,7 @@
   <div class="mobielmenu__kop wrap">
     <a class="logo" href="/"><img class="logo__beeld" src="/assets/brand/logo.svg" alt="De Koning Tegelwerken" width="542" height="442"></a>
     <button class="mobielmenu__sluit" type="button" data-menu-sluit>
-      Sluiten <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#sluiten"/></svg>
+      <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#sluiten"/></svg><span class="visueel-verborgen">Menu sluiten</span>
     </button>
   </div>
   <nav class="mobielmenu__nav wrap" aria-label="Hoofdmenu mobiel">
@@ -115,28 +115,29 @@
   <header class="wrap paginakop">
     <nav aria-label="Kruimelpad"><ol class="kruimels" role="list"><li><a href="/">Home</a></li><li><a href="/projecten/">Projecten</a></li><li><span aria-current="page">Voorbeeldproject: badkamer met grootformaat tegels</span></li></ol></nav>
     <h1 class="kop-2">Voorbeeldproject: badkamer met grootformaat tegels</h1>
-    <p class="project-plaats"><span class="ph">[PLAATS]</span></p>
+    <p class="project-plaats"><span class="ph">[PLAATS]</span> · Badkamer</p>
   </header>
 
   <div class="wrap project-hero">
     <div class="foto foto--sfeer" data-soort="sfeerbeeld"><img src="/assets/beelden/projectdetail-hero-1200.webp" srcset="/assets/beelden/projectdetail-hero-800.webp 800w, /assets/beelden/projectdetail-hero-1200.webp 1200w, /assets/beelden/projectdetail-hero-1600.webp 1600w, /assets/beelden/projectdetail-hero-2400.webp 2400w" sizes="(min-width: 90em) 84rem, calc(100vw - 2.5rem)" width="2400" height="1340" alt="Sfeerbeeld: complete badkamer met grootformaat tegels, inloopdouche, vrijstaand bad en badmeubel" fetchpriority="high" loading="eager" decoding="async"></div>
   </div>
 
-  <section class="sectie" aria-labelledby="project-kop">
-    <div class="wrap project-intro">
-      <div class="project-intro__tekst">
-        <p class="ph-blok"><strong>Voorbeeldpagina.</strong> Zo komt een project eruit te zien. Echte projectgegevens en foto's volgen via het project-CMS.</p>
-        <h2 class="kop-3" id="project-kop">Het project</h2>
-        <p class="ph-blok">[KORTE UITLEG VAN DE WERKZAAMHEDEN — door De Koning aan te leveren. Bijvoorbeeld: wat de situatie was, wat er gevraagd werd en hoe het is aangepakt.]</p><p class="ph-blok">[EVENTUELE BIJZONDERHEID — bijvoorbeeld een lastige aansluiting, een nis of de keuze voor verstekhoeken.]</p>
-      </div>
-      <dl class="specs" aria-label="Projectinformatie"><div><dt>Ruimte</dt><dd>Badkamer</dd></div><div><dt>Tegels</dt><dd><span class="ph">[TEGELFORMAAT]</span></dd></div><div><dt>Wanden</dt><dd><span class="ph">[MATERIAAL WANDEN]</span></dd></div><div><dt>Vloer</dt><dd><span class="ph">[FORMAAT VLOER]</span></dd></div><div><dt>Afwerking</dt><dd><span class="ph">[AFWERKING, bijv. verstek]</span></dd></div><div><dt>Bijzonderheden</dt><dd><span class="ph">[BIJZONDERHEDEN, bijv. inbouwnis en douchegoot]</span></dd></div></dl>
+  <!-- Foto's eerst: grote beelden, weinig tekst. -->
+  <section class="sectie sectie--compact" aria-labelledby="fotos-kop">
+    <div class="wrap">
+      <h2 class="visueel-verborgen" id="fotos-kop">Foto's van het project</h2>
+      <div class="galerij" data-galerij><figure><a class="galerij__link" href="/assets/beelden/projectdetail-douchezone-1200.webp" data-lichtbak aria-label="Foto groot bekijken"><div class="foto foto--sfeer" data-soort="sfeerbeeld"><img src="/assets/beelden/projectdetail-douchezone-800.webp" srcset="/assets/beelden/projectdetail-douchezone-480.webp 480w, /assets/beelden/projectdetail-douchezone-800.webp 800w, /assets/beelden/projectdetail-douchezone-1200.webp 1200w" sizes="(min-width: 40em) 50vw, 100vw" width="1200" height="1490" alt="Sfeerbeeld: douchezone met inloopdouche en een strakke douchegoot langs de wand" loading="lazy" decoding="async"></div></a></figure><figure><a class="galerij__link" href="/assets/beelden/projectdetail-badmeubel-1200.webp" data-lichtbak aria-label="Foto groot bekijken"><div class="foto foto--sfeer" data-soort="sfeerbeeld"><img src="/assets/beelden/projectdetail-badmeubel-800.webp" srcset="/assets/beelden/projectdetail-badmeubel-480.webp 480w, /assets/beelden/projectdetail-badmeubel-800.webp 800w, /assets/beelden/projectdetail-badmeubel-1200.webp 1200w" sizes="(min-width: 40em) 50vw, 100vw" width="1200" height="1490" alt="Sfeerbeeld: badmeubel voor een tegelwand waarvan de voegen gelijk lopen met de rand van het meubel" loading="lazy" decoding="async"></div></a></figure><figure><a class="galerij__link" href="/assets/beelden/project-badkamer-xxl-1600.webp" data-lichtbak aria-label="Foto groot bekijken"><div class="foto foto--sfeer" data-soort="sfeerbeeld"><img src="/assets/beelden/project-badkamer-xxl-800.webp" srcset="/assets/beelden/project-badkamer-xxl-480.webp 480w, /assets/beelden/project-badkamer-xxl-800.webp 800w, /assets/beelden/project-badkamer-xxl-1200.webp 1200w, /assets/beelden/project-badkamer-xxl-1600.webp 1600w" sizes="(min-width: 40em) 50vw, 100vw" width="1600" height="1195" alt="Sfeerbeeld: badkamer met XXL-tegels in zandtint, gezien vanaf de deur, met doorlopende voegen van vloer naar wand" loading="lazy" decoding="async"></div></a></figure></div>
     </div>
   </section>
 
-  <section class="sectie sectie--compact" aria-labelledby="fotos-kop">
-    <div class="wrap">
-      <div class="subkop"><span class="eyebrow">Resultaat</span><h2 class="kop-3" id="fotos-kop">Het eindresultaat.</h2></div>
-      <div class="galerij"><figure><div class="foto foto--sfeer" data-soort="sfeerbeeld"><img src="/assets/beelden/projectdetail-douchezone-800.webp" srcset="/assets/beelden/projectdetail-douchezone-480.webp 480w, /assets/beelden/projectdetail-douchezone-800.webp 800w, /assets/beelden/projectdetail-douchezone-1200.webp 1200w" sizes="(min-width: 40em) 50vw, 100vw" width="1200" height="1490" alt="Sfeerbeeld: douchezone met inloopdouche en een strakke douchegoot langs de wand" loading="lazy" decoding="async"></div></figure><figure><div class="foto foto--sfeer" data-soort="sfeerbeeld"><img src="/assets/beelden/projectdetail-badmeubel-800.webp" srcset="/assets/beelden/projectdetail-badmeubel-480.webp 480w, /assets/beelden/projectdetail-badmeubel-800.webp 800w, /assets/beelden/projectdetail-badmeubel-1200.webp 1200w" sizes="(min-width: 40em) 50vw, 100vw" width="1200" height="1490" alt="Sfeerbeeld: badmeubel voor een tegelwand waarvan de voegen gelijk lopen met de rand van het meubel" loading="lazy" decoding="async"></div></figure><figure><div class="foto foto--sfeer" data-soort="sfeerbeeld"><img src="/assets/beelden/project-badkamer-xxl-800.webp" srcset="/assets/beelden/project-badkamer-xxl-480.webp 480w, /assets/beelden/project-badkamer-xxl-800.webp 800w, /assets/beelden/project-badkamer-xxl-1200.webp 1200w, /assets/beelden/project-badkamer-xxl-1600.webp 1600w" sizes="(min-width: 40em) 50vw, 100vw" width="1600" height="1195" alt="Sfeerbeeld: badkamer met XXL-tegels in zandtint, gezien vanaf de deur, met doorlopende voegen van vloer naar wand" loading="lazy" decoding="async"></div></figure></div>
+  <section class="sectie sectie--compact sectie--diep" aria-labelledby="project-kop">
+    <div class="wrap project-intro">
+      <div class="project-intro__tekst">
+        <p class="ph-blok"><strong>Voorbeeldpagina.</strong> Zo komt een project eruit te zien. Echte projectgegevens en foto's volgen via het project-CMS.</p>
+        <h2 class="kop-3" id="project-kop">Over dit project</h2>
+        <p class="ph-blok">[KORTE UITLEG VAN DE WERKZAAMHEDEN — door De Koning aan te leveren. Bijvoorbeeld: wat de situatie was, wat er gevraagd werd en hoe het is aangepakt.]</p><p class="ph-blok">[EVENTUELE BIJZONDERHEID — bijvoorbeeld een lastige aansluiting, een nis of de keuze voor verstekhoeken.]</p>
+      </div>
+      <dl class="specs" aria-label="Projectgegevens"><div><dt>Plaats</dt><dd><span class="ph">[PLAATS]</span></dd></div><div><dt>Ruimte</dt><dd>Badkamer</dd></div><div><dt>Soort tegel</dt><dd><span class="ph">[SOORT TEGEL]</span></dd></div><div><dt>Formaat</dt><dd><span class="ph">[TEGELFORMAAT]</span></dd></div><div><dt>Werkzaamheden</dt><dd><span class="ph">[WERKZAAMHEDEN, bijv. wanden en vloer, inloopdouche]</span></dd></div><div><dt>Bijzonderheden</dt><dd><span class="ph">[BIJZONDERHEDEN, bijv. verstekhoeken, inbouwnis, douchegoot]</span></dd></div></dl>
     </div>
   </section>
 
@@ -223,11 +224,13 @@
   </div>
 </footer>
 
+<!-- Mobiel: twee acties onderin, zodat niemand terug omhoog hoeft. De WhatsApp-knop
+     verdwijnt in productiemodus zolang er geen nummer in data/site.json staat. -->
 <div class="stickycta" data-stickycta>
-  <a class="knop" href="/offerte/">Offerte aanvragen</a>
-  <a class="stickycta__wa" data-veld="whatsapp" data-veld-tekst aria-label="Stuur een WhatsApp-bericht">
-    <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg>
+  <a class="knop knop--lijn stickycta__wa" data-veld="whatsapp" data-veld-tekst>
+    <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg> WhatsApp
   </a>
+  <a class="knop stickycta__offerte" href="/offerte/">Offerte aanvragen</a>
 </div>
 
 <!-- /gen:footer -->

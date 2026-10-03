@@ -64,7 +64,7 @@
       </a>
       <a class="knop kop__cta" href="/offerte/">Offerte aanvragen</a>
       <button class="menuknop" type="button" aria-expanded="false" aria-controls="mobielmenu" data-menu-open>
-        Menu <span class="menuknop__streep" aria-hidden="true"></span>
+        <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#menu"/></svg><span class="visueel-verborgen">Menu</span>
       </button>
     </div>
   </div>
@@ -74,7 +74,7 @@
   <div class="mobielmenu__kop wrap">
     <a class="logo" href="/" aria-current="page"><img class="logo__beeld" src="/assets/brand/logo.svg" alt="De Koning Tegelwerken" width="542" height="442"></a>
     <button class="mobielmenu__sluit" type="button" data-menu-sluit>
-      Sluiten <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#sluiten"/></svg>
+      <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#sluiten"/></svg><span class="visueel-verborgen">Menu sluiten</span>
     </button>
   </div>
   <nav class="mobielmenu__nav wrap" aria-label="Hoofdmenu mobiel">
@@ -118,16 +118,38 @@
 <div class="foto foto--donker hero__beeld" data-soort="sfeerbeeld"><picture><source media="(min-width: 40em)" srcset="/assets/beelden/hero-960.webp 960w, /assets/beelden/hero-1600.webp 1600w, /assets/beelden/hero-2400.webp 2400w" sizes="100vw" width="2400" height="1340"><img src="/assets/beelden/hero-mobiel-800.webp" srcset="/assets/beelden/hero-mobiel-480.webp 480w, /assets/beelden/hero-mobiel-800.webp 800w, /assets/beelden/hero-mobiel-1080.webp 1080w" sizes="100vw" width="1080" height="1341" alt="Sfeerbeeld: rustige badkamer met grootformaat wandtegels in warm lichtgrijs, inloopdouche met strakke douchegoot en zacht daglicht" fetchpriority="high" loading="eager" decoding="async"></picture></div>
 <!-- /gen:beeld -->
     <div class="wrap hero__inhoud">
-      <p class="hero__merk">De Koning Tegelwerken</p>
       <h1 id="hero-kop">Tegelwerk tot in detail.</h1>
-      <p class="hero__sub">Van complete badkamers en tegelvloeren tot grootformaat en specialistisch tegelwerk. Strak geplaatst en zorgvuldig afgewerkt.</p>
+      <ul class="hero__specialismen" role="list" aria-label="Specialismen">
+        <li>Badkamers</li><li>Vloeren</li><li>XXL</li><li>Natuursteen</li>
+      </ul>
+      <!-- Werkgebied bevestigd door Bob (3 okt 2026); ook in data/site.json. -->
+      <p class="hero__sub">Vakwerk in IJmuiden en omgeving.</p>
       <div class="knoppen">
-        <a class="knop knop--licht" href="/offerte/">Offerte aanvragen <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
-        <a class="knop knop--lijn" href="#werk">Bekijk ons werk</a>
+        <a class="knop knop--licht" href="/offerte/">Vraag vrijblijvend offerte aan <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
+        <a class="knop knop--lijn" href="#werk">Bekijk projecten</a>
       </div>
       <!-- Vertrouwenselementen uit data/site.json; js/site.js vult ze. Leeg = weggelaten. -->
       <ul class="vertrouwen" role="list" data-vertrouwen hidden></ul>
     </div>
+  </section>
+
+  <!-- Vertrouwenspunten direct onder de hero. Alleen punten die Bob heeft bevestigd
+       (3 okt 2026): persoonlijk contact, strakke afwerking, duidelijke afspraken. -->
+  <section class="usps" aria-label="Waarom De Koning Tegelwerken">
+    <ul class="wrap usps__lijst" role="list">
+      <li class="usp">
+        <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#persoon"/></svg>
+        <p class="usp__titel">Persoonlijk contact</p>
+      </li>
+      <li class="usp">
+        <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#waterpas"/></svg>
+        <p class="usp__titel">Strakke afwerking</p>
+      </li>
+      <li class="usp">
+        <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#afspraak"/></svg>
+        <p class="usp__titel">Duidelijke afspraken</p>
+      </li>
+    </ul>
   </section>
 
   <!-- §4 Projecten direct na de hero -->
@@ -311,6 +333,8 @@
       <div class="sectiekop">
         <span class="eyebrow">Reviews</span>
         <h2 id="reviews-kop">Wat klanten zeggen.</h2>
+        <!-- Gemiddelde score en aantal uit data/site.json (vertrouwen.googleScore en -AantalReviews). -->
+        <p class="reviews__score" data-reviews-score hidden></p>
       </div>
       <p class="ph-blok" data-reviews-placeholder><strong>Echte Google-reviews volgen.</strong> Hier komen alleen echte reviews van klanten te staan, met toestemming van de schrijver en een link naar Google. Er worden geen reviews verzonnen of gegenereerd.</p>
       <ul class="reviews" role="list" data-reviews-lijst hidden></ul>
@@ -330,7 +354,10 @@
       <div class="over__tekst">
         <span class="eyebrow">Over De Koning</span>
         <h2 id="over-kop">Persoonlijk vakmanschap.</h2>
-        <p class="ph-blok"><strong>[KORT VERHAAL VAN DE EIGENAAR]</strong> In eigen woorden, persoonlijk en normaal: wie De Koning Tegelwerken is, hoeveel ervaring er is, waarom voor dit vak gekozen is, de specialisaties, de regio en de manier van werken. Aan te leveren door De Koning.</p>
+        <!-- Hier komt het verhaal van de eigenaar (± 100 woorden, eigen woorden): wie hij is,
+             hoeveel jaar ervaring, waar hij werkt en waarom hij bepaalde projecten graag doet.
+             Met een foto van de eigenaar aan het werk in plaats van het sfeerbeeld ernaast. -->
+        <p class="ph-blok" data-alleen-preview><strong>[KORT VERHAAL VAN DE EIGENAAR]</strong> Ongeveer 100 woorden in eigen woorden: wie De Koning is, hoeveel jaar ervaring, waar hij werkt en waarom hij bepaalde tegelprojecten graag uitvoert. Aan te leveren door De Koning, samen met een foto van de eigenaar aan het werk.</p>
         <dl class="over__feiten">
           <div><dt>Specialisaties</dt><dd>Badkamers, tegelvloeren, toiletten, grootformaat en XXL, visgraat, natuursteen</dd></div>
           <div data-veld-blok="werkgebied"><dt>Werkgebied</dt><dd data-veld="werkgebied"><span class="ph">[WERKGEBIED]</span></dd></div>
@@ -433,11 +460,13 @@
   </div>
 </footer>
 
+<!-- Mobiel: twee acties onderin, zodat niemand terug omhoog hoeft. De WhatsApp-knop
+     verdwijnt in productiemodus zolang er geen nummer in data/site.json staat. -->
 <div class="stickycta" data-stickycta>
-  <a class="knop" href="/offerte/">Offerte aanvragen</a>
-  <a class="stickycta__wa" data-veld="whatsapp" data-veld-tekst aria-label="Stuur een WhatsApp-bericht">
-    <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg>
+  <a class="knop knop--lijn stickycta__wa" data-veld="whatsapp" data-veld-tekst>
+    <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg> WhatsApp
   </a>
+  <a class="knop stickycta__offerte" href="/offerte/">Offerte aanvragen</a>
 </div>
 
 <!-- /gen:footer -->

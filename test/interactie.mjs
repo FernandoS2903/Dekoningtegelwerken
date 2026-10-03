@@ -31,6 +31,9 @@ await b.evalueer(`scrollTo({top:1200,behavior:'instant'})`);
 await wacht(300);
 controleer('sticky CTA zichtbaar na de hero', await b.evalueer(`document.querySelector('[data-stickycta]').classList.contains('zichtbaar')`));
 
+controleer('sticky balk heeft een offerteknop van minstens 48 px', await b.evalueer(`document.querySelector('.stickycta__offerte').getBoundingClientRect().height >= 48`));
+controleer('header mobiel: alleen logo en menuknop zichtbaar', await b.evalueer(`[...document.querySelectorAll('.kop__acties > *')].filter(e=>getComputedStyle(e).display!=='none').every(e=>e.matches('[data-menu-open]'))`));
+
 // -- filters -------------------------------------------------------------------
 const zichtbaar = `[...document.querySelectorAll('[data-projectgrid] .projectkaart')].filter(k=>!k.hidden).length`;
 const totaal = await b.evalueer(zichtbaar);
@@ -50,6 +53,23 @@ controleer('klik opent Nissen en sluit verstek', await b.evalueer(`(()=>{const t
 // -- voor/na ---------------------------------------------------------------------
 await b.evalueer(`(()=>{const i=document.querySelector('.voorna__invoer');i.value='20';i.dispatchEvent(new Event('input'))})()`);
 controleer('slider via invoer verschuift de lijn', (await b.evalueer(`document.querySelector('[data-voorna]').style.getPropertyValue('--pos')`)) === '20%');
+
+// -- lichtbak op de projectpagina -------------------------------------------------
+await b.open(BASIS + '/projecten/voorbeeldproject-badkamer-grootformaat/');
+const aantalFotos = await b.evalueer(`document.querySelectorAll('[data-lichtbak]').length`);
+if (aantalFotos) {
+  await b.evalueer(`document.querySelector('[data-lichtbak]').click()`);
+  await wacht(200);
+  controleer('klik op galerijfoto opent de lichtbak', await b.evalueer(`document.querySelector('.lichtbak').open && document.querySelector('.lichtbak__beeld').src.endsWith('.webp')`));
+  if (aantalFotos > 1) {
+    await b.toets('ArrowRight', 'ArrowRight', 39);
+    controleer('pijl rechts toont de volgende foto', (await b.evalueer(`document.querySelector('.lichtbak__teller').textContent`)) === '2 / ' + aantalFotos);
+  }
+  await b.toets('Escape', 'Escape', 27);
+  await wacht(200);
+  controleer('Escape sluit de lichtbak', await b.evalueer(`!document.querySelector('.lichtbak').open`));
+}
+await b.open(BASIS + '/');
 
 // -- placeholders zonder gegevens -------------------------------------------------
 controleer('vertrouwenselementen weg zonder data', await b.evalueer(`document.querySelector('[data-vertrouwen]').hidden`));

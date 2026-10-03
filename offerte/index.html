@@ -62,7 +62,7 @@
       </a>
       <a class="knop kop__cta" href="/offerte/" aria-current="page">Offerte aanvragen</a>
       <button class="menuknop" type="button" aria-expanded="false" aria-controls="mobielmenu" data-menu-open>
-        Menu <span class="menuknop__streep" aria-hidden="true"></span>
+        <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#menu"/></svg><span class="visueel-verborgen">Menu</span>
       </button>
     </div>
   </div>
@@ -72,7 +72,7 @@
   <div class="mobielmenu__kop wrap">
     <a class="logo" href="/"><img class="logo__beeld" src="/assets/brand/logo.svg" alt="De Koning Tegelwerken" width="542" height="442"></a>
     <button class="mobielmenu__sluit" type="button" data-menu-sluit>
-      Sluiten <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#sluiten"/></svg>
+      <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#sluiten"/></svg><span class="visueel-verborgen">Menu sluiten</span>
     </button>
   </div>
   <nav class="mobielmenu__nav wrap" aria-label="Hoofdmenu mobiel">
@@ -184,11 +184,13 @@
   </div>
 </footer>
 
+<!-- Mobiel: twee acties onderin, zodat niemand terug omhoog hoeft. De WhatsApp-knop
+     verdwijnt in productiemodus zolang er geen nummer in data/site.json staat. -->
 <div class="stickycta" data-stickycta>
-  <a class="knop" href="/offerte/">Offerte aanvragen</a>
-  <a class="stickycta__wa" data-veld="whatsapp" data-veld-tekst aria-label="Stuur een WhatsApp-bericht">
-    <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg>
+  <a class="knop knop--lijn stickycta__wa" data-veld="whatsapp" data-veld-tekst>
+    <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg> WhatsApp
   </a>
+  <a class="knop stickycta__offerte" href="/offerte/">Offerte aanvragen</a>
 </div>
 
 <!-- /gen:footer -->

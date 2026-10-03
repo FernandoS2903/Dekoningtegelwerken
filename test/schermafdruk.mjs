@@ -15,7 +15,7 @@ const BASIS = process.env.BASIS || 'http://127.0.0.1:8099';
 const [uit = '/tmp/schermafdrukken', ...paden] = process.argv.slice(2);
 const PAGINAS = paden.length ? paden : ['/', '/projecten/', '/projecten/voorbeeldproject-badkamer-grootformaat/',
   '/badkamer-tegelen/', '/tegelzetter/', '/contact/', '/offerte/', '/privacy/', '/404.html'];
-const BREEDTES = [{ naam: 'mobiel', w: 360, h: 780, mobiel: true }, { naam: 'tablet', w: 820, h: 1180, mobiel: true }, { naam: 'desktop', w: 1440, h: 900, mobiel: false }];
+const BREEDTES = [{ naam: 'mobiel', w: 360, h: 780, mobiel: true }, { naam: 'mobiel390', w: 390, h: 844, mobiel: true }, { naam: 'tablet', w: 820, h: 1180, mobiel: true }, { naam: 'desktop', w: 1440, h: 900, mobiel: false }];
 
 mkdirSync(uit, { recursive: true });
 const b = await startBrowser(process.env.CHROME);

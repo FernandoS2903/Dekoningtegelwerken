@@ -31,21 +31,22 @@
     {{{hero}}}
   </div>
 
-  <section class="sectie" aria-labelledby="project-kop">
-    <div class="wrap project-intro">
-      <div class="project-intro__tekst">
-        {{{voorbeeldmelding}}}
-        <h2 class="kop-3" id="project-kop">Het project</h2>
-        {{{omschrijvingHtml}}}
-      </div>
-      <dl class="specs" aria-label="Projectinformatie">{{{specs}}}</dl>
+  <!-- Foto's eerst: grote beelden, weinig tekst. -->
+  <section class="sectie sectie--compact" aria-labelledby="fotos-kop">
+    <div class="wrap">
+      <h2 class="visueel-verborgen" id="fotos-kop">Foto's van het project</h2>
+      <div class="galerij" data-galerij>{{{fotos}}}</div>
     </div>
   </section>
 
-  <section class="sectie sectie--compact" aria-labelledby="fotos-kop">
-    <div class="wrap">
-      <div class="subkop"><span class="eyebrow">Resultaat</span><h2 class="kop-3" id="fotos-kop">Het eindresultaat.</h2></div>
-      <div class="galerij">{{{na}}}</div>
+  <section class="sectie sectie--compact sectie--diep" aria-labelledby="project-kop">
+    <div class="wrap project-intro">
+      <div class="project-intro__tekst">
+        {{{voorbeeldmelding}}}
+        <h2 class="kop-3" id="project-kop">Over dit project</h2>
+        {{{omschrijvingHtml}}}
+      </div>
+      <dl class="specs" aria-label="Projectgegevens">{{{specs}}}</dl>
     </div>
   </section>
 {{{voorNa}}}

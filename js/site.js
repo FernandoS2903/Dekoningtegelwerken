@@ -206,6 +206,61 @@ function initVoorNa() {
   }
 }
 
+/* -- lichtbak voor de projectgalerij --------------------------------------- */
+// Zonder JS opent elke foto gewoon als bestand; met JS in een <dialog> met
+// vorige/volgende, pijltjestoetsen, vegen en Escape (native bij showModal).
+function initLichtbak() {
+  const links = $$('[data-lichtbak]');
+  if (!links.length || typeof HTMLDialogElement !== 'function') return;
+  const ico = (naam) => `<svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#${naam}"/></svg>`;
+  const dlg = document.createElement('dialog');
+  dlg.className = 'lichtbak';
+  dlg.setAttribute('aria-label', 'Foto groot bekijken');
+  dlg.innerHTML = `<img class="lichtbak__beeld" alt="">`
+    + `<p class="lichtbak__teller" aria-live="polite"></p>`
+    + `<button class="lichtbak__knop lichtbak__vorige" type="button" aria-label="Vorige foto">${ico('pijl')}</button>`
+    + `<button class="lichtbak__knop lichtbak__volgende" type="button" aria-label="Volgende foto">${ico('pijl')}</button>`
+    + `<button class="lichtbak__knop lichtbak__sluit" type="button" aria-label="Sluiten">${ico('sluiten')}</button>`;
+  document.body.append(dlg);
+  const img = $('.lichtbak__beeld', dlg);
+  const teller = $('.lichtbak__teller', dlg);
+  const meer = links.length > 1;
+  $('.lichtbak__vorige', dlg).hidden = !meer;
+  $('.lichtbak__volgende', dlg).hidden = !meer;
+
+  let huidig = 0;
+  const toon = (n) => {
+    huidig = (n + links.length) % links.length;
+    const a = links[huidig];
+    img.src = a.href;
+    img.alt = $('img', a)?.alt || '';
+    teller.textContent = meer ? `${huidig + 1} / ${links.length}` : '';
+  };
+  links.forEach((a, n) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    toon(n);
+    dlg.showModal();
+  }));
+  $('.lichtbak__vorige', dlg).addEventListener('click', () => toon(huidig - 1));
+  $('.lichtbak__volgende', dlg).addEventListener('click', () => toon(huidig + 1));
+  $('.lichtbak__sluit', dlg).addEventListener('click', () => dlg.close());
+  dlg.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') toon(huidig - 1);
+    if (e.key === 'ArrowRight') toon(huidig + 1);
+  });
+  // klik naast de foto sluit; horizontaal vegen bladert
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  let startX = null;
+  dlg.addEventListener('pointerdown', (e) => { startX = e.clientX; });
+  dlg.addEventListener('pointerup', (e) => {
+    if (startX === null || !meer) return;
+    const dx = e.clientX - startX;
+    startX = null;
+    if (Math.abs(dx) > 50) toon(huidig + (dx < 0 ? 1 : -1));
+  });
+  dlg.addEventListener('close', () => links[huidig].focus({ preventScroll: true }));
+}
+
 /* -- bedrijfsgegevens en vertrouwenselementen uit data/site.json ----------- */
 const cijfers = (s) => String(s || '').replace(/[^\d]/g, '');
 
@@ -291,6 +346,27 @@ function vulVertrouwen(d) {
   if (items.length) { lijst.replaceChildren(...items); lijst.hidden = false; }
 }
 
+const sterrenSpan = () => {
+  const span = Object.assign(document.createElement('span'), { className: 'sterren', textContent: '★★★★★' });
+  span.setAttribute('aria-hidden', 'true');
+  return span;
+};
+
+/** Google-score boven de reviews: "4,8 ★★★★★ 23 reviews op Google". */
+function vulReviewScore(d) {
+  const el = $('[data-reviews-score]');
+  const v = d.vertrouwen || {};
+  const score = Number(v.googleScore);
+  if (!el || !Number.isFinite(score) || score <= 0) return;
+  const aantal = Number(v.googleAantalReviews);
+  el.replaceChildren(
+    Object.assign(document.createElement('strong'), { textContent: score.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }),
+    sterrenSpan(),
+    Number.isFinite(aantal) && aantal > 0 ? aantal + ' reviews op Google' : 'op Google',
+  );
+  el.hidden = false;
+}
+
 function vulReviews(d) {
   const sectie = $('[data-reviews-sectie]');
   if (!sectie) return;
@@ -300,7 +376,7 @@ function vulReviews(d) {
     return;
   }
   const lijst = $('[data-reviews-lijst]', sectie);
-  lijst.replaceChildren(...reviews.slice(0, 6).map((r) => {
+  lijst.replaceChildren(...reviews.slice(0, 3).map((r) => {
     const li = document.createElement('li');
     li.className = 'review';
     const sterren = Math.max(1, Math.min(5, Math.round(Number(r.sterren) || 5)));
@@ -323,7 +399,7 @@ function vulReviews(d) {
 }
 
 async function initSiteGegevens() {
-  if (!$('[data-veld], [data-ph], [data-vertrouwen], [data-reviews-sectie]')) return;
+  if (!$('[data-veld], [data-ph], [data-vertrouwen], [data-reviews-sectie], [data-alleen-preview]')) return;
   let d;
   try {
     const antwoord = await fetch('/data/site.json', { cache: 'no-cache' });
@@ -334,7 +410,10 @@ async function initSiteGegevens() {
   }
   vulVelden(d);
   vulVertrouwen(d);
+  vulReviewScore(d);
   vulReviews(d);
+  // Instructieblokken voor De Koning (bijv. "kort verhaal van de eigenaar") niet op de live site.
+  if (d.placeholdersTonen === false) $$('[data-alleen-preview]').forEach((el) => el.remove());
 }
 
 initKop();
@@ -344,4 +423,5 @@ initReveal();
 initFilters();
 initDetails();
 initVoorNa();
+initLichtbak();
 initSiteGegevens();
