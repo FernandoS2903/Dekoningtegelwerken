@@ -108,11 +108,13 @@ test('geen review-structured data (besluit Bob)', () => {
 });
 
 test('site.json bevat geen ingevulde bedrijfsgegevens zonder bron', () => {
-  // Bewaakt dat er niet per ongeluk verzonnen gegevens in komen: alle velden
-  // behalve de naam zijn leeg tot Bob ze aanlevert. Pas deze test bewust aan
-  // zodra er echte gegevens zijn.
+  // Bewaakt dat er niet per ongeluk verzonnen gegevens in komen: alleen de
+  // velden in AANGELEVERD zijn ingevuld, met precies die waarde; de rest blijft
+  // leeg tot Bob ze aanlevert. Voeg een veld pas toe als het echt is aangeleverd.
+  // KvK en adres: uittreksel Handelsregister, aangeleverd 3 okt 2026.
+  const AANGELEVERD = { naam: 'De Koning Tegelwerken', kvk: '53284046', adres: 'Appelboomstraat 57, 1971 RA IJmuiden' };
   const d = JSON.parse(readFileSync(path.join(ROOT, 'data/site.json'), 'utf8'));
-  for (const [k, v] of Object.entries(d.bedrijf)) if (k !== 'naam') assert.equal(v, '', 'bedrijf.' + k);
+  for (const [k, v] of Object.entries(d.bedrijf)) assert.equal(v, AANGELEVERD[k] ?? '', 'bedrijf.' + k);
   for (const [k, v] of Object.entries(d.vertrouwen)) assert.ok(v === '' || v === null, 'vertrouwen.' + k);
   assert.deepEqual(d.reviews, []);
 });

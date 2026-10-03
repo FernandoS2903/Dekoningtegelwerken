@@ -75,7 +75,9 @@ cd /root/dekoning-tegelwerken && deploy/preview-deploy.sh feature/fase-1-fronten
 
 ## Nog aan te leveren (blokkeert "af", niet het bouwen)
 
-Zie `docs/PLAN.md` §3. Het belangrijkste voor de uitstraling: officieel logobestand, echte projectfoto's (per project voor/na/detail) ter vervanging van de sfeerbeelden, eigenaarsfoto + kort verhaal. Daarnaast telefoon, WhatsApp, e-mail, werkgebied, KvK, jaren ervaring, Google-profiel + score, en controle van de conceptteksten in `data/diensten.json`.
+Zie `docs/PLAN.md` §3. Het belangrijkste voor de uitstraling: officieel logobestand, echte projectfoto's (per project voor/na/detail) ter vervanging van de sfeerbeelden, eigenaarsfoto + kort verhaal. Daarnaast telefoon, WhatsApp, e-mail, werkgebied, jaren ervaring, Google-profiel + score, en controle van de conceptteksten in `data/diensten.json`.
+
+**Aangeleverd (3 okt 2026, uittreksel Handelsregister):** KvK 53284046 en adres Appelboomstraat 57, 1971 RA IJmuiden (hoofdvestiging, vestigingsnummer 000023166991, eenmanszaak), ingevuld in `data/site.json`. KvK staat nu in footer en op /contact; het adres staat in site.json maar nog nergens zichtbaar (geen `data-veld="adres"` op de site). Of het adres op de site moet (bij een eenmanszaak vaak het woonadres), is aan De Koning. LocalBusiness-JSON-LD wacht nog op het telefoonnummer.
 
 Invullen kan direct in `data/site.json` (gegevens) en `data/projecten.json` (projecten) gevolgd door `node service/cli/genereer.mjs`; vóór livegang `placeholdersTonen` op `false` en de bewakingstest in `test/site.test.mjs` aanpassen.
 
@@ -83,6 +85,6 @@ Invullen kan direct in `data/site.json` (gegevens) en `data/projecten.json` (pro
 
 - `vormen()` (gridritme) staat in de generator én in `js/site.js`: samen wijzigen.
 - De voorbeeldkaarten (`pagina: false`) moeten weg zodra er echte projecten zijn.
-- Productie-vhost: dezelfde CSP als de preview; assets dan langer cachen (bestandsnamen met versie of `?v=`).
+- Productie-vhost en `deploy/live-deploy.sh` staan klaar (voorcontrole weigert zolang de site niet klaar is voor livegang); css/js/svg cachen nog kort zolang er geen versie in de bestandsnamen zit.
 - `/werkwijze/` en `/over-ons/` als eigen pagina's (plan stap 1d) zijn bewust uitgesteld: nu ankers op de homepage.
 - De browsertests gebruiken de Playwright-Chromium in `~/.cache/ms-playwright/` op hfd-web01; die is niet door dit project geïnstalleerd.
