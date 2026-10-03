@@ -65,7 +65,18 @@ Werk dit bestand bij aan het eind van elke fase.
 - Favicon (`assets/favicon.svg`) en `assets/apple-touch-icon.png` (180 px): het vectorpad van de kroon uit het logo in het logopaars op zand, dus een uitsnede en geen nieuw merk. `assets/og-image.jpg` (1200×630): hero-sfeerbeeld met de lichte logovariant en "Tegelwerk tot in detail.".
 - **Nog nodig van De Koning:** een officieel bronbestand van het logo (SVG of AI, liefst met de kroon als vector in plaats van een ingebed JPEG), en een besluit of het logopaars ook als accentkleur op de site moet komen (nu gedempt brons).
 
-## Wat Bob nu moet doen
+## Live sinds 3 oktober 2026
+
+Op uitdrukkelijk besluit van Bob staat de site live op **https://dekoningtegelwerken.nl/** (www stuurt door), vóórdat alles klaar was. `main` is daarvoor fast-forward gezet naar de featurebranch (85a2e6d), certificaat via certbot (webroot `/var/www/html`, beide namen), vhost `/etc/nginx/sites-enabled/dekoningtegelwerken.nl.conf` = `deploy/dekoningtegelwerken.nl.conf`, root `/var/www/dekoningtegelwerken`, uitgerold met `deploy/live-deploy.sh --forceer`.
+
+Open punten die nu **openbaar** zichtbaar zijn (de voorcontrole blijft ze melden):
+- `placeholdersTonen: false`, dus zonder telefoon, e-mail, WhatsApp en werkgebied staat er op de site geen enkele contactmogelijkheid; alleen het KvK-nummer.
+- 6 voorbeeldprojecten (met `[PROJECTNAAM]`/`[PLAATS]`) en sfeerbeelden met het label "Sfeerbeeld" op projectkaarten en de projectpagina.
+- Dienstteksten nog niet door De Koning gecontroleerd.
+
+Bijwerken: wijziging mergen naar `main`, daarna `deploy/live-deploy.sh` (met `--forceer` zolang bovenstaande open staat).
+
+## Preview
 
 Preview zichtbaar maken: stappen in `deploy/README.md` (DNS-record `preview`, map, wachtwoordbestand, certificaat, vhost, `deploy/preview-deploy.sh feature/fase-1-frontend`). Daarna beoordelen en eventueel mergen. Bijwerken na nieuwe commits:
 
