@@ -425,7 +425,7 @@ h3 {
 @supports (backdrop-filter: blur(1px)) {
   .kop--over-hero.kop--vast { background: rgba(243, 238, 230, 0.82); backdrop-filter: saturate(1.2) blur(14px); }
 }
-.kop--vast { --kop-hoogte: 4.25rem; }
+.kop--vast { --kop-hoogte: 4.5rem; }
 .kop--over-hero.kop--vast :focus-visible { --focus: var(--brons); }
 
 .kop__binnen {
@@ -458,12 +458,12 @@ h3 {
 .kop--over-hero:not(.kop--vast) .logo__beeld--origineel { display: none; }
 .kop--over-hero:not(.kop--vast) { --kop-hoogte: 5.75rem; }
 .kop--over-hero:not(.kop--vast) .logo { --logo-h: 4.75rem; }
-.kop--vast .logo { --logo-h: 3.25rem; }
+.kop--vast .logo { --logo-h: 3.75rem; }
 @media (min-width: 40em) {
   .kop { --kop-hoogte: 5rem; }
   .logo { --logo-h: 4.1rem; }
-  .kop--vast { --kop-hoogte: 4.25rem; }
-  .kop--vast .logo { --logo-h: 3.5rem; }
+  .kop--vast { --kop-hoogte: 5rem; }
+  .kop--vast .logo { --logo-h: 4.25rem; }
   .kop--over-hero:not(.kop--vast) { --kop-hoogte: 7rem; }
   .kop--over-hero:not(.kop--vast) .logo { --logo-h: 6rem; }
 }
