@@ -451,8 +451,10 @@ h3 {
   transition: height var(--duur) var(--ease);
 }
 .kop--over-hero:not(.kop--vast) { --kop-hoogte: 4.5rem; }   /* mobiel: 72 px */
-.kop--over-hero:not(.kop--vast) .logo { --logo-h: 3.75rem; }
-.kop--vast .logo { --logo-h: 3.75rem; }
+/* mobiel: logo ±15% groter (69 px) binnen dezelfde header van 72 px */
+.logo { --logo-h: 4.3rem; }
+.kop--over-hero:not(.kop--vast) .logo { --logo-h: 4.3rem; }
+.kop--vast .logo { --logo-h: 4.3rem; }
 @media (min-width: 40em) {
   .kop { --kop-hoogte: 5rem; }
   .logo { --logo-h: 4.1rem; }
@@ -461,7 +463,7 @@ h3 {
   .kop--over-hero:not(.kop--vast) { --kop-hoogte: 7rem; }
   .kop--over-hero:not(.kop--vast) .logo { --logo-h: 6rem; }
 }
-.mobielmenu .logo { --logo-h: 3.4rem; }
+.mobielmenu .logo { --logo-h: 4.3rem; }
 .voet .logo { --logo-h: 6rem; }
 
 .hoofdnav { display: none; }
@@ -674,7 +676,7 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
 /* mobiel: de tekst beslaat het onderste deel van een lichte foto, dus daar wat donkerder */
 @media (max-width: 39.99em) {
   .hero__beeld::after {
-    background: linear-gradient(180deg, rgba(30, 29, 27, 0.35) 0%, rgba(30, 29, 27, 0.15) 18%, rgba(30, 29, 27, 0.5) 45%, rgba(30, 29, 27, 0.82) 100%);
+    background: linear-gradient(180deg, rgba(30, 29, 27, 0) 0%, rgba(30, 29, 27, 0) 30%, rgba(30, 29, 27, 0.45) 55%, rgba(30, 29, 27, 0.72) 100%);
   }
 }
 .hero__inhoud {
@@ -709,10 +711,38 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   color: var(--licht);       /* volle lichte kleur: de hero-foto is licht */
 }
 .hero .knoppen { margin-top: var(--r-4); }
-/* Mobiel: knoppen over de volle breedte, makkelijk met de duim. */
+/* Mobiel: compacte hero (± 74svh) als portfolio-opening. Grote serif-kop,
+   rustige regels eronder, één dominante knop en "Bekijk onze projecten" als
+   tekstlink. Desktop blijft ongewijzigd. */
+.alleen-mobiel { display: none; }
 @media (max-width: 39.99em) {
-  .hero .knoppen { display: grid; }
+  .alleen-mobiel { display: inline; }
+  .hero { min-height: 74svh; }
+  .hero__inhoud { padding-top: calc(var(--kop-hoogte) + var(--r-5)); padding-bottom: var(--r-3); }
+  .hero h1 { font-size: clamp(2.75rem, 1.5rem + 5.2vw, 3rem); line-height: 1; }   /* 44–46 px */
+  .hero__specialismen { margin-top: var(--r-2); font-size: 0.9375rem; }
+  .hero__sub { margin-top: 0.25rem; font-size: 0.9375rem; color: var(--licht-zacht); }
+  .hero .knoppen { display: grid; gap: 0.25rem; margin-top: var(--r-3); }
   .hero .knop { width: 100%; }
+  .hero .hero__tweede {
+    --knop-bg: transparent;
+    --knop-rand: transparent;
+    justify-self: center;
+    width: auto;
+    min-height: var(--tik);
+    gap: 0.4rem;
+    padding-inline: 0.5rem;
+    font-weight: 500;
+  }
+  .hero__tweede-tekst {
+    text-decoration: underline;
+    text-decoration-color: rgba(237, 230, 218, 0.45);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.3em;
+  }
+  .hero .hero__tweede:hover { --knop-bg: transparent; --knop-rand: transparent; --knop-tekst: var(--brons-licht); }
+  .hero .hero__tweede .icoon { transform: rotate(90deg); width: 1rem; height: 1rem; }
+  .hero .hero__tweede:hover .icoon { transform: rotate(90deg) translateX(3px); }
 }
 
 /* Vertrouwenspunten direct onder de hero */
@@ -733,6 +763,15 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   text-align: center;
 }
 .usp .icoon { width: 1.75rem; height: 1.75rem; color: var(--brons); }
+.usp__vink { display: none; }
+@media (max-width: 39.99em) {
+  .usps { padding-block: 0.65rem; }
+  .usps__lijst { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.15rem 1rem; }
+  .usp { grid-auto-flow: column; align-items: center; gap: 0.35rem; text-align: left; }
+  .usp__icoon { display: none; }
+  .usp .usp__vink { display: block; width: 1rem; height: 1rem; }
+  .usp__titel { font-size: var(--t-s); font-weight: 600; white-space: nowrap; }
+}
 .usp__titel { font-weight: 600; line-height: 1.3; text-wrap: balance; }
 @media (min-width: 40em) {
   .usps { padding-block: var(--r-4); }
@@ -1218,6 +1257,13 @@ a.projectkaart__link:hover .projectkaart__naam { color: var(--brons); }
   a.projectkaart__link:hover .projectkaart__naam { color: var(--licht); }
 }
 .projecten-voet { margin-top: var(--r-5); }
+/* mobiel: de projecten beginnen direct na de trust-balk, zonder inleidende alinea */
+@media (max-width: 39.99em) {
+  #werk { padding-top: var(--r-4); }
+  #werk .sectiekop { gap: var(--r-2); margin-bottom: var(--r-3); }
+  #werk .sectiekop .lead { display: none; }
+  #werk .filters { display: none; }   /* filteren kan op /projecten/; hier eerst het werk zelf */
+}
 
 /* Projectdetail */
 .paginakop { padding-top: var(--r-6); padding-bottom: var(--r-5); }
