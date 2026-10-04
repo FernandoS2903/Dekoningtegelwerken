@@ -33,6 +33,12 @@ function initKop() {
     if (!gepland) { gepland = true; requestAnimationFrame(bijwerken); }
   }, { passive: true });
   bijwerken();
+  // Zolang iemand een veld invult, staat de balk niet over het formulier.
+  if (sticky) {
+    const isVeld = (el) => el?.matches?.('input:not([type="checkbox"]):not([type="radio"]), textarea, select');
+    document.addEventListener('focusin', (e) => { if (isVeld(e.target)) sticky.classList.add('invoer'); });
+    document.addEventListener('focusout', (e) => { if (isVeld(e.target)) sticky.classList.remove('invoer'); });
+  }
 }
 
 /* -- desktopnavigatie: uitklapmenu Diensten ------------------------------- */
@@ -66,12 +72,23 @@ function initMobielMenu() {
   if (!menu || !open) return;
   const sluit = $('[data-menu-sluit]', menu);
 
-  const focusbaar = () => $$('a[href], button:not([disabled])', menu).filter((el) => el.offsetParent !== null);
+  const focusbaar = () => $$('a[href], button:not([disabled]), summary', menu).filter((el) => el.offsetParent !== null);
+  // Openen: direct tonen (CSS-animatie bij verschijnen). Sluiten: eerst de
+  // uitgaande animatie, dan pas hidden. Achtergrond scrollt niet mee zolang het open is.
+  let sluitTimer;
   const zet = (isOpen) => {
-    menu.hidden = !isOpen;
+    clearTimeout(sluitTimer);
     open.setAttribute('aria-expanded', String(isOpen));
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    if (isOpen) sluit.focus(); else open.focus();
+    document.documentElement.classList.toggle('menu-open', isOpen);
+    if (isOpen) {
+      menu.classList.remove('mobielmenu--sluit');
+      menu.hidden = false;
+      sluit.focus();
+    } else {
+      menu.classList.add('mobielmenu--sluit');
+      sluitTimer = setTimeout(() => { menu.hidden = true; menu.classList.remove('mobielmenu--sluit'); }, rustig ? 0 : 200);
+      open.focus();
+    }
   };
   open.addEventListener('click', () => zet(true));
   sluit.addEventListener('click', () => zet(false));
@@ -90,7 +107,7 @@ function initMobielMenu() {
     if (a && a.pathname === location.pathname && a.hash) {
       menu.hidden = true;
       open.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
+      document.documentElement.classList.remove('menu-open');
     }
   });
   // breder dan het menu-breakpoint: menu dicht
@@ -169,11 +186,27 @@ function initDetails() {
       if (bron) {
         const kopie = bron.cloneNode(true);
         kopie.classList.remove('details__foto-mobiel');
-        paneel.replaceChildren(kopie);
+        const veeg = Object.assign(document.createElement('p'), { className: 'details__veeg', textContent: `Detail ${index + 1} van ${tabs.length} · veeg voor het volgende` });
+        veeg.setAttribute('aria-hidden', 'true');
+        paneel.replaceChildren(kopie, veeg);
       }
     }
+    huidig = index;
   };
+  let huidig = 0;
   tabs.forEach((tab, i) => tab.addEventListener('click', () => open(i)));
+  // Mobiel: horizontaal vegen over de grote foto bladert door de details.
+  if (paneel) {
+    let startX = null;
+    paneel.addEventListener('pointerdown', (e) => { startX = e.clientX; });
+    paneel.addEventListener('pointerup', (e) => {
+      if (startX === null) return;
+      const dx = e.clientX - startX;
+      startX = null;
+      if (Math.abs(dx) > 50) open((huidig + (dx < 0 ? 1 : -1) + tabs.length) % tabs.length);
+    });
+    paneel.addEventListener('pointercancel', () => { startX = null; });
+  }
   open(0);
 }
 

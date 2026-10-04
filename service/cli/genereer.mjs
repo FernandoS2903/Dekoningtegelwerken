@@ -259,9 +259,10 @@ function wizardBlok() {
 
   const s6 = `<div class="velden">`
     + veld('naam', 'Naam', 'name="naam" type="text" autocomplete="name" required')
-    + veld('telefoon', 'Telefoonnummer', 'name="telefoon" type="tel" autocomplete="tel" inputmode="tel" required')
-    + veld('email', 'E-mailadres', 'name="email" type="email" autocomplete="email" inputmode="email" required')
-    + veld('postcode', 'Postcode', 'name="postcode" type="text" autocomplete="postal-code" autocapitalize="characters" maxlength="7" placeholder="1234 AB" required')
+    + `<p class="wizard__hulp wizard__hulp--klein">Telefoon of e-mail is genoeg; allebei mag ook.</p>`
+    + veld('telefoon', 'Telefoonnummer', 'name="telefoon" type="tel" autocomplete="tel" inputmode="tel"')
+    + veld('email', 'E-mailadres', 'name="email" type="email" autocomplete="email" inputmode="email"')
+    + veld('postcode', 'Postcode', 'name="postcode" type="text" autocomplete="postal-code" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" maxlength="7" placeholder="1234 AB" required')
     + `<div class="veld"><label for="periode">Wanneer wil je het laten uitvoeren?</label><select id="periode" name="periode" data-periode><option value="">Kies een periode</option><option>Zo snel mogelijk</option><option>Nog niet bekend</option></select></div>`
     + `<div class="veld"><label for="toelichting">Toelichting <span class="wizard__optioneel">(optioneel)</span></label><textarea id="toelichting" name="toelichting" rows="3" maxlength="1500"></textarea></div>`
     + `</div><label class="vink vink--privacy"><input type="checkbox" name="privacy" value="ja" required><span>Ik ga akkoord met de <a href="/privacy/">privacyverklaring</a>.</span></label>`
@@ -318,6 +319,7 @@ function blok(naam, args, paginaPad) {
       h = h.split(`href="${paginaPad}">`).join(`href="${paginaPad}" aria-current="page">`);
       if (dienstPerSlug[paginaPad.replace(/\//g, '')]) {
         h = h.replace('class="nav-groep"', 'class="nav-groep actief"');
+        h = h.replace('<details class="mobielmenu__groep">', '<details class="mobielmenu__groep" open>');
       }
       return h;
     }

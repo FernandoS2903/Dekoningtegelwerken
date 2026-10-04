@@ -24,8 +24,13 @@ controleer('menu is dicht bij laden', await b.evalueer(`document.getElementById(
 await b.evalueer(`document.querySelector('[data-menu-open]').click()`);
 controleer('menu opent', await b.evalueer(`!document.getElementById('mobielmenu').hidden && document.querySelector('[data-menu-open]').getAttribute('aria-expanded')==='true'`));
 controleer('focus staat in het menu', await b.evalueer(`document.getElementById('mobielmenu').contains(document.activeElement)`));
+controleer('Offerte aanvragen bovenaan in het menu', await b.evalueer(`(()=>{const k=document.querySelector('.mobielmenu__actie .knop');const r=k.getBoundingClientRect();return r.height>=48&&r.bottom<innerHeight})()`));
+controleer('achtergrond scrollt niet met open menu', await b.evalueer(`getComputedStyle(document.body).overflow==='hidden'`));
+controleer('menu-items minstens 48 px', await b.evalueer(`[...document.querySelectorAll('.mobielmenu__nav > ul > li > a, .mobielmenu__groepkop')].every(a=>a.getBoundingClientRect().height>=48)`));
 await b.toets('Escape', 'Escape', 27);
-controleer('Escape sluit het menu', await b.evalueer(`document.getElementById('mobielmenu').hidden`));
+await wacht(350);
+controleer('Escape sluit het menu', await b.evalueer(`document.getElementById('mobielmenu').hidden && getComputedStyle(document.body).overflow!=='hidden'`));
+controleer('mobiele header hooguit 72 px', await b.evalueer(`document.querySelector('[data-kop]').getBoundingClientRect().height <= 72.5`));
 controleer('sticky CTA verborgen in de hero', await b.evalueer(`!document.querySelector('[data-stickycta]').classList.contains('zichtbaar')`));
 await b.evalueer(`scrollTo({top:1200,behavior:'instant'})`);
 await wacht(300);

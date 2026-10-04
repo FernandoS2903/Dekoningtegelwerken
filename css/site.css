@@ -74,7 +74,7 @@
   --t-xl: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
   --t-kop-3: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);     /* 390 px: ≈ 28 px */
   --t-kop-2: clamp(2.375rem, 1.75rem + 2.6vw, 4.25rem);  /* 390 px: ≈ 38 px */
-  --t-kop-1: clamp(2.75rem, 1.4rem + 5.4vw, 6.5rem);     /* 390 px: ≈ 44 px */
+  --t-kop-1: clamp(2.375rem, 1.4rem + 4.6vw, 2.65rem);   /* mobiel: 360 ≈ 39, 390 ≈ 40, 430 ≈ 42 px */
   --tik: 3rem;              /* minimale hoogte van alles wat je aantikt (48 px) */
 
   /* ruimte: ruime schaal voor een rustige, luxe opbouw */
@@ -95,6 +95,10 @@
   --duur-kort: 180ms;
   --duur: 320ms;
   --duur-lang: 900ms;
+}
+
+@media (min-width: 40em) {
+  :root { --t-kop-1: clamp(3rem, 1.9rem + 5.2vw, 6.5rem); }   /* tablet en desktop: ongewijzigd */
 }
 
 /* 3. Reset en basis -------------------------------------------------------- */
@@ -460,8 +464,8 @@ h3 {
 .logo__beeld--licht { display: none; }
 .kop--over-hero:not(.kop--vast) .logo__beeld--licht { display: block; }
 .kop--over-hero:not(.kop--vast) .logo__beeld--origineel { display: none; }
-.kop--over-hero:not(.kop--vast) { --kop-hoogte: 5.25rem; }
-.kop--over-hero:not(.kop--vast) .logo { --logo-h: 4.25rem; }
+.kop--over-hero:not(.kop--vast) { --kop-hoogte: 4.5rem; }   /* mobiel: 72 px */
+.kop--over-hero:not(.kop--vast) .logo { --logo-h: 3.75rem; }
 .kop--vast .logo { --logo-h: 3.75rem; }
 @media (min-width: 40em) {
   .kop { --kop-hoogte: 5rem; }
@@ -603,6 +607,11 @@ h3 {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+.mobielmenu:not([hidden]) { animation: menu-in 240ms var(--ease); }
+.mobielmenu--sluit { animation: menu-uit 200ms var(--ease) forwards; }
+@keyframes menu-in { from { opacity: 0; transform: translateY(-10px); } }
+@keyframes menu-uit { to { opacity: 0; transform: translateY(-10px); } }
+html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergrondscroll */
 .mobielmenu > * { flex-shrink: 0; }  /* kop en voet niet laten krimpen als de lijst langer is dan het scherm */
 .mobielmenu__kop {
   display: flex;
@@ -611,7 +620,7 @@ h3 {
   height: var(--kop-hoogte);
   border-bottom: 1px solid var(--lijn);
 }
-.mobielmenu__nav { padding-block: var(--r-4); }
+.mobielmenu__nav { padding-block: var(--r-2) var(--r-4); }
 .mobielmenu__nav > ul > li { border-bottom: 1px solid var(--lijn); }
 .mobielmenu__nav > ul > li > a,
 .mobielmenu__groepkop {
@@ -623,8 +632,13 @@ h3 {
   font-size: 1.9rem;
   text-decoration: none;
 }
-.mobielmenu__groepkop { padding-top: 0.5rem; }
+.mobielmenu__groepkop { cursor: pointer; list-style: none; }
+.mobielmenu__groepkop::-webkit-details-marker { display: none; }
+.mobielmenu__groepkop .icoon { width: 1.4rem; height: 1.4rem; transition: transform var(--duur) var(--ease); }
+.mobielmenu__groep[open] .mobielmenu__groepkop .icoon { transform: rotate(180deg); }
 .mobielmenu__sub { padding-bottom: var(--r-2); }
+.mobielmenu__actie { padding-top: var(--r-3); }
+.mobielmenu__actie .knop { width: 100%; }
 .mobielmenu__sub a {
   display: flex;
   align-items: center;
@@ -636,18 +650,15 @@ h3 {
 .mobielmenu a[aria-current="page"] { color: var(--brons); }
 .mobielmenu__voet {
   margin-top: auto;
-  display: grid;
-  gap: var(--r-2);
-  padding-block: var(--r-4) calc(var(--r-4) + env(safe-area-inset-bottom));
+  padding-block: var(--r-2) calc(var(--r-4) + env(safe-area-inset-bottom));
 }
-.mobielmenu__voet .knop { width: 100%; }
 
 /* 7. Secties van de homepage ----------------------------------------------- */
 
 /* Hero */
 .hero {
   position: relative;
-  min-height: 90svh;         /* mobiel: de vertrouwenspunten eronder komen net in beeld */
+  min-height: 78svh;         /* mobiel: 70–80svh, de vertrouwenspunten eronder komen in beeld */
   display: flex;
   align-items: flex-end;
   color: var(--licht);
@@ -667,6 +678,8 @@ h3 {
   align-items: flex-end;
   text-align: right;
 }
+.hero__beeld img { object-position: 50% 40%; }   /* douche en wand in beeld op smalle schermen */
+@media (min-width: 40em) { .hero__beeld img { object-position: 50% 50%; } }
 .hero__beeld::after {
   /* rustige verduistering onderaan voor leesbaarheid van de tekst */
   content: "";
@@ -676,7 +689,7 @@ h3 {
   pointer-events: none;
 }
 .hero__inhoud {
-  padding-top: calc(var(--kop-hoogte) + var(--r-6));
+  padding-top: calc(var(--kop-hoogte) + var(--r-5));
   padding-bottom: clamp(2.5rem, 1.5rem + 4vw, 7rem);
 }
 @media (min-width: 60em) { .hero { min-height: 100svh; } }
@@ -784,20 +797,19 @@ h3 {
 .dienstkaart a:hover .foto__vlak,
 .dienstkaart a:hover .foto img { transform: scale(1.03); }
 .dienstkaart a:hover h3 .icoon { transform: translateX(4px); }
-/* Mobiel: compacte rijen (foto, titel, pijl) in plaats van zes grote kaarten
-   onder elkaar; de toelichting staat op de dienstpagina zelf. */
+/* Mobiel: één kaart per rij, breed beeld (3:2) zodat de lijst snel doorscrolt,
+   titel duidelijk, tekst op één à twee regels. */
 @media (max-width: 39.99em) {
-  .dienstkaarten { gap: 0; border-top: 1px solid var(--lijn-sterk); }
-  .dienstkaart a {
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    align-items: center;
-    gap: var(--r-2);
-    padding-block: 0.75rem;
-    border-bottom: 1px solid var(--lijn-sterk);
+  .dienstkaarten { gap: var(--r-4); }
+  .dienstkaart a { gap: 0.6rem; }
+  .dienstkaart .foto { --ratio: 3 / 2; }
+  .dienstkaart h3 { margin-top: 0.25rem; font-size: 1.6rem; }
+  .dienstkaart p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
-  .dienstkaart .foto { --ratio: 1 / 1; }
-  .dienstkaart h3 { margin: 0; font-size: 1.6rem; align-items: center; }
-  .dienstkaart p { display: none; }
 }
 
 /* Detailsectie: tabbladen met een macrofoto per detail */
@@ -849,12 +861,19 @@ h3 {
 }
 .details__tekst p { max-width: 28rem; }
 .details__foto-mobiel { --ratio: 4 / 3; }
-/* Zonder JS staan alle details open; js/site.js zet hidden op de dichte items. */
+/* Zonder JS staan alle details open met hun eigen foto. Met JS: één grote
+   close-up (het paneel) die meewisselt met het geopende detail; op mobiel
+   bovenaan en te vegen, op desktop ernaast. */
 .details__paneel { display: none; }
+.js .details__foto-mobiel { display: none; }
+.js .details__paneel { display: block; order: -1; touch-action: pan-y; }
+.details__paneel .foto { --ratio: 4 / 5; }
+.details__veeg { margin-top: 0.6rem; font-size: var(--t-s); color: var(--licht-zacht); }
 @media (min-width: 60em) {
   .details__foto-mobiel { display: none; }
-  .details__paneel { display: block; position: sticky; top: calc(var(--kop-hoogte) + var(--r-4)); }
+  .js .details__paneel { order: 0; position: sticky; top: calc(var(--kop-hoogte) + var(--r-4)); }
   .details__paneel .foto { --ratio: 1 / 1; }
+  .details__veeg { display: none; }
 }
 
 /* Voor/na-slider */
@@ -994,6 +1013,23 @@ h3 {
   gap: var(--r-3);
 }
 @media (min-width: 60em) { .reviews { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* Mobiel: één review tegelijk, volledig zichtbaar; de volgende met vegen. */
+@media (max-width: 39.99em) {
+  .reviews {
+    grid-auto-flow: column;
+    grid-auto-columns: 88%;
+    overflow-x: auto;
+    margin-inline: calc(var(--rand) * -1);
+    padding-inline: var(--rand);
+    scroll-padding-inline: var(--rand);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .reviews::-webkit-scrollbar { display: none; }
+  .review { scroll-snap-align: start; }
+  .reviews:has(> :only-child) { grid-auto-columns: 100%; }
+  .review__sterren .icoon { width: 1.35rem; height: 1.35rem; }
+}
 .review {
   display: grid;
   gap: var(--r-2);
@@ -1108,6 +1144,20 @@ h3 {
     border-color var(--duur-kort) var(--ease);
 }
 .filter:hover { border-color: var(--antraciet); }
+@media (max-width: 39.99em) {
+  .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: calc(var(--rand) * -1);
+    padding-inline: var(--rand);
+    scroll-padding-inline: var(--rand);
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter { flex: none; scroll-snap-align: start; }
+}
 .filter[aria-pressed="true"] { background: var(--antraciet); border-color: var(--antraciet); color: var(--zand); }
 .filters-status { margin-bottom: var(--r-3); font-size: var(--t-s); color: var(--inkt-zacht); }
 
@@ -1118,10 +1168,9 @@ h3 {
   display: grid;
   gap: var(--r-5) var(--r-4);
 }
-.projectkaart .foto { --ratio: 4 / 5; }
-.projectkaart[data-vorm="breed"] .foto,
-.projectkaart[data-vorm="groot"] .foto { --ratio: 4 / 3; }
+.projectkaart .foto { --ratio: 4 / 5; }   /* mobiel: één per rij, alles staand en groot */
 @media (min-width: 40em) {
+  .projectkaart[data-vorm="groot"] .foto { --ratio: 4 / 3; }
   .projectgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .projectkaart[data-vorm="breed"] { grid-column: 1 / -1; }
   .projectkaart[data-vorm="breed"] .foto { --ratio: 21 / 9; }
@@ -1443,17 +1492,23 @@ a.projectkaart__link:hover .projectkaart__naam { color: var(--brons); }
   .stickycta { background: rgba(243, 238, 230, 0.8); backdrop-filter: saturate(1.2) blur(14px); }
 }
 .stickycta.zichtbaar { transform: none; }
+/* tijdens invullen (toetsenbord open) geen balk over het formulier */
+.stickycta.zichtbaar.invoer { transform: translateY(110%); }
 .stickycta .knop { flex: 1 1 0; min-height: var(--tik); padding-inline: 0.75rem; gap: 0.5rem; }
 .stickycta__offerte { flex-grow: 1.4; }
 .stickycta__wa .icoon { width: 1.2rem; height: 1.2rem; }
 @media (min-width: 40em) { .stickycta { display: none; } }
 
-/* Scroll-reveal: alleen als JS draait (html.js), anders is alles direct zichtbaar. */
+/* Scroll-reveal: alleen als JS draait (html.js), anders is alles direct zichtbaar.
+   Op mobiel korter en subtieler. */
 .js .reveal {
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity var(--duur-lang) var(--ease), transform var(--duur-lang) var(--ease);
+  transform: translateY(8px);
+  transition: opacity 600ms var(--ease), transform 600ms var(--ease);
   transition-delay: var(--vertraging, 0ms);
+}
+@media (min-width: 40em) {
+  .js .reveal { transform: translateY(14px); transition-duration: var(--duur-lang); }
 }
 .js .reveal.in { opacity: 1; transform: none; }
 /* Kleine verschuiving per kolom, als data-attribuut (geen inline style i.v.m. CSP). */
@@ -1501,6 +1556,7 @@ html:not(.js) .wizard { display: none; }
 /* de kop krijgt focus voor schermlezers bij elke nieuwe stap; geen zichtbaar kader */
 .wizard__kop:focus { outline: none; }
 .wizard__hulp { margin-bottom: var(--r-3); color: var(--inkt-zacht); }
+.wizard__hulp--klein { margin: 0 0 calc(var(--r-3) * -0.5); font-size: var(--t-s); }
 .wizard__optioneel { font-weight: 400; color: var(--inkt-zacht); }
 .wizard__fout { margin-top: var(--r-2); color: var(--fout); font-weight: 600; }
 .wizard__fout:empty { display: none; }

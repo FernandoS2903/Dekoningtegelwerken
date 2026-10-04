@@ -140,8 +140,10 @@ function initWizard(form) {
         const mail = $('[name="email"]', form);
         const pc = $('[name="postcode"]', form);
         if (!naam.value.trim()) return fout('Vul je naam in.', naam);
-        if (cijfersVan(tel.value).length < 10) return fout('Vul een telefoonnummer in, bijvoorbeeld 06 12345678.', tel);
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.value.trim())) return fout('Vul een geldig e-mailadres in.', mail);
+        // telefoon óf e-mail is genoeg; wat wel is ingevuld, moet kloppen
+        if (!tel.value.trim() && !mail.value.trim()) return fout('Vul een telefoonnummer of e-mailadres in, zodat we je kunnen bereiken.', tel);
+        if (tel.value.trim() && cijfersVan(tel.value).length < 10) return fout('Vul een telefoonnummer in, bijvoorbeeld 06 12345678.', tel);
+        if (mail.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.value.trim())) return fout('Vul een geldig e-mailadres in.', mail);
         if (!/^\d{4}\s?[a-z]{2}$/i.test(pc.value.trim())) return fout('Vul een postcode in zoals 1971 RA.', pc);
         pc.value = pc.value.trim().toUpperCase().replace(/^(\d{4})\s?([A-Z]{2})$/, '$1 $2');
         const privacy = $('[name="privacy"]', form);
@@ -362,7 +364,10 @@ function samenvatting(form, bestanden) {
   if (waarde('periode')) regels.push(['Gewenste periode', waarde('periode')]);
   const n = bestanden.fotos.length;
   regels.push(['Bijlagen', `${n} ${n === 1 ? 'foto' : "foto's"}${bestanden.plattegrond.length ? ' + plattegrond' : ''}`]);
-  regels.push(['Naam', waarde('naam')], ['Telefoon', waarde('telefoon')], ['E-mail', waarde('email')], ['Postcode', waarde('postcode')]);
+  regels.push(['Naam', waarde('naam')]);
+  if (waarde('telefoon')) regels.push(['Telefoon', waarde('telefoon')]);
+  if (waarde('email')) regels.push(['E-mail', waarde('email')]);
+  regels.push(['Postcode', waarde('postcode')]);
   if (waarde('toelichting')) regels.push(['Toelichting', waarde('toelichting')]);
 
   const titel = `Nieuwe aanvraag – ${ruimtes.map((r) => (r === 'anders' ? 'Anders' : LABELS[r])).join(', ')}${waarde('postcode') ? ', ' + waarde('postcode') : ''}`;

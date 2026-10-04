@@ -15,7 +15,7 @@ const BASIS = process.env.BASIS || 'http://127.0.0.1:8099';
 const [uit = '/tmp/schermafdrukken', ...paden] = process.argv.slice(2);
 const PAGINAS = paden.length ? paden : ['/', '/projecten/', '/projecten/voorbeeldproject-badkamer-grootformaat/',
   '/badkamer-tegelen/', '/tegelzetter/', '/contact/', '/offerte/', '/privacy/', '/404.html'];
-const BREEDTES = [{ naam: 'mobiel', w: 360, h: 780, mobiel: true }, { naam: 'mobiel390', w: 390, h: 844, mobiel: true }, { naam: 'tablet', w: 820, h: 1180, mobiel: true }, { naam: 'desktop', w: 1440, h: 900, mobiel: false }];
+const BREEDTES = [{ naam: 'mobiel', w: 360, h: 780, mobiel: true }, { naam: 'mobiel390', w: 390, h: 844, mobiel: true }, { naam: 'mobiel430', w: 430, h: 932, mobiel: true }, { naam: 'tablet', w: 820, h: 1180, mobiel: true }, { naam: 'desktop', w: 1440, h: 900, mobiel: false }];
 
 mkdirSync(uit, { recursive: true });
 const b = await startBrowser(process.env.CHROME);
@@ -28,7 +28,7 @@ for (const vp of BREEDTES) {
     // door de pagina scrollen (zonder smooth scroll) zodat reveals afgaan
     await b.evalueer(`(async()=>{for(let y=0;y<document.body.scrollHeight;y+=400){scrollTo({top:y,behavior:"instant"});await new Promise(r=>setTimeout(r,60))}scrollTo({top:0,behavior:"instant"})})()`);
     await wacht(1100);
-    const r = await b.evalueer(`(()=>{const w=document.documentElement.clientWidth;const breed=[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&(r.right>w+1||r.left<-1)&&getComputedStyle(e).position!=='fixed'&&!e.closest('.visueel-verborgen,[hidden]')}).slice(0,5).map(e=>e.tagName.toLowerCase()+'.'+[...e.classList].join('.')+' '+Math.round(e.getBoundingClientRect().right));return{scroll:document.documentElement.scrollWidth,w,breed,hoogte:document.documentElement.scrollHeight}})()`);
+    const r = await b.evalueer(`(()=>{const w=document.documentElement.clientWidth;const breed=[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&(r.right>w+1||r.left<-1)&&getComputedStyle(e).position!=='fixed'&&!e.closest('.visueel-verborgen,[hidden]')&&!(()=>{for(let p=e.parentElement;p&&p!==document.body;p=p.parentElement){if(/auto|scroll/.test(getComputedStyle(p).overflowX))return true}return false})()}).slice(0,5).map(e=>e.tagName.toLowerCase()+'.'+[...e.classList].join('.')+' '+Math.round(e.getBoundingClientRect().right));return{scroll:document.documentElement.scrollWidth,w,breed,hoogte:document.documentElement.scrollHeight}})()`);
     const naam = (pad === '/' ? 'home' : pad.replace(/^\/|\/$/g, '').replace(/[/.]/g, '_')) + '-' + vp.naam;
     // in stukken van ±1,5 viewport, zodat elke afdruk op ware grootte leesbaar is
     const stuk = Math.round(vp.h * 1.5);

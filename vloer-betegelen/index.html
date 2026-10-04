@@ -77,21 +77,27 @@
       <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#sluiten"/></svg><span class="visueel-verborgen">Menu sluiten</span>
     </button>
   </div>
+  <!-- Primaire actie bovenaan, zodat hij nooit onder de vouw valt. -->
+  <div class="mobielmenu__actie wrap">
+    <a class="knop" href="/offerte/">Offerte aanvragen <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
+  </div>
   <nav class="mobielmenu__nav wrap" aria-label="Hoofdmenu mobiel">
     <ul role="list">
       <li><a href="/">Home</a></li>
       <li>
-        <span class="mobielmenu__groepkop">Diensten</span>
-        <ul class="mobielmenu__sub" role="list">
-          <li><a href="/badkamer-tegelen/">Badkamer tegelen</a></li>
-          <li><a href="/vloer-betegelen/" aria-current="page">Vloer betegelen</a></li>
-          <li><a href="/toilet-betegelen/">Toilet betegelen</a></li>
-          <li><a href="/grootformaat-tegels/">Grootformaat tegels</a></li>
-          <li><a href="/xxl-tegels/">XXL-tegels</a></li>
-          <li><a href="/visgraat-tegels/">Visgraat en patronen</a></li>
-          <li><a href="/natuursteen/">Natuursteen</a></li>
-          <li><a href="/tegelzetter/">Alle diensten</a></li>
-        </ul>
+        <details class="mobielmenu__groep" open>
+          <summary class="mobielmenu__groepkop">Diensten <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#chevron"/></svg></summary>
+          <ul class="mobielmenu__sub" role="list">
+            <li><a href="/badkamer-tegelen/">Badkamer tegelen</a></li>
+            <li><a href="/vloer-betegelen/" aria-current="page">Vloer betegelen</a></li>
+            <li><a href="/toilet-betegelen/">Toilet betegelen</a></li>
+            <li><a href="/grootformaat-tegels/">Grootformaat tegels</a></li>
+            <li><a href="/xxl-tegels/">XXL-tegels</a></li>
+            <li><a href="/visgraat-tegels/">Visgraat en patronen</a></li>
+            <li><a href="/natuursteen/">Natuursteen</a></li>
+            <li><a href="/tegelzetter/">Alle diensten</a></li>
+          </ul>
+        </details>
       </li>
       <li><a href="/projecten/">Projecten</a></li>
       <li><a href="/#werkwijze">Werkwijze</a></li>
@@ -100,7 +106,6 @@
     </ul>
   </nav>
   <div class="mobielmenu__voet wrap">
-    <a class="knop" href="/offerte/">Offerte aanvragen <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
     <p class="whatsapp-cta" data-veld-blok="whatsapp">
       <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#whatsapp"/></svg>
       <span>Liever even overleggen? <a data-veld="whatsapp" data-veld-tekst="Stuur een WhatsApp.">Stuur een WhatsApp.</a> <span class="ph" data-ph="whatsapp">[WHATSAPP-NUMMER]</span></span>
