@@ -201,6 +201,8 @@ function initVoorNa() {
     const stop = () => { actief = false; };
     slider.addEventListener('pointerup', stop);
     slider.addEventListener('pointercancel', stop);
+    // vangnet: een sleepactie van de browser (foto) zou de pointer afbreken
+    slider.addEventListener('dragstart', (e) => e.preventDefault());
     invoer.addEventListener('input', () => zet(Number(invoer.value)));
     zet(50);
   }

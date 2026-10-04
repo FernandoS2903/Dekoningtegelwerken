@@ -53,6 +53,18 @@ controleer('klik opent Nissen en sluit verstek', await b.evalueer(`(()=>{const t
 // -- voor/na ---------------------------------------------------------------------
 await b.evalueer(`(()=>{const i=document.querySelector('.voorna__invoer');i.value='20';i.dispatchEvent(new Event('input'))})()`);
 controleer('slider via invoer verschuift de lijn', (await b.evalueer(`document.querySelector('[data-voorna]').style.getPropertyValue('--pos')`)) === '20%');
+// echt slepen met de muis op desktop: een foto mag geen eigen sleepactie starten
+await b.viewport(1440, 900, false);
+await b.evalueer(`document.querySelector('[data-voorna]').scrollIntoView({block:'center',behavior:'instant'})`);
+await wacht(300);
+const vn = await b.evalueer(`(()=>{const r=document.querySelector('[data-voorna]').getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
+const vy = vn.y + vn.h / 2;
+await b.s('Input.dispatchMouseEvent', { type: 'mousePressed', x: vn.x + vn.w * 0.5, y: vy, button: 'left', clickCount: 1 });
+for (let i = 1; i <= 10; i++) await b.s('Input.dispatchMouseEvent', { type: 'mouseMoved', x: vn.x + vn.w * (0.5 - 0.03 * i), y: vy, button: 'left', buttons: 1 });
+await b.s('Input.dispatchMouseEvent', { type: 'mouseReleased', x: vn.x + vn.w * 0.2, y: vy, button: 'left', clickCount: 1 });
+await wacht(150);
+controleer('slider met de muis slepen werkt', parseFloat(await b.evalueer(`document.querySelector('[data-voorna]').style.getPropertyValue('--pos')`)) < 25);
+await b.viewport(360, 780, true);
 
 // -- lichtbak op de projectpagina -------------------------------------------------
 await b.open(BASIS + '/projecten/voorbeeldproject-badkamer-grootformaat/');
