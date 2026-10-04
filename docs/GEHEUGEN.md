@@ -1,6 +1,6 @@
 # Geheugen — stand van zaken dekoningtegelwerken.nl
 
-Bijgewerkt: 3 oktober 2026, na de mobiele herziening (1b) en de offertewizard (stap 2).
+Bijgewerkt: 4 oktober 2026, 1b en wizard in `main`; uitrol naar live nog te doen.
 Werk dit bestand bij aan het eind van elke fase.
 
 ## Waar staan we
@@ -10,8 +10,8 @@ Werk dit bestand bij aan het eind van elke fase.
 | A — inventaris en plan | Klaar, goedgekeurd door Bob op 3 okt 2026. Besluiten staan bovenaan `docs/PLAN.md`. |
 | B — stap 1: design system, homepage, projecten, diensten, contact | Klaar; op uitdrukkelijk besluit van Bob via `main` live gezet (zie "Live sinds"). |
 | B+ — sfeerbeelden en logo | Klaar op dezelfde branch: 29 AI-sfeerbeelden overal waar placeholdervlakken stonden, en het logo in header, menu, footer, favicon en og-image. |
-| 1b — mobiel leidend (feedback Bob, 3 okt 2026) | Klaar op `feature/fase-1b-mobiel`: 390 px als ontwerpbreedte, koppen 38–44 px, klikvlakken ≥ 48 px, header = logo + menuknop, sticky balk WhatsApp + Offerte, nieuwe hero (specialismen, "Vakwerk in IJmuiden en omgeving."), drie bevestigde vertrouwenspunten, compacte specialismen op mobiel, projectpagina met galerij (6–12) en lichtbak, reviewscore. Op de preview, nog niet live. |
-| Stap 2 — offertewizard `/offerte` | Klaar op `feature/fase-2-offertewizard` (bovenop 1b): zes stappen uit `data/wizard.json` (ruimte → oppervlak → tegels → foto's → plattegrond → contact), vervolgvragen per ruimte, lengte × breedte, uploads met miniaturen, sessionStorage, samenvatting in het formaat "Nieuwe aanvraag – Badkamer, 1971 RA / Badkamer: vloer ±8 m², wanden ±31 m² · Inloopdouche …". **Zonder backend verstuurt hij niets**: de bezoeker krijgt de samenvatting om via WhatsApp/e-mail door te sturen of te kopiëren. Op de preview, nog niet live. |
+| 1b — mobiel leidend (feedback Bob, 3 okt 2026) | Klaar op `feature/fase-1b-mobiel`: 390 px als ontwerpbreedte, koppen 38–44 px, klikvlakken ≥ 48 px, header = logo + menuknop, sticky balk WhatsApp + Offerte, nieuwe hero (specialismen, "Vakwerk in IJmuiden en omgeving."), drie bevestigde vertrouwenspunten, compacte specialismen op mobiel, projectpagina met galerij (6–12) en lichtbak, reviewscore. Op de preview; op akkoord van Bob (4 okt 2026) in `main` (de2ce63), **uitrol naar live nog te doen**. |
+| Stap 2 — offertewizard `/offerte` | Klaar op `feature/fase-2-offertewizard` (bovenop 1b): zes stappen uit `data/wizard.json` (ruimte → oppervlak → tegels → foto's → plattegrond → contact), vervolgvragen per ruimte, lengte × breedte, uploads met miniaturen, sessionStorage, samenvatting in het formaat "Nieuwe aanvraag – Badkamer, 1971 RA / Badkamer: vloer ±8 m², wanden ±31 m² · Inloopdouche …". **Zonder backend verstuurt hij niets**: de bezoeker krijgt de samenvatting om via WhatsApp/e-mail door te sturen of te kopiëren. Op de preview; in `main` (de2ce63), **uitrol naar live nog te doen**. |
 | Stap 3 — backend | Niet begonnen. De wizard is er klaar voor: `data-endpoint` op het formulier zetten, dan gaan antwoorden + bestanden als multipart naar die URL. |
 | Stap 4 — beheer, calculatie, offertes, project-CMS | Niet begonnen. |
 | Stap 5 — plattegrondanalyse, AI-conceptcalculatie | Niet begonnen. |
