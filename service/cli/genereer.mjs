@@ -310,10 +310,9 @@ function blok(naam, args, paginaPad) {
     case 'head': return HEAD;
     case 'header': {
       const overHero = args.includes('over-hero');
-      // Boven de donkere hero de lichte logovariant; die wordt alleen hier geladen.
+      // Het logo is overal hetzelfde: het paarse origineel (besluit Bob, 4 okt 2026).
       let h = vul(PARTIALS.header, {
         kopKlasse: overHero ? ' kop--over-hero' : '',
-        logoLicht: overHero ? '<img class="logo__beeld logo__beeld--licht" src="/assets/brand/logo-licht.svg" alt="De Koning Tegelwerken" width="542" height="442">' : '',
       });
       // actieve pagina markeren; de Diensten-groep ook als je op een dienstpagina zit
       h = h.split(`href="${paginaPad}">`).join(`href="${paginaPad}" aria-current="page">`);

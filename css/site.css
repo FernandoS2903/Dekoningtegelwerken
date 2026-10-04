@@ -139,8 +139,7 @@ a { color: inherit; }
   outline: 2px solid var(--focus);
   outline-offset: 3px;
 }
-.donker :focus-visible,
-.kop--over-hero :focus-visible { --focus: var(--brons-licht); }
+.donker :focus-visible { --focus: var(--brons-licht); }
 
 ::selection { background: var(--brons-licht); color: var(--antraciet); }
 
@@ -416,25 +415,14 @@ h3 {
 @supports (backdrop-filter: blur(1px)) {
   .kop { background: rgba(243, 238, 230, 0.82); backdrop-filter: saturate(1.2) blur(14px); }
 }
-/* Op de homepage ligt de header eerst transparant over de donkere hero. */
+/* Op de homepage ligt de header over de hero (fixed), maar wel met de lichte,
+   halfdoorzichtige achtergrond: het paarse logo is op een donkere foto niet
+   leesbaar, en het logo blijft overal hetzelfde (besluit Bob, 4 okt 2026). */
 .kop--over-hero {
   position: fixed;
   inset-inline: 0;
-  background: transparent;
-  backdrop-filter: none;
-  border-color: transparent;
-  color: var(--licht);
-}
-.kop--over-hero.kop--vast {
-  background: rgba(243, 238, 230, 0.94);
-  border-color: var(--lijn);
-  color: var(--inkt);
-}
-@supports (backdrop-filter: blur(1px)) {
-  .kop--over-hero.kop--vast { background: rgba(243, 238, 230, 0.82); backdrop-filter: saturate(1.2) blur(14px); }
 }
 .kop--vast { --kop-hoogte: 4.5rem; }
-.kop--over-hero.kop--vast :focus-visible { --focus: var(--brons); }
 
 .kop__binnen {
   display: flex;
@@ -444,9 +432,10 @@ h3 {
   height: 100%;
 }
 
-/* Logo (assets/brand/logo.svg, ruitvormig beeld- en woordmerk). Boven de
-   donkere hero staat de lichte variant groter; na scrollen het origineel,
-   compact. --logo-h is de hoogte; de breedte volgt uit de verhouding. */
+/* Logo (assets/brand/logo.svg, ruitvormig beeld- en woordmerk): overal het
+   paarse origineel, ook boven de hero en in de footer. Boven de hero iets
+   groter, na scrollen compact. --logo-h is de hoogte; de breedte volgt uit de
+   verhouding. */
 .logo {
   --logo-h: 3.6rem;
   display: inline-flex;
@@ -461,9 +450,6 @@ h3 {
   height: var(--logo-h);
   transition: height var(--duur) var(--ease);
 }
-.logo__beeld--licht { display: none; }
-.kop--over-hero:not(.kop--vast) .logo__beeld--licht { display: block; }
-.kop--over-hero:not(.kop--vast) .logo__beeld--origineel { display: none; }
 .kop--over-hero:not(.kop--vast) { --kop-hoogte: 4.5rem; }   /* mobiel: 72 px */
 .kop--over-hero:not(.kop--vast) .logo { --logo-h: 3.75rem; }
 .kop--vast .logo { --logo-h: 3.75rem; }
@@ -476,7 +462,7 @@ h3 {
   .kop--over-hero:not(.kop--vast) .logo { --logo-h: 6rem; }
 }
 .mobielmenu .logo { --logo-h: 3.4rem; }
-.voet .logo { --logo-h: 7.5rem; }
+.voet .logo { --logo-h: 6rem; }
 
 .hoofdnav { display: none; }
 .hoofdnav > ul {
@@ -568,9 +554,6 @@ h3 {
   transition: color var(--duur-kort) var(--ease);
 }
 .kop__whatsapp:hover { color: var(--brons); }
-.kop--over-hero:not(.kop--vast) .kop__whatsapp:hover { color: var(--brons-licht); }
-.kop--over-hero:not(.kop--vast) .kop__cta { --knop-bg: var(--zand); --knop-tekst: var(--antraciet); --knop-rand: var(--zand); }
-.kop--over-hero:not(.kop--vast) .kop__cta:hover { --knop-bg: var(--brons-licht); --knop-rand: var(--brons-licht); }
 
 .menuknop,
 .mobielmenu__sluit {
@@ -896,6 +879,9 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   aspect-ratio: auto;
 }
 .voorna__na { clip-path: inset(0 0 0 var(--pos)); }
+/* De foto's mogen geen eigen sleepactie starten (dat breekt het schuiven met de muis af). */
+.voorna { cursor: ew-resize; }
+.voorna img { pointer-events: none; -webkit-user-drag: none; user-select: none; }
 .voorna__na .foto__vlak { align-items: flex-end; text-align: right; }
 .voorna__voor .foto__vlak { --foto-tegel: 2.25rem; background-color: #ddd4c6; }
 .voorna__lijn {
@@ -1439,7 +1425,13 @@ a.projectkaart__link:hover .projectkaart__naam { color: var(--brons); }
 }
 @media (min-width: 40em) { .voet__boven { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 64em) { .voet__boven { grid-template-columns: minmax(0, 4fr) repeat(3, minmax(0, 2fr)); } }
-.voet .logo { color: var(--licht); }
+/* Het paarse logo staat in de donkere footer op een lichte tegel, anders is het
+   paars en zwart op antraciet niet leesbaar. */
+.voet .logo {
+  padding: 0.75rem 1.25rem;
+  background: var(--zand);
+  border-radius: var(--hoek);
+}
 .voet__merk p { margin-top: var(--r-3); max-width: 22rem; }
 .voet h2 {
   margin-bottom: var(--r-2);
