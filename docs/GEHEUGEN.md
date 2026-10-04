@@ -53,6 +53,7 @@ Werk dit bestand bij aan het eind van elke fase.
 
 ## Sfeerbeelden (3 oktober 2026, op verzoek van Bob: "overal mooie foto's")
 
+- **Nieuwe hero (4 okt 2026, op verzoek van Bob):** badkamer met XXL-platen in warme travertinlook en een vrijstaand bad; `hero` (16:9) en `hero-mobiel` (4:5, met `hero` als referentie voor dezelfde ruimte) opnieuw gemaakt, 2 generaties, 36 credits. Totaal nu 32 generaties.
 - **29 beelden**, AI-gegenereerd via KIE.AI met `nano-banana-pro` (2K, `POST /api/v1/jobs/createTask`, pollen via `/api/v1/jobs/recordInfo`). 30 generaties in totaal: een eerste run op de achtergrond werd afgebroken (één taak ging daarbij verloren), daarna op de voorgrond in twee parallelle brokken. Geen enkel beeld mislukt. Verbruik 540 credits (18 per beeld); tegoed daarna 8453.
 - Manifest met prompts, verhoudingen, breedtes en alt-teksten: `data/beelden.json`; script: `service/cli/kie-beelden.mjs` (sleutel uit `/etc/dekoning/kie.env`, nooit in repo of logs). Het na-beeld van de voor/na is een image-to-image-bewerking van het voor-beeld (zelfde standpunt).
 - WebP via `cwebp` (q78) in 3 à 4 breedtes: 93 bestanden, samen 2,8 MB voor álle varianten; een bezoeker laadt alleen de passende breedte. Hero op mobiel 13 KB (800 px), hero desktop 43 KB (2400 px).

@@ -671,6 +671,12 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   background: linear-gradient(180deg, rgba(30, 29, 27, 0.55) 0%, rgba(30, 29, 27, 0.12) 22%, rgba(30, 29, 27, 0.18) 45%, rgba(30, 29, 27, 0.78) 100%);
   pointer-events: none;
 }
+/* mobiel: de tekst beslaat het onderste deel van een lichte foto, dus daar wat donkerder */
+@media (max-width: 39.99em) {
+  .hero__beeld::after {
+    background: linear-gradient(180deg, rgba(30, 29, 27, 0.35) 0%, rgba(30, 29, 27, 0.15) 18%, rgba(30, 29, 27, 0.5) 45%, rgba(30, 29, 27, 0.82) 100%);
+  }
+}
 .hero__inhoud {
   padding-top: calc(var(--kop-hoogte) + var(--r-5));
   padding-bottom: clamp(2.5rem, 1.5rem + 4vw, 7rem);
@@ -700,7 +706,7 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   margin-top: 0.35rem;
   max-width: 34rem;
   font-size: var(--t-l);
-  color: var(--licht-zacht);
+  color: var(--licht);       /* volle lichte kleur: de hero-foto is licht */
 }
 .hero .knoppen { margin-top: var(--r-4); }
 /* Mobiel: knoppen over de volle breedte, makkelijk met de duim. */

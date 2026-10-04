@@ -18,8 +18,8 @@
         1600,
         2400
       ],
-      "prompt": "Wide view of a serene luxury bathroom with large-format porcelain wall tiles in warm light grey with a subtle sand tone, 120 x 260 cm slabs with barely visible 2 mm joints, a walk-in shower behind a minimal frameless glass panel, a long slim linear shower drain in the floor, matching large floor tiles, a floating oak vanity on the right, soft daylight falling from a tall window on the left, lots of calm empty wall space on the left half of the frame for text overlay.",
-      "alt": "Sfeerbeeld: rustige badkamer met grootformaat wandtegels in warm lichtgrijs, inloopdouche met strakke douchegoot en zacht daglicht",
+      "prompt": "Wide view of a spacious, serene luxury bathroom finished floor to ceiling in XXL porcelain slabs with a warm sand travertine look, 120 x 280 cm slabs with continuous bookmatched veining running across the wall and onto the floor, barely visible 2 mm joints, a freestanding matte stone bathtub in front of a tall window, warm low late-afternoon sunlight raking across the tile surface and revealing its texture, a long recessed wall niche, a slim brushed bronze floor-standing tap, a small anthracite stool, the left third of the frame calm, softly lit tile wall for text overlay.",
+      "alt": "Sfeerbeeld: ruime badkamer met XXL-tegels in warme travertinlook, doorlopende tekening van wand naar vloer en een vrijstaand bad in laag middaglicht",
       "afmeting": {
         "hoogte": 1536,
         "breedte": 2752
@@ -30,9 +30,9 @@
         2400
       ],
       "gegenereerd": {
-        "datum": "2026-10-03",
+        "datum": "2026-10-04",
         "model": "nano-banana-pro",
-        "taak": "e81755c82b6050469280d8a017179838",
+        "taak": "de686686a81929a408ed926b8ad1ac03",
         "credits": 18
       }
     },
@@ -45,8 +45,8 @@
         800,
         1080
       ],
-      "prompt": "Vertical view of a serene luxury bathroom with large-format porcelain wall tiles in warm light grey with a subtle sand tone, barely visible 2 mm joints, a walk-in shower with a frameless glass panel and a slim linear shower drain, matching large floor tiles, soft daylight from a window, calm empty wall area in the upper part of the frame.",
-      "alt": "Sfeerbeeld: badkamer met grootformaat wandtegels en inloopdouche in zacht daglicht",
+      "prompt": "Vertical view of the same bathroom as the reference image: the same warm sand travertine-look XXL porcelain slabs with continuous veining, the same freestanding stone bathtub and tall window, the same warm late-afternoon light. Calm tile wall in the upper part of the frame for text overlay.",
+      "alt": "Sfeerbeeld: badkamer met XXL-tegels in warme travertinlook en een vrijstaand bad in laag middaglicht",
       "afmeting": {
         "hoogte": 2304,
         "breedte": 1856
@@ -57,11 +57,12 @@
         1080
       ],
       "gegenereerd": {
-        "datum": "2026-10-03",
+        "datum": "2026-10-04",
         "model": "nano-banana-pro",
-        "taak": "fb3b7e408bcc79beed0dfbd69f86debb",
+        "taak": "0658fba3c74a12c4706bf2cf4bd7a4e0",
         "credits": 18
-      }
+      },
+      "referentie": "hero"
     },
     {
       "id": "project-badkamer-xxl",
