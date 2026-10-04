@@ -1,6 +1,6 @@
 # Geheugen — stand van zaken dekoningtegelwerken.nl
 
-Bijgewerkt: 4 oktober 2026. Live: 1b + wizard (`main` = de2ce63). Nog niet live: 1c (`feature/fase-1c-mobiel`).
+Bijgewerkt: 4 oktober 2026. Live: 1b, wizard, 1c en de logo/slider-fix (`main` = 9c67335).
 Werk dit bestand bij aan het eind van elke fase.
 
 ## Waar staan we
@@ -11,7 +11,7 @@ Werk dit bestand bij aan het eind van elke fase.
 | B — stap 1: design system, homepage, projecten, diensten, contact | Klaar; op uitdrukkelijk besluit van Bob via `main` live gezet (zie "Live sinds"). |
 | B+ — sfeerbeelden en logo | Klaar op dezelfde branch: 29 AI-sfeerbeelden overal waar placeholdervlakken stonden, en het logo in header, menu, footer, favicon en og-image. |
 | 1b — mobiel leidend (feedback Bob, 3 okt 2026) | Klaar op `feature/fase-1b-mobiel`: 390 px als ontwerpbreedte, koppen 38–44 px, klikvlakken ≥ 48 px, header = logo + menuknop, sticky balk WhatsApp + Offerte, nieuwe hero (specialismen, "Vakwerk in IJmuiden en omgeving."), drie bevestigde vertrouwenspunten, compacte specialismen op mobiel, projectpagina met galerij (6–12) en lichtbak, reviewscore. Op de preview; op akkoord van Bob (4 okt 2026) in `main` (de2ce63), **live sinds 4 okt 2026** (uitgerold door Bob). |
-| 1c — mobiele verfijning (feedback Bob, 4 okt 2026) | Klaar op `feature/fase-1c-mobiel`: header 72 px, menu met offerte bovenaan en uitklapbare diensten, hero 78svh, h1 38–42 px op mobiel, swipebare filters en reviews, specialismen één per rij met groot beeld, vakmanschap als grote close-up met vegen, balk weg tijdens invullen, wizard: telefoon óf e-mail. Werkwijze houdt de stappen uit de briefing (zie open vraag). Op de preview, **nog niet live**. |
+| 1c — mobiele verfijning (feedback Bob, 4 okt 2026) | Klaar op `feature/fase-1c-mobiel`: header 72 px, menu met offerte bovenaan en uitklapbare diensten, hero 78svh, h1 38–42 px op mobiel, swipebare filters en reviews, specialismen één per rij met groot beeld, vakmanschap als grote close-up met vegen, balk weg tijdens invullen, wizard: telefoon óf e-mail. Werkwijze houdt de stappen uit de briefing (zie open vraag). **Live sinds 4 okt 2026.** |
 | Stap 2 — offertewizard `/offerte` | Klaar op `feature/fase-2-offertewizard` (bovenop 1b): zes stappen uit `data/wizard.json` (ruimte → oppervlak → tegels → foto's → plattegrond → contact), vervolgvragen per ruimte, lengte × breedte, uploads met miniaturen, sessionStorage, samenvatting in het formaat "Nieuwe aanvraag – Badkamer, 1971 RA / Badkamer: vloer ±8 m², wanden ±31 m² · Inloopdouche …". **Zonder backend verstuurt hij niets**: de bezoeker krijgt de samenvatting om via WhatsApp/e-mail door te sturen of te kopiëren. Op de preview; in `main` (de2ce63), **live sinds 4 okt 2026** (uitgerold door Bob). |
 | Stap 3 — backend | Niet begonnen. De wizard is er klaar voor: `data-endpoint` op het formulier zetten, dan gaan antwoorden + bestanden als multipart naar die URL. |
 | Stap 4 — beheer, calculatie, offertes, project-CMS | Niet begonnen. |
@@ -76,7 +76,7 @@ Open punten die nu **openbaar** zichtbaar zijn (de voorcontrole blijft ze melden
 - 6 voorbeeldprojecten (met `[PROJECTNAAM]`/`[PLAATS]`) en sfeerbeelden met het label "Sfeerbeeld" op projectkaarten en de projectpagina.
 - Dienstteksten nog niet door De Koning gecontroleerd.
 
-Bijwerken: wijziging mergen naar `main`, daarna `deploy/live-deploy.sh` (met `--forceer` zolang bovenstaande open staat).
+Bijwerken: wijziging mergen naar `main` én de lokale `main` op de server bijwerken (`git branch -f main origin/main`; het script pakt de lokale branch), daarna `deploy/live-deploy.sh` (met `--forceer` zolang bovenstaande open staat).
 
 ## Preview
 
