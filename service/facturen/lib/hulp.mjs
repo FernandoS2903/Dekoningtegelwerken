@@ -72,14 +72,18 @@ export function naarBedrag(waarde) {
   let s = String(waarde).trim();
   if (!s) return null;
 
+  // "90,-" betekent hele euro's en is dus géén minteken: eerst wegwerken,
+  // anders leest de controle hieronder het als een negatief bedrag.
+  s = s.replace(/([.,])-\s*$/, '$100');
+
   // Negatief kan vooraan, achteraan of met haakjes genoteerd staan.
   let negatief = false;
   if (/^\(.*\)$/.test(s)) { negatief = true; s = s.slice(1, -1); }
   if (/-\s*$/.test(s) && /\d/.test(s)) { negatief = true; s = s.replace(/-\s*$/, ''); }
   if (/^\s*-/.test(s)) { negatief = true; }
 
-  // Valutatekens, codes en "euro" eruit; "90,-" wordt "90,00".
-  s = s.replace(/[€$£]|\b(eur|euro|usd|gbp)\b/gi, '').replace(/,-\s*$/, ',00');
+  // Valutatekens en codes eruit.
+  s = s.replace(/[€$£]|\b(eur|euro|usd|gbp)\b/gi, '');
   s = s.replace(/[^\d.,]/g, '');
   if (!/\d/.test(s)) return null;
 

@@ -156,21 +156,14 @@ export function maakBunq({
     return antwoord.json();
   }
 
-  // Installatie en apparaat: eenmalig per sleutel. Een andere API-key betekent
-  // helemaal opnieuw beginnen.
+  // Installatie en apparaat: eenmalig per sleutel.
   async function zorgVoorInstallatie() {
-    const s = leesState();
-    const afdruk = vingerafdruk(apiKey);
-
-    if (s.apiKeyAfdruk && s.apiKeyAfdruk !== afdruk) {
-      log('warn', 'Andere bunq API-key gevonden; installatie wordt opnieuw opgebouwd.');
-      state = {};
-    }
+    leesState();
     if (!state.privateKey) {
       const { privateKey, publicKey } = maakSleutelpaar();
       state.privateKey = privateKey;
       state.publicKey = publicKey;
-      state.apiKeyAfdruk = afdruk;
+      state.apiKeyAfdruk = vingerafdruk(apiKey);
       delete state.installationToken;
       delete state.apparaatOk;
       delete state.sessieToken;
@@ -231,9 +224,17 @@ export function maakBunq({
     return state.sessieToken;
   }
 
+  // Hier wordt gecontroleerd of de API-key nog dezelfde is. Dat moet vóór het
+  // hergebruiken van een sessie gebeuren: met een oude sessie in de state zou
+  // een nieuwe sleutel anders nooit opgemerkt worden.
   async function zorgVoorSessie() {
     const s = leesState();
-    if (s.sessieToken && s.userId) return s.sessieToken;
+    if (s.apiKeyAfdruk && s.apiKeyAfdruk !== vingerafdruk(apiKey)) {
+      log('warn', 'Andere bunq API-key gevonden; installatie en sessie worden opnieuw opgebouwd.');
+      state = {};
+      bewaarState();
+    }
+    if (state.sessieToken && state.userId) return state.sessieToken;
     return nieuweSessie();
   }
 
@@ -253,7 +254,9 @@ export function maakBunq({
   }
 
   async function rekeningen() {
-    const data = await lees(`/user/${encodeURIComponent(leesState().userId)}/monetary-account?count=100`);
+    // Eerst de sessie, dan het pad: de user-id komt uit de sessie.
+    await zorgVoorSessie();
+    const data = await lees(`/user/${encodeURIComponent(state.userId)}/monetary-account?count=100`);
     const soorten = ['MonetaryAccountBank', 'MonetaryAccountJoint', 'MonetaryAccountSavings', 'MonetaryAccountLight'];
     const uit = [];
     for (const rekening of alleUitResponse(data, soorten)) {
@@ -281,7 +284,7 @@ export function maakBunq({
       if (!beschikbaar) throw new Error('bunq is niet ingesteld');
       const uit = [];
       for (const rekening of await rekeningen()) {
-        let pad = `/user/${encodeURIComponent(leesState().userId)}/monetary-account/`
+        let pad = `/user/${encodeURIComponent(state.userId)}/monetary-account/`
           + `${encodeURIComponent(rekening.id)}/payment?count=${BETALINGEN_PER_PAGINA}`;
         let volledig = false;
 
