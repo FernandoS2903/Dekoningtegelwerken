@@ -11,6 +11,12 @@ herladen en certificaten aanvragen blijft handwerk.
 | `live-deploy.sh` | Zet **alleen `main`** live, op dezelfde manier als `preview-deploy.sh`, maar pas na een voorcontrole: weigert zolang `placeholdersTonen` aan staat, telefoon/e-mail/KvK leeg zijn, er voorbeeldprojecten zijn of sfeerbeelden als project op de site staan. Herlaadt niets. |
 | `preview-deploy.sh` | Zet een branch (gecommitte staat, via `git archive`) met rsync in de preview-map, zonder `.git`, `docs/`, `deploy/`, `_sjablonen/`, `service/`, `test/` en markdown. Stopt als de gegenereerde pagina's niet actueel zijn. Herlaadt niets. |
 
+Het **factuurdashboard** is een losse interne dienst die niets met de website te
+maken heeft. De stappen daarvoor staan apart in
+[`README-factuurdashboard.md`](README-factuurdashboard.md); de bestanden zijn
+`dekoning-facturen.service`, `facturen.env.voorbeeld`, `facturen-deploy.sh` en
+`Setup-MailboxScope.ps1`.
+
 ## Preview zichtbaar maken (eenmalig)
 
 Alle commando's als root op **hfd-web01**.

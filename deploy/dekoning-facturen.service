@@ -1,0 +1,60 @@
+# Factuurdashboard De Koning Tegelwerken.
+#
+# Voorbeeld; Bob zet dit zelf neer. Zie deploy/README.md voor de volgorde.
+#   cp deploy/dekoning-facturen.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now dekoning-facturen
+#
+# De dienst luistert op 127.0.0.1:8132 en is alleen via het tailnet bereikbaar
+# (tailscale serve), met Basic Auth erbovenop. Niets publiek.
+
+[Unit]
+Description=Factuurdashboard De Koning Tegelwerken
+Documentation=file:/opt/dekoning-facturen/service/facturen/server.mjs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dekoning-facturen
+Group=dekoning-facturen
+WorkingDirectory=/opt/dekoning-facturen
+ExecStart=/usr/bin/node service/facturen/server.mjs
+EnvironmentFile=/etc/dekoning/facturen.env
+Environment=NODE_ENV=production
+
+# Maakt /var/lib/dekoning-facturen aan (eigenaar: de dienst) en zet
+# STATE_DIRECTORY, waar de dienst DATA_DIR uit afleidt. Daarin komen de
+# database, de PDF's en bunq_state.json.
+StateDirectory=dekoning-facturen
+StateDirectoryMode=0700
+UMask=0077
+
+Restart=on-failure
+RestartSec=5
+
+# Afscherming. De code in /opt staat op root en is voor de dienst alleen
+# leesbaar; schrijven mag alleen in de datamap.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+ReadWritePaths=/var/lib/dekoning-facturen
+
+# MemoryDenyWriteExecute staat bewust uit: de JIT van Node heeft geheugen
+# nodig dat zowel beschrijfbaar als uitvoerbaar is, anders start hij niet.
+
+[Install]
+WantedBy=multi-user.target
