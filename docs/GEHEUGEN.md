@@ -1,7 +1,13 @@
 # Geheugen — stand van zaken dekoningtegelwerken.nl
 
-Bijgewerkt: 4 oktober 2026. Live: 1b, wizard, 1c en de logo/slider-fix (`main` = 9c67335).
+Bijgewerkt: 5 oktober 2026. Live: 1b, wizard, 1c, de logo/slider-fix, de mobiele
+hero, het lettertype, de mobiele polish en de leesbaarheid van de hero-kop
+(`main` = 8802784; de laatste sitewijziging daarin is 5edaacf).
 Werk dit bestand bij aan het eind van elke fase.
+
+> **Naast de website loopt sinds 5 oktober 2026 een tweede spoor:** het interne
+> **factuurdashboard** op `feature/factuurdashboard`. Dat heeft niets met de
+> publieke site te maken en staat onderaan dit bestand beschreven.
 
 ## Waar staan we
 
@@ -110,3 +116,110 @@ Invullen kan direct in `data/site.json` (gegevens) en `data/projecten.json` (pro
 - Productie-vhost en `deploy/live-deploy.sh` staan klaar (voorcontrole weigert zolang de site niet klaar is voor livegang); css/js/svg cachen nog kort zolang er geen versie in de bestandsnamen zit.
 - `/werkwijze/` en `/over-ons/` als eigen pagina's (plan stap 1d) zijn bewust uitgesteld: nu ankers op de homepage.
 - De browsertests gebruiken de Playwright-Chromium in `~/.cache/ms-playwright/` op hfd-web01; die is niet door dit project geïnstalleerd.
+
+---
+
+# Factuurdashboard (intern, los van de website)
+
+Opdracht van Bob, 5 oktober 2026, ongewijzigd vastgelegd in
+[`docs/opdrachten/factuurdashboard.md`](opdrachten/factuurdashboard.md), met
+onderaan zijn antwoorden op de open vragen uit fase A.
+
+**Branch:** `feature/factuurdashboard` (vanaf `origin/main` = 8802784). Niet
+gemerged; mergen doet Bob. Vier commits:
+
+1. Opdracht factuurdashboard vastleggen
+2. Kern van het factuurdashboard: opslag, koppelingen en de sync-ronde
+3. Schermen en dienst van het factuurdashboard, met tests
+4. Uitrol van het factuurdashboard voorbereiden
+
+## Wat het doet
+
+Een dependency-vrije Node 22-dienst die de map **Inbox › Facturen** van de
+Microsoft 365-mailbox uitleest, de facturen met de Claude API laat uitlezen, ze
+koppelt aan uitgaande bunq-betalingen en betaalde facturen naar de boekhouder
+doorstuurt. Drie schermen: overzicht, één factuur behandelen, instellingen.
+
+Het staat **niet** op de website: `127.0.0.1:8132`, alleen via het tailnet
+(`tailscale serve --set-path /facturen`), met Basic Auth erbovenop. Geen
+nginx-vhost, niets open naar buiten.
+
+## Opbouw
+
+| Map/bestand | Wat |
+|---|---|
+| `service/facturen/server.mjs` | De dienst: routes, Basic Auth, CSP, statische bestanden, de timer. |
+| `service/facturen/lib/` | `db` (schema + queries), `instellingen`, `http` (retry), `graph`, `claude`, `bunq`, `koppelen`, `doorsturen`, `sync`, `hulp`. |
+| `service/facturen/web/` | De drie schermen (server-side HTML), `dashboard.css`, `dashboard.js`. |
+| `test/facturen-*.test.mjs` | 83 tests in `node --test`, zonder netwerk. |
+| `test/facturen-browser.mjs` | Browsertest: overflow, klikvlakken, bevestiging vóór doorsturen. |
+| `deploy/` | Unit, env-voorbeeld, deploy-script, PowerShell-script, eigen README. |
+
+Keuzes die vastliggen (besluiten van Bob, 5 okt 2026):
+
+- poort **8132** (8130/8131 blijven gereserveerd voor `dekoning-aanvraag` en
+  `dekoning-beheer` uit `docs/PLAN.md` §1.3);
+- eigen gebruiker `dekoning-facturen`, data in `/var/lib/dekoning-facturen`,
+  code in `/opt/dekoning-facturen` (de werkkopie staat onder `/root`, dat is
+  0700 en dus onbereikbaar voor een dienstgebruiker);
+- `BASIS_PAD` standaard leeg, in productie `/facturen`;
+- bunq op **production**, alleen lezen;
+- **geen** terugval bij een weigering van het model; die wordt afgevangen als
+  `mislukt` en is in het dashboard opnieuw te proberen;
+- genormaliseerde Levenshtein als gelijkenismaat voor leveranciersnamen (het
+  Python-prototype gebruikte `difflib.SequenceMatcher`; grensgevallen rond 0,75
+  kunnen daardoor anders uitvallen), plus een vaste tie-break bij het greedy
+  toewijzen zodat de uitkomst reproduceerbaar is.
+
+## Veiligheid en eerlijkheid
+
+- Secrets staan alleen in `/etc/dekoning/facturen.env` (600) en komen niet in
+  de repo, een logregel, het logboek of een pagina. De bunq-state (sleutelpaar,
+  tokens) staat op 600 en bevat de API-key niet, alleen een hash ervan.
+- **Testmodus staat standaard aan**: automatisch doorsturen wordt dan alleen
+  gelogd. De knop op een factuur verstuurt wél altijd echt, na een bevestiging
+  in de browser.
+- De schakelaar "automatisch doorsturen" legt zijn eigen startmoment vast.
+  Alleen facturen die dáárna betaald zijn gaan automatisch mee; oudere blijven
+  onder "Nog naar boekhouder" staan en gaan alleen met de knop. Zonder die
+  grens zou de eerste sync de hele historie naar de boekhouder sturen.
+- Zonder e-mailadres van de boekhouder gaat er niets weg, ook niet met de knop;
+  dat wordt in het scherm en in het logboek gemeld.
+- Elke POST wordt op herkomst gecontroleerd (`Sec-Fetch-Site`, anders `Origin`
+  tegen de `Host`), zodat een andere site geen actie kan laten uitvoeren met de
+  inloggegevens die de browser al heeft.
+- Een mail met meerdere PDF's gaat één keer de deur uit; de andere regels van
+  die mail worden als meegestuurd gelogd, zodat ze niet als achterstand blijven
+  staan.
+- Niets wordt verzonnen: wat het model niet zeker weet blijft leeg, en een
+  mislukt uitlezen is zichtbaar in plaats van stilletjes leeg.
+
+## Getest
+
+- `node --test test/*.test.mjs`: **94/94**, waarvan 11 de bestaande sitetests.
+  Graph, bunq en Claude zijn nagebootst; er gaat geen verzoek naar buiten.
+- `node test/facturen-browser.mjs`: **35/35** in de headless Chromium van
+  hfd-web01 — geen horizontale overflow op 360/390/820/1440 px, klikvlakken
+  ≥ 44 px, geen JS-fouten of mislukte verzoeken, en doorsturen vraagt eerst na.
+- **Niet getest:** de echte koppelingen (Microsoft 365, bunq, Claude) en
+  `deploy/Setup-MailboxScope.ps1` — op hfd-web01 staat geen PowerShell. Die
+  gaan pas langs de werkelijkheid zodra Bob de env invult.
+
+Tijdens het testen gevonden en opgelost: `€ 90,-` werd als negatief bedrag
+gelezen; het bunq-pad werd opgebouwd vóór de sessie bestond; een gewisselde
+bunq API-key werd niet opgemerkt zolang er nog een sessie lag; de
+instellingenpagina liep op mobiel buiten beeld (een `fieldset` krimpt standaard
+niet); de terug-link was op mobiel een te klein klikvlak.
+
+## Wat Bob nog zelf moet doen
+
+De volledige volgorde met commando's staat in
+[`deploy/README-factuurdashboard.md`](../deploy/README-factuurdashboard.md).
+Kort: Entra-app zonder Mail-permissions aanmaken, `Setup-MailboxScope.ps1` op
+Windows draaien, een bunq API-key maken, op hfd-web01 de gebruiker en
+`/etc/dekoning/facturen.env` aanmaken, `facturen-deploy.sh` draaien, de unit
+installeren en starten, poort 8132 in `/etc/handsfree/poorten.md` zetten en
+`tailscale serve --set-path /facturen` aanzetten. Daarna: eerst een paar rondes
+in testmodus nakijken, en `/var/lib/dekoning-facturen` in de back-up opnemen.
+De datamap zelf hoeft hij niet aan te maken: `StateDirectory` in de unit doet
+dat op 0700.
