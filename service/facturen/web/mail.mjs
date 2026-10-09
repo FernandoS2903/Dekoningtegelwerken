@@ -44,7 +44,10 @@ const STATUS_KLASSE = {
 const MAPNAMEN = SORTEER_MAPPEN.map((m) => m.naam);
 const ALLE_DOELEN = [...MAPNAMEN, INBOX_NAAM];
 
-const mailPagina = (opties) => pagina({ ...opties, menu: MAIL_MENU, onderdeel: 'Mail' });
+const mailPagina = (opties) => pagina({
+  ...opties, onderdeel: 'Mail', menu: [],
+  subnav: MAIL_MENU.map((m) => ({ pad: opties.basis + (m.pad === '/' ? '/' : m.pad), naam: m.naam, actief: m.pad === opties.actief })),
+});
 
 function opties(waarden, gekozen, { leeg = null, namen = {} } = {}) {
   const regels = [];
@@ -124,8 +127,7 @@ function logRij(r, basis) {
 }
 
 export function logboekPagina({ basis, rijen, filter, status, webhook, minuten, meldingen = [], kader = null, bezig = false }) {
-  const inhoud = `<h1>Mail</h1>
-<p>Nieuwe mail in de Inbox wordt in de juiste map gezet. Twijfelgevallen blijven in de Inbox met de
+  const inhoud = `<p>Nieuwe mail in de Inbox wordt in de juiste map gezet. Twijfelgevallen blijven in de Inbox met de
   categorie <strong>Controleren</strong>. Er wordt nooit iets verwijderd of als gelezen gemarkeerd.</p>
 <ul class="uitslag">
   <li>${e(rondeTekst(status.laatste))}</li>
@@ -147,13 +149,12 @@ ${rijen.length
     ? `<ul class="lijst">\n${rijen.map((r) => logRij(r, basis)).join('\n')}\n</ul>`
     : '<p class="leeg">Nog niets in het logboek' + (filter.map || filter.bron || filter.status ? ' met dit filter' : '') + '.</p>'}
 `;
-  return mailPagina({ titel: 'Logboek', basis, actief: '/', inhoud, meldingen, kader });
+  return mailPagina({ titel: 'Mail', basis, actief: '/', inhoud, meldingen, kader });
 }
 
 // -- regels ----------------------------------------------------------------
 export function regelsPagina({ basis, regels, meldingen = [], kader = null, invoer = {} }) {
-  const inhoud = `<h1>Regels</h1>
-<p>Een regel wint altijd, ook van Claude. Een regel op een adres wint van een regel op het domein.
+  const inhoud = `<p>Een regel wint altijd, ook van Claude. Een regel op een adres wint van een regel op het domein.
   Een domeinregel geldt ook voor subdomeinen (mail.voorbeeld.nl valt onder voorbeeld.nl).
   Kies "Inbox" om mail van een afzender juist altijd te laten staan.</p>
 
@@ -188,9 +189,7 @@ ${regels.map((r) => `<li class="mailrij">
 
 // -- instellingen ----------------------------------------------------------
 export function mailInstellingenPagina({ basis, inst, status, webhook, minuten, test = null, meldingen = [], kader = null }) {
-  const inhoud = `<h1>Instellingen</h1>
-
-<form method="post" action="${basis}/instellingen">
+  const inhoud = `<form method="post" action="${basis}/instellingen">
   <fieldset class="veldgroep">
     <legend>Sorteren</legend>
     ${schakel('sorteren', 'Nieuwe mail automatisch sorteren',
@@ -249,5 +248,5 @@ export function mailInstellingenPagina({ basis, inst, status, webhook, minuten, 
   </ul>` : '<p class="tegel__bij">Er wordt niets gewijzigd of aangemaakt; er wordt alleen gekeken.</p>'}
 </section>
 `;
-  return mailPagina({ titel: 'Instellingen', basis, actief: '/instellingen', inhoud, meldingen, kader });
+  return mailPagina({ titel: 'Mailinstellingen', basis, actief: '/instellingen', inhoud, meldingen, kader });
 }

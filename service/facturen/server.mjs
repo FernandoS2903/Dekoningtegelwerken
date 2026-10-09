@@ -49,10 +49,11 @@ import {
 } from './lib/web.mjs';
 import { maakMailApp } from './mail.mjs';
 import { maakPortaal } from './portaal.mjs';
-import { overzicht } from './web/overzicht.mjs';
+import { dashboardPagina, overzicht } from './web/overzicht.mjs';
+import { leveranciersPagina } from './web/leveranciers.mjs';
 import { factuurPagina } from './web/factuur.mjs';
 import { instellingenPagina } from './web/instellingen.mjs';
-import { FILTERS } from './web/opmaak.mjs';
+import { FILTERS, SORTEER_KEUZES } from './web/opmaak.mjs';
 import { STATISCH, stuurStatisch } from './web/statisch.mjs';
 
 export { STATISCH };
@@ -106,6 +107,13 @@ export function maakFacturenApp({
   }
 
   const meldingenUit = (zoekparams) => meldingenVan(zoekparams, MELDINGEN);
+
+  // Het dashboard; het portaal zet het op /, met de mailtellingen erbij.
+  function dashboard({ meldingen = [], kader = null, mail = null, offertesUrl = '' } = {}) {
+    return dashboardPagina({
+      basis, opslag, inst: leesInstellingen(), nu: nu(), meldingen, syncBezig: sync.bezig(), kader, mail, offertesUrl,
+    });
+  }
 
   // -- PDF uitleveren --------------------------------------------------
   function stuurPdf(res, factuur) {
@@ -255,14 +263,27 @@ export function maakFacturenApp({
       const inst = leesInstellingen();
       const meldingen = meldingenUit(url.searchParams);
 
-      // Overzicht
+      // Facturenoverzicht
       if (pad === '/' && req.method === 'GET') {
         const gevraagd = url.searchParams.get('filter') || 'open';
         const filter = FILTERS.some(([s]) => s === gevraagd) ? gevraagd : 'open';
         const zoek = (url.searchParams.get('zoek') || '').trim().slice(0, 100);
+        const gewenst = url.searchParams.get('sorteer') || '';
+        const sorteer = SORTEER_KEUZES.some(([s]) => s === gewenst) ? gewenst : '';
         return stuurHtml(res, 200, overzicht({
-          basis, opslag, inst, filter, zoek, nu: nu(), meldingen, syncBezig: sync.bezig(), kader,
+          basis, opslag, inst, filter, zoek, sorteer, nu: nu(), meldingen, syncBezig: sync.bezig(), kader,
         }));
+      }
+
+      // Dashboard (op het portaal de startpagina; hier ook bereikbaar)
+      if (pad === '/dashboard' && req.method === 'GET') {
+        return stuurHtml(res, 200, dashboard({ meldingen, kader }));
+      }
+
+      // Leveranciers
+      if (pad === '/leveranciers' && req.method === 'GET') {
+        const zoek = (url.searchParams.get('zoek') || '').trim().slice(0, 100);
+        return stuurHtml(res, 200, leveranciersPagina({ basis, opslag, nu: nu(), zoek, meldingen, kader }));
       }
 
       // Nu synchroniseren: op de achtergrond, zodat het verzoek niet wacht.
@@ -324,7 +345,9 @@ export function maakFacturenApp({
         const actie = factuurPad[2] || null;
 
         if (req.method === 'GET' && !actie) {
-          return stuurHtml(res, 200, factuurPagina({ basis, opslag, inst, factuur, nu: nu(), meldingen, kader }));
+          // ?deel=paneel: alleen de inhoud, voor het zijpaneel naast de lijst.
+          const alleenInhoud = url.searchParams.get('deel') === 'paneel';
+          return stuurHtml(res, 200, factuurPagina({ basis, opslag, inst, factuur, nu: nu(), meldingen, kader, alleenInhoud }));
         }
         if (req.method === 'GET' && actie === 'pdf') return stuurPdf(res, factuur);
         if (req.method === 'POST' && actie) return doeActie(res, factuur, actie, await lees());
@@ -341,7 +364,7 @@ export function maakFacturenApp({
     }
   }
 
-  return { handle, sync, opslag, basis };
+  return { handle, sync, opslag, basis, dashboard };
 }
 
 // -- los factuurdashboard met Basic Auth -------------------------------------

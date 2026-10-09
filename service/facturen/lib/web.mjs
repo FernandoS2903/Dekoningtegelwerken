@@ -16,6 +16,8 @@ export const CSP = [
   "font-src 'self'",
   "img-src 'self' data:",
   "script-src 'self'",
+  // fetch naar de eigen dienst: het zijpaneel en het verversen van de lijst.
+  "connect-src 'self'",
   "object-src 'self'",
   "form-action 'self' https://login.microsoftonline.com",
   "base-uri 'none'",

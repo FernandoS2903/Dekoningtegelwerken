@@ -17,9 +17,7 @@ export function uitslagRegel(naam, uitslag) {
 }
 
 export function instellingenPagina({ basis, opslag, inst, test = null, meldingen = [], kader = null }) {
-  const inhoud = `<h1>Instellingen</h1>
-
-<form method="post" action="${basis}/instellingen">
+  const inhoud = `<form method="post" action="${basis}/instellingen">
   <fieldset class="veldgroep">
     <legend>Boekhouder</legend>
     <p>
@@ -94,5 +92,8 @@ export function instellingenPagina({ basis, opslag, inst, test = null, meldingen
 </section>
 `;
 
-  return pagina({ titel: 'Instellingen', basis, actief: '/instellingen', inhoud, meldingen, kader });
+  return pagina({
+    titel: 'Instellingen', basis, actief: '/instellingen', inhoud, meldingen, kader, onderdeel: 'Instellingen',
+    subnav: kader ? [{ pad: `${basis}/instellingen`, naam: 'Facturen', actief: true }, { pad: '/mail/instellingen', naam: 'Mail' }] : null,
+  });
 }

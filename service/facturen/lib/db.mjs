@@ -163,6 +163,20 @@ export const UITGELEZEN_VELDEN = [
   'bedrag', 'valuta', 'iban', 'betalingskenmerk', 'omschrijving',
 ];
 
+// Sorteringen van de factuurlijst: sleutel in de URL -> ORDER BY.
+export const SORTERINGEN = {
+  'leverancier': "lower(coalesce(leverancier, afzender_naam, afzender_email, '')) ASC, id DESC",
+  'leverancier-af': "lower(coalesce(leverancier, afzender_naam, afzender_email, '')) DESC, id DESC",
+  'datum': 'coalesce(factuurdatum, substr(ontvangen, 1, 10)) ASC, id ASC',
+  'datum-af': 'coalesce(factuurdatum, substr(ontvangen, 1, 10)) DESC, id DESC',
+  'vervaldatum': 'vervaldatum IS NULL, vervaldatum ASC, id DESC',
+  'vervaldatum-af': 'vervaldatum IS NULL, vervaldatum DESC, id DESC',
+  'bedrag': 'bedrag IS NULL, bedrag ASC, id DESC',
+  'bedrag-af': 'bedrag IS NULL, bedrag DESC, id DESC',
+  'status': "CASE status WHEN 'open' THEN 0 WHEN 'betaald' THEN 1 ELSE 2 END, id DESC",
+  'status-af': "CASE status WHEN 'open' THEN 2 WHEN 'betaald' THEN 1 ELSE 0 END, id DESC",
+};
+
 export function openDatabase(pad) {
   mkdirSync(path.dirname(pad), { recursive: true });
   const db = new DatabaseSync(pad);
@@ -312,7 +326,9 @@ export function maakOpslag(db) {
     },
 
     // -- lijst en tegels -------------------------------------------------
-    lijst(filter, zoek, nu) {
+    // `sorteer` is een sleutel uit SORTERINGEN; alles anders valt terug op de
+    // standaardvolgorde (open eerst, op vervaldatum).
+    lijst(filter, zoek, nu, sorteer = '') {
       const waarden = [];
       let waar = '1 = 1';
       if (filter === 'open') waar = "status = 'open'";
@@ -334,15 +350,53 @@ export function maakOpslag(db) {
 
       // Open facturen eerst op vervaldatum (zonder datum achteraan), de rest
       // op wat er het laatst gebeurde.
-      return db.prepare(`
-        SELECT * FROM facturen WHERE ${waar}
-        ORDER BY
+      const volgorde = SORTERINGEN[sorteer] || `
           CASE WHEN status = 'open' THEN 0 ELSE 1 END,
           CASE WHEN status = 'open' AND vervaldatum IS NULL THEN 1 ELSE 0 END,
           CASE WHEN status = 'open' THEN vervaldatum END ASC,
           coalesce(betaald_op, ontvangen, aangemaakt_op) DESC,
-          id DESC
-        LIMIT 500`).all(...waarden);
+          id DESC`;
+      return db.prepare(`SELECT * FROM facturen WHERE ${waar} ORDER BY ${volgorde} LIMIT 500`).all(...waarden);
+    },
+
+    // Alles wat aandacht vraagt, voor het dashboard: mislukt uitlezen, een
+    // voorstel dat bevestigd moet worden, verlopen, en betaald maar nog niet
+    // doorgestuurd. Eén regel per factuur, met de reden erbij.
+    actieVereist(nu, max = 8) {
+      return db.prepare(`
+        SELECT *,
+          CASE
+            WHEN uitlees_status = 'mislukt' THEN 'uitlezen mislukt'
+            WHEN status = 'open' AND suggestie_betaling_id IS NOT NULL THEN 'betaling gevonden, bevestigen'
+            WHEN status = 'open' AND vervaldatum IS NOT NULL AND vervaldatum < ? THEN 'verlopen'
+            WHEN status = 'betaald' AND doorgestuurd_op IS NULL THEN 'nog naar de boekhouder'
+          END AS actie
+        FROM facturen
+        WHERE uitlees_status = 'mislukt'
+           OR (status = 'open' AND suggestie_betaling_id IS NOT NULL)
+           OR (status = 'open' AND vervaldatum IS NOT NULL AND vervaldatum < ?)
+           OR (status = 'betaald' AND doorgestuurd_op IS NULL)
+        ORDER BY
+          CASE WHEN uitlees_status = 'mislukt' THEN 0 WHEN suggestie_betaling_id IS NOT NULL THEN 1
+               WHEN status = 'open' THEN 2 ELSE 3 END,
+          vervaldatum ASC, id DESC
+        LIMIT ?`).all(nu, nu, Number(max));
+    },
+
+    // Per leverancier: aantal, totaal, open en verlopen bedrag, laatste factuur.
+    leveranciers(nu) {
+      return db.prepare(`
+        SELECT coalesce(nullif(leverancier, ''), '(onbekend)') AS leverancier,
+               count(*) AS aantal,
+               coalesce(sum(bedrag), 0) AS som,
+               coalesce(sum(CASE WHEN status = 'open' THEN bedrag END), 0) AS open_som,
+               sum(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_aantal,
+               sum(CASE WHEN status = 'open' AND vervaldatum IS NOT NULL AND vervaldatum < ? THEN 1 ELSE 0 END) AS verlopen_aantal,
+               max(coalesce(factuurdatum, substr(ontvangen, 1, 10))) AS laatste
+        FROM facturen
+        WHERE status != 'genegeerd'
+        GROUP BY leverancier
+        ORDER BY open_som DESC, som DESC, leverancier`).all(nu);
     },
 
     tegels(nu) {

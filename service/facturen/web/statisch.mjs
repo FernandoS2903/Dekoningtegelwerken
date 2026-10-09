@@ -17,6 +17,8 @@ export const STATISCH = {
   // naast de dienst en worden alleen gelezen.
   '/fonts/fraunces-latin-opsz-wght.woff2': [path.join(REPO, 'assets/fonts/fraunces-latin-opsz-wght.woff2'), 'font/woff2'],
   '/fonts/inter-latin-wght.woff2': [path.join(REPO, 'assets/fonts/inter-latin-wght.woff2'), 'font/woff2'],
+  // Het paarse origineel, overal hetzelfde (besluit Bob, 4 okt 2026).
+  '/logo.svg': [path.join(REPO, 'assets/brand/logo.svg'), 'image/svg+xml'],
 };
 
 export function stuurStatisch(res, pad) {

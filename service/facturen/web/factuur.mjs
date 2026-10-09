@@ -1,9 +1,13 @@
 // Scherm 2: één factuur behandelen. Links het document, rechts de gegevens,
 // de acties en de geschiedenis.
+//
+// Met `alleenInhoud` komt alleen het binnenste terug (geen pagina eromheen):
+// dat laadt dashboard.js op desktop in het zijpaneel naast de lijst. Zonder
+// JavaScript en op mobiel is het een gewone pagina.
 
 import { datumNl, escapeHtml as e, euro, vandaag } from '../lib/hulp.mjs';
 import { magAutomatisch } from '../lib/doorsturen.mjs';
-import { geschiedenis, pagina, vlag } from './opmaak.mjs';
+import { geschiedenis, metCsrf, melding, pagina, vlag, icoon } from './opmaak.mjs';
 
 const veld = (naam, label, waarde, { type = 'text', hint = '' } = {}) => `<p>
   <label for="v-${naam}">${e(label)}</label>
@@ -24,14 +28,14 @@ function betalingBlok(betaling, { score, basis, factuurId, voorstel }) {
   </ul>
   <p class="tegel__bij">Zekerheid ${procent}%</p>
   <div class="zekerheid" role="img" aria-label="Zekerheid ${procent} procent"><span data-deel="${procent}"></span></div>
-  ${voorstel ? `<form method="post" action="${basis}/factuur/${factuurId}/koppel">
+  ${voorstel ? `<form method="post" action="${basis}/factuur/${factuurId}/koppel" data-bevestig="Deze betaling koppelen en de factuur op betaald zetten?">
     <input type="hidden" name="betaling_id" value="${e(betaling.id)}">
     <div class="knoppen"><button class="knop" type="submit">Klopt, koppel deze betaling</button></div>
   </form>` : ''}
 </section>`;
 }
 
-export function factuurPagina({ basis, opslag, inst, factuur, nu = vandaag(), meldingen = [], kader = null }) {
+export function factuurPagina({ basis, opslag, inst, factuur, nu = vandaag(), meldingen = [], kader = null, alleenInhoud = false }) {
   const naam = factuur.leverancier || factuur.afzender_naam || factuur.afzender_email || '(onbekende afzender)';
   const gekoppeld = opslag.betaling(factuur.bunq_betaling_id);
   const voorstel = factuur.status === 'open' ? opslag.betaling(factuur.suggestie_betaling_id) : null;
@@ -56,10 +60,13 @@ export function factuurPagina({ basis, opslag, inst, factuur, nu = vandaag(), me
             ? 'Gaat ook automatisch mee met de volgende ronde.'
             : `Gaat niet automatisch mee: ${automatisch.reden}.`;
 
-  const inhoud = `<p><a class="terug" href="${basis}/">← Terug naar het overzicht</a></p>
-<h1>${e(naam)}</h1>
-<p>${vlag(factuur, nu)} ${factuur.factuurnummer ? e('factuur ' + factuur.factuurnummer) : ''}
-  ${factuur.bedrag === null ? '' : '· ' + e(euro(factuur.bedrag, factuur.valuta))}</p>
+  const kop = `<div class="factuurkop">
+  <p class="factuurkop__sub">${vlag(factuur, nu)} ${factuur.factuurnummer ? e('factuur ' + factuur.factuurnummer) : ''}${factuur.factuurdatum ? ` · ${e(datumNl(factuur.factuurdatum))}` : ''}</p>
+  <p class="factuurkop__bedrag">${factuur.bedrag === null ? '—' : e(euro(factuur.bedrag, factuur.valuta))}</p>
+</div>`;
+
+  const inhoud = `${alleenInhoud ? `<header class="zijpaneel__kop"><h2>${e(naam)}</h2><a class="knop knop--rustig knop--klein" href="${basis}/factuur/${factuur.id}" data-paneel-open>Open als pagina</a><button class="knop knop--rustig knop--klein knop--icoon" type="button" data-paneel-sluit aria-label="Sluiten">${icoon('sluit')}</button></header>${meldingen.map(melding).join('')}` : `<p><a class="terug" href="${basis}/">← Alle facturen</a></p>`}
+${kop}
 
 ${factuur.uitlees_status === 'mislukt'
     ? `<div class="melding melding--fout" role="alert"><p>Uitlezen mislukt: ${e(factuur.uitlees_fout || 'onbekende fout')}</p></div>`
@@ -80,7 +87,8 @@ ${factuur.uitlees_status === 'geen_factuur' ? '<div class="melding"><p>Volgens h
     ? `<form method="post" action="${basis}/factuur/${factuur.id}/open">
         <div class="knoppen"><button class="knop knop--rustig" type="submit">Terug naar open</button></div>
       </form>`
-    : `<form method="post" action="${basis}/factuur/${factuur.id}/betaald">
+    : `<form method="post" action="${basis}/factuur/${factuur.id}/betaald" class="betaaldformulier"
+        data-bevestig="Deze factuur op betaald zetten?">
         <p>
           <label for="betaald_op">Betaald op</label>
           <input type="date" id="betaald_op" name="betaald_op" value="${e(nu)}">
@@ -100,7 +108,7 @@ ${factuur.uitlees_status === 'geen_factuur' ? '<div class="melding"><p>Volgens h
       <div class="knoppen">
         ${factuur.status === 'genegeerd'
     ? `<form method="post" action="${basis}/factuur/${factuur.id}/open"><button class="knop knop--rustig" type="submit">Niet meer negeren</button></form>`
-    : `<form method="post" action="${basis}/factuur/${factuur.id}/negeren"><button class="knop knop--rustig" type="submit">Negeren</button></form>`}
+    : `<form method="post" action="${basis}/factuur/${factuur.id}/negeren" data-bevestig="Deze factuur negeren? Hij telt dan nergens meer mee."><button class="knop knop--rustig" type="submit">Negeren</button></form>`}
         <form method="post" action="${basis}/factuur/${factuur.id}/opnieuw"><button class="knop knop--rustig" type="submit">Opnieuw uitlezen</button></form>
       </div>
     </section>
@@ -148,5 +156,6 @@ ${factuur.uitlees_status === 'geen_factuur' ? '<div class="melding"><p>Volgens h
 </div>
 `;
 
-  return pagina({ titel: naam, basis, actief: '/', inhoud, meldingen, kader });
+  if (alleenInhoud) return kader ? metCsrf(inhoud, kader.csrf) : inhoud;
+  return pagina({ titel: naam, basis, actief: '/', inhoud, meldingen, kader, onderdeel: 'Facturen', menu: kader ? [] : undefined });
 }

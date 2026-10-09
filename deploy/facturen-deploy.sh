@@ -9,8 +9,8 @@
 # Veilig door opzet:
 #  - Er wordt een schone kopie van de gecommitte branch gemaakt (git archive);
 #    niet-gecommitte bestanden in de werkmap gaan dus nooit mee.
-#  - Alleen wat de dienst nodig heeft: service/ en assets/fonts/ (het dashboard
-#    levert de lettertypen van de site zelf uit). De rest van de site, docs/,
+#  - Alleen wat de dienst nodig heeft: service/, assets/fonts/ en het logo
+#    (het portaal levert de lettertypen en het logo van de site zelf uit). De rest van de site, docs/,
 #    deploy/ en test/ blijven erbuiten.
 #  - rsync --delete werkt alleen binnen de doelmap, en het script weigert elk
 #    ander doel dan /opt/dekoning-facturen.
@@ -75,6 +75,8 @@ rsync_opties=(
   --include='/service/facturen/***'
   --include='/assets/'
   --include='/assets/fonts/***'
+  --include='/assets/brand/'
+  --include='/assets/brand/logo.svg'
   --exclude='*'
 )
 

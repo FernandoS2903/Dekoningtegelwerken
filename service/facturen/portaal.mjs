@@ -28,7 +28,7 @@ import {
   bezoekerIp, doorsturen, kop, leesBody, leesRuw, stuurHtml, stuurTekst, zelfdeHerkomst, zelfdeTekst,
 } from './lib/web.mjs';
 import { STATISCH, stuurStatisch } from './web/statisch.mjs';
-import { losPagina, startPagina } from './web/portaal.mjs';
+import { losPagina } from './web/portaal.mjs';
 
 export const MAX_NOTIFY_BYTES = 256 * 1024;
 const IS_HEADERWAARDE = /^[\x21-\x7e]{1,254}$/;
@@ -175,12 +175,11 @@ export function maakPortaal({
   }
 
   // -- startpagina -----------------------------------------------------------
+  // Het financiële dashboard, met de mailtellingen erbij.
   function start(res, kader) {
-    const tegels = opslag.tegels(vandaag());
     const week = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
-    return stuurHtml(res, 200, startPagina({
+    return stuurHtml(res, 200, facturen.dashboard({
       kader,
-      facturen: { open: tegels.open.aantal, verlopen: tegels.verlopen.aantal },
       mail: sorteerOpslag.tellingen({ vandaagVanaf: middernachtAmsterdam(), weekVanaf: week }),
       offertesUrl,
     }));
@@ -209,7 +208,7 @@ export function maakPortaal({
         }
       }
 
-      const kader = { naam: persoon.naam, email: persoon.email, modus: persoon.modus, csrf: persoon.csrf };
+      const kader = { naam: persoon.naam, email: persoon.email, modus: persoon.modus, csrf: persoon.csrf, offertesUrl };
       const ctx = { kader, body };
 
       if (pad === '/' && req.method === 'GET') return start(res, kader);
