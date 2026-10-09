@@ -426,9 +426,15 @@ Branch vanaf `main` (= 8c332c5, het portaal is op 9 okt naar main gegaan).
   `facturen-browser.mjs`: 45/45. Klikvlakken ≥ 48 px op mobiel (`--tik`
   3rem, op desktop 2,5rem).
 
+## Live
+
+Bob: "Ja mag naar live" (9 okt 2026). `main` = 957dd2c (fast-forward),
+`/opt/dekoning-facturen` bijgewerkt, dienst herstart 17:09 CEST; sessies
+bleven geldig. Bob was om 16:37 CEST voor het eerst ingelogd (fase C stap 7
+klaar); er is nog geen mail gesorteerd omdat er sinds het startpunt niets
+binnenkwam.
+
 ## Open
 
-- Nog niet uitgerold op cms.; wacht op akkoord van Bob (en zijn eerste
-  login, fase C stap 7).
-- Punt 6 en verder van de opdracht ontbreken nog.
+- Punt 6 en verder van de redesign-opdracht ontbreken nog.
 
