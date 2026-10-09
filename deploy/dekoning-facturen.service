@@ -1,14 +1,15 @@
-# Factuurdashboard De Koning Tegelwerken.
+# Portaal De Koning Tegelwerken: factuurdashboard + mailsorteerder.
 #
-# Voorbeeld; Bob zet dit zelf neer. Zie deploy/README.md voor de volgorde.
+# Voorbeeld; zie deploy/README-factuurdashboard.md en deploy/CMS-INSTALLATIE.md.
 #   cp deploy/dekoning-facturen.service /etc/systemd/system/
 #   systemctl daemon-reload && systemctl enable --now dekoning-facturen
 #
-# De dienst luistert op 127.0.0.1:8132 en is alleen via het tailnet bereikbaar
-# (tailscale serve), met Basic Auth erbovenop. Niets publiek.
+# De dienst luistert alleen op 127.0.0.1:8132. Publiek wordt hij pas via de
+# nginx-vhost cms.dekoningtegelwerken.nl, en alleen met inloggen via
+# Microsoft (SSO). Zonder SSO: Basic Auth, alleen lokaal.
 
 [Unit]
-Description=Factuurdashboard De Koning Tegelwerken
+Description=Portaal De Koning Tegelwerken (facturen en mailsorteerder)
 Documentation=file:/opt/dekoning-facturen/service/facturen/server.mjs
 After=network-online.target
 Wants=network-online.target

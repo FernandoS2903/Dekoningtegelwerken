@@ -6,8 +6,10 @@ hero, het lettertype, de mobiele polish en de leesbaarheid van de hero-kop
 Werk dit bestand bij aan het eind van elke fase.
 
 > **Naast de website loopt sinds 5 oktober 2026 een tweede spoor:** het interne
-> **factuurdashboard** op `feature/factuurdashboard`. Dat heeft niets met de
-> publieke site te maken en staat onderaan dit bestand beschreven.
+> **factuurdashboard** op `feature/factuurdashboard`, sinds 9 oktober uitgebreid
+> tot **portaal met mailsorteerder** op `feature/mailsorteerder-portaal`. Dat
+> heeft niets met de publieke site te maken en staat onderaan dit bestand
+> beschreven.
 
 ## Waar staan we
 
@@ -223,3 +225,141 @@ installeren en starten, poort 8132 in `/etc/handsfree/poorten.md` zetten en
 in testmodus nakijken, en `/var/lib/dekoning-facturen` in de back-up opnemen.
 De datamap zelf hoeft hij niet aan te maken: `StateDirectory` in de unit doet
 dat op 0700.
+
+---
+
+# Portaal en mailsorteerder (9 oktober 2026)
+
+Opdracht van Bob, ongewijzigd in
+[`docs/opdrachten/mailsorteerder-portaal.md`](opdrachten/mailsorteerder-portaal.md),
+met onderaan zijn antwoorden en correcties bij de go voor fase B.
+
+**Branch:** `feature/mailsorteerder-portaal`, vanaf `feature/factuurdashboard`
+(9089913). Niet gemerged; mergen doet Bob.
+
+## Stand per fase
+
+- **Fase 0 (klaar):** het factuurdashboard draait sinds 9 okt op hfd-web01:
+  gebruiker `dekoning-facturen`, poort 8132 in `/etc/handsfree/poorten.md`,
+  code `feature/factuurdashboard` (9089913) in `/opt/dekoning-facturen`, unit
+  enabled. Alleen lokaal, Basic Auth (gebruiker `bob`). Na de RBAC-fix van Bob:
+  verbindingstest Microsoft 365 in orde (map Facturen gevonden in
+  info@dekoningtegelwerken.nl); eerste ronde 10 mails, 11 PDF's ingelezen,
+  **niets doorgestuurd** (geen boekhouderadres, testmodus aan). De draaiende
+  dienst kent de `ANTHROPIC_API_KEY` pas na een herstart (die hoort bij fase C).
+- **Fase A (klaar):** inventaris en plan, akkoord van Bob met correcties.
+- **Fase B (klaar):** gebouwd, getest en gepusht; het systeem is niet
+  aangeraakt (alleen een alleen-lezen controle van de delta query op de
+  mailbox en een `--droog` van het deploy-script).
+- **Fase C (open):** zie [`deploy/CMS-INSTALLATIE.md`](../deploy/CMS-INSTALLATIE.md).
+
+## Mailtoegang (besluit Bob, 9 okt 2026)
+
+De mail-app (`dcab51df-…`) heeft Application `Mail.ReadWrite` + `Mail.Send`
+**alleen via Exchange RBAC for Applications**, scope `Scope-FactuurdashboardDKT`
+op info@dekoningtegelwerken.nl (getest: InScope True voor DKT, False voor
+andere mailboxen). In Entra staan **geen** Mail-rechten. De tenant wordt
+gedeeld met andere mailboxen en domeinen van Bob en klanten: **toegang via
+RBAC-scope op één mailbox; nooit Entra Mail-rechten toevoegen.** Met RBAC
+staat er geen roles-claim in het token; "Verbindingen testen" kijkt echt in de
+mailbox. Dezelfde app leest de facturen, sorteert en stuurt door.
+
+## Opbouw
+
+Eén dienst (`service/facturen/`, unit `dekoning-facturen`, 127.0.0.1:8132):
+
+| Pad | Wat |
+|---|---|
+| `/` | startpagina: tegels Facturen (open/verlopen), Mail (vandaag gesorteerd, te controleren), Offertes (link naar de Offerteknop-tenant met eigen login) |
+| `/facturen/` | het factuurdashboard (`maakFacturenApp` in `server.mjs`) |
+| `/mail/` | logboek met filters, Terugzetten, Andere map (met "altijd" → regel); `/mail/regels`; `/mail/instellingen` (`mail.mjs`, `web/mail.mjs`) |
+| `/auth/*` | login, callback, logout, uitgelogd, check (`portaal.mjs`) |
+| `/graph/notify` | webhook van Graph, zonder login |
+
+| Bestand | Wat |
+|---|---|
+| `lib/mail/koppeling.mjs` | de vaste mailinterface (`nieuweBerichten`, `verplaats`, `categorie`, `doorsturen`, `mapAanmaken` + ondersteunend), gekozen op `MAIL_PROVIDER`; nu alleen `m365` (`lib/mail/m365.mjs`). Een Gmail-adapter komt ernaast zonder verbouwing. |
+| `lib/graph.mjs` | uitgebreid met delta query op de Inbox, move, mappen onder Inbox, subscriptions |
+| `lib/sorteren.mjs` | de sorteerder; `lib/classificeer.mjs` (Claude, `SORT_MODEL`); `lib/sorteer-opslag.mjs`; `lib/webhook.mjs` |
+| `lib/oidc.mjs`, `lib/sessies.mjs` | Entra-login en sessies |
+| `lib/web.mjs`, `web/statisch.mjs` | gedeelde http-hulp en statische bestanden |
+| `deploy/nginx/`, `deploy/fail2ban/`, `deploy/CMS-INSTALLATIE.md` | fase C |
+
+Schema versie 2: `sorteer_log`, `sorteer_regels`, `sorteer_staat`, `sessies`,
+`oidc_pogingen` (alleen nieuwe tabellen).
+
+## Hoe de sorteerder beslist
+
+1. Eerste ronde: alleen een startpunt (deltaLink met filter op
+   `receivedDateTime ge nu`); bestaande inboxmail wordt nooit gesorteerd. Een
+   verlopen deltaLink (410) geeft een nieuw startpunt.
+2. Overslaan: agenda (`eventMessage`), gemarkeerd, concept, de eigen mailbox,
+   het eigen domein (behalve een adres dat Bob zelf als adresregel of
+   website-afzender opgaf). Ook overgeslagen: een mail die al eens langs is
+   geweest (herkend aan `internetMessageId`, dus ook na terugzetten) en een
+   oude mail die alleen gewijzigd is.
+3. Regels uit de database (adres wint van domein, subdomeinen tellen mee;
+   een regel kan ook "Inbox" zijn = laten staan) → website-afzenders
+   (instelling, standaard leeg; Bob vult die later) naar `Offerteaanvragen`
+   zonder AI → Claude met afzender, onderwerp, 1500 tekens en bijlagenamen.
+   Het antwoord telt alleen als het een bestaande map is met een zekerheid
+   tussen 0 en 1.
+4. Claude ≥ drempel (0,75) → verplaatsen, nieuw id bewaren; daaronder categorie
+   `Controleren`. Map uit → blijft staan. Fout → blijft staan, in het logboek.
+   Zonder Claude-sleutel → "niet beoordeeld", blijft staan.
+5. Eén ronde tegelijk; een seintje tijdens een ronde geeft precies één
+   vervolgronde. Polling elke `SORT_INTERVAL_MIN` (5); de webhook alleen als SSO
+   aan staat, `PORTAL_BASE_URL` en `GRAPH_WEBHOOK_SECRET` gevuld zijn. De
+   subscription loopt 3 dagen en wordt verlengd als er minder dan een dag over
+   is; validationToken wordt alleen beantwoord tijdens het aanmaken.
+
+## Inloggen
+
+- SSO staat pas aan als `PORTAL_BASE_URL` (https), tenant-GUID,
+  `ENTRA_PORTAL_CLIENT_ID`, `ENTRA_PORTAL_CLIENT_SECRET`,
+  `PORTAL_ALLOWED_EMAILS` en `SESSION_SECRET` (≥ 32) er allemaal zijn; anders
+  Basic Auth (alleen lokaal). De journal zegt bij de start welke het is.
+- OIDC code + PKCE (S256), state (eenmalig, 10 min, gebonden aan een
+  `__Host-dkt_login`-cookie) en nonce. id_token zelf gecontroleerd: RS256 tegen
+  de JWKS van de tenant (cache 24 uur, onbekende kid hooguit eens per 5 min
+  opnieuw), iss, aud, tid, exp/nbf (2 min marge), nonce. Daarna de allowlist
+  op `preferred_username`/`email`; leeg = niemand.
+- Sessie in SQLite (alleen een HMAC van het token), cookie `__Host-dkt_sessie`,
+  Secure, HttpOnly, SameSite=Lax, 8 uur schuivend. CSRF-token per sessie in
+  elk POST-formulier (ook uitloggen), naast de herkomstcontrole.
+- `form-action` in de CSP staat ook `login.microsoftonline.com` toe: uitloggen
+  eindigt met een redirect naar de logout van Microsoft.
+- Offerteknop blijft ongewijzigd (besluit Bob): de tegel linkt naar de tenant
+  met zijn eigen login. Het platformbrede SSO-geheim van Offerteknop komt niet
+  naar cms. Het `auth_request`-blok voor `/offertes/` staat uitgecommentarieerd
+  in de vhost, klaar voor als Offerteknop `X-Portal-User` vertrouwt.
+
+## Getest (9 okt 2026)
+
+- `node --test test/*.test.mjs`: **181/181** (11 site, 83 facturen, 87 nieuw:
+  mailinterface, sorteren, webhook, OIDC/sessies, portaal over http). Graph,
+  Claude en Entra nagebootst; Entra met eigen RSA-sleutels en JWKS.
+- `node test/portaal-browser.mjs`: **33/33**; `node test/facturen-browser.mjs`:
+  **35/35**. `test/cdp.mjs` start Chromium nu via `timeout -k 5`.
+- `nginx -t` op een losse kopie van de vhost (met het bestaande certificaat
+  ingevuld); `fail2ban-regex` op voorbeeldregels; een proefstart van de nieuwe
+  dienst op een vrije poort met lege env (Basic Auth, alle pagina's 200).
+- Alleen-lezen tegen de echte mailbox: delta query met filter en vervolgronde,
+  submappen van de Inbox (nu alleen `Facturen`). `claude-haiku-4-5` antwoordt
+  200 bij de API.
+- **Niet getest:** een echte Entra-login, een echte webhook-subscription en een
+  echte move; die komen in fase C.
+
+## Niet gebouwd
+
+- De optionele knop "Bestaande inbox sorteren" (eerst tellen, dan bevestigen).
+- Een echte één-login voor het offertebeheer (volgt in de Offerteknop-repo).
+
+## Open voor Bob
+
+Entra `DKT Portaal` aanmaken (stap 3 van `CMS-INSTALLATIE.md`), DNS voor
+`cms.`, akkoord voor fase C (inclusief fail2ban), website-afzenders invullen
+zodra bekend, bunq-sleutel, boekhouderadres, back-up van
+`/var/lib/dekoning-facturen`. Verder AVG: mailinhoud (1500 tekens) gaat naar
+Anthropic als er geen regel past.
+

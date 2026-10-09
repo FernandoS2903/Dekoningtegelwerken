@@ -64,9 +64,9 @@ if [[ ! -f "$tmp/service/facturen/server.mjs" ]]; then
 fi
 
 echo "Syntaxcontrole van de dienst..."
-for bestand in "$tmp"/service/facturen/server.mjs "$tmp"/service/facturen/lib/*.mjs "$tmp"/service/facturen/web/*.mjs; do
+while IFS= read -r -d '' bestand; do
   node --check "$bestand" >/dev/null
-done
+done < <(find "$tmp/service/facturen" -name '*.mjs' -print0)
 
 rsync_opties=(
   --recursive --times --delete --delete-excluded --checksum

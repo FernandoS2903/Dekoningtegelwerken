@@ -1,13 +1,29 @@
-# Factuurdashboard — stappen voor Bob
+# Factuurdashboard en mailsorteerder — stappen voor Bob
 
-Het factuurdashboard is een losse Node-dienst (`service/facturen/`) die de map
-**Inbox › Facturen** van de Microsoft 365-mailbox uitleest, de facturen met de
-Claude API laat uitlezen, ze koppelt aan uitgaande bunq-betalingen en betaalde
-facturen naar de boekhouder doorstuurt.
+Eén Node-dienst (`service/facturen/`, unit `dekoning-facturen`) met:
 
-Het staat **niet** op de website. Het luistert op `127.0.0.1:8132`, is alleen
-via het tailnet bereikbaar (`tailscale serve`) en heeft daarbovenop Basic Auth.
-Er komt geen nginx-vhost bij en er gaat niets open naar buiten.
+- het **factuurdashboard** (`/facturen/`): leest de map **Inbox › Facturen** van
+  de Microsoft 365-mailbox, laat de facturen met de Claude API uitlezen, koppelt
+  ze aan uitgaande bunq-betalingen en stuurt betaalde facturen door naar de
+  boekhouder;
+- de **mailsorteerder** (`/mail/`): zet nieuwe mail in de Inbox in de juiste
+  map (regels, website-afzenders, Claude), zie
+  `docs/opdrachten/mailsorteerder-portaal.md`;
+- het **portaal** (`/`): één login met Microsoft voor beide.
+
+Het staat **niet** op de website. Het luistert alleen op `127.0.0.1:8132`.
+Zolang inloggen met Microsoft (SSO) niet is ingesteld, is het alleen lokaal
+bereikbaar met Basic Auth. Publiek op `https://cms.dekoningtegelwerken.nl` gaat
+het pas met SSO, via de stappen in [`CMS-INSTALLATIE.md`](CMS-INSTALLATIE.md).
+Geen `tailscale serve` en geen `portal.`-subdomein (besluit Bob, 9 okt 2026).
+
+> **Toegang tot de mailbox.** De app heeft Application `Mail.ReadWrite` en
+> `Mail.Send` **alleen via de RBAC-scope** `Scope-FactuurdashboardDKT` op
+> `info@dekoningtegelwerken.nl` (Exchange RBAC for Applications). De tenant wordt
+> gedeeld met andere mailboxen en domeinen van Bob en klanten: toegang via
+> RBAC-scope op één mailbox; **nooit Entra Mail-rechten toevoegen**, want die
+> gelden voor elke mailbox in de tenant. Met RBAC staat er geen roles-claim in
+> het token; "Verbindingen testen" kijkt daarom echt in de mailbox.
 
 | Bestand | Wat |
 |---|---|
@@ -15,6 +31,9 @@ Er komt geen nginx-vhost bij en er gaat niets open naar buiten.
 | `facturen.env.voorbeeld` | Alle instellingen met placeholders. Kopiëren naar `/etc/dekoning/facturen.env` (600). |
 | `facturen-deploy.sh` | Zet een branch (gecommitte staat, via `git archive`) in `/opt/dekoning-facturen`. Herstart niets. |
 | `Setup-MailboxScope.ps1` | Draai jij op Windows: geeft de app toegang tot precies één mailbox via Exchange RBAC for Applications. |
+| `CMS-INSTALLATIE.md` | Fase C: het portaal live op `cms.dekoningtegelwerken.nl` (DNS, certificaat, Entra `DKT Portaal`, nginx, fail2ban). |
+| `nginx/cms.dekoningtegelwerken.nl.conf` | nginx-vhost voor het portaal. |
+| `fail2ban/dekoning-cms.conf`, `fail2ban/dekoning-cms.local` | Filter en jail op mislukte logins en 401's. |
 
 > **Over de bunq-sleutel.** Een bunq API-key geeft **volledige toegang** tot de
 > rekening. Dat dit dashboard alleen leest, zit in de code en niet in de
@@ -24,9 +43,14 @@ Er komt geen nginx-vhost bij en er gaat niets open naar buiten.
 
 ## 1. Entra: app-registratie (in de browser, portal.azure.com)
 
-De app krijgt **geen enkele Mail-permission**. Zou je `Mail.Read` of `Mail.Send`
-toekennen, dan kan de app bij élke mailbox in de tenant; de begrenzing tot één
-mailbox gebeurt in stap 2, in Exchange zelf.
+**Staat al** (9 okt 2026): app `dcab51df-…`, rechten via de RBAC-scope.
+Onderstaande stappen zijn er voor als het ooit opnieuw moet.
+
+De app krijgt in Entra **geen enkele Mail-permission**. Zou je `Mail.ReadWrite`
+of `Mail.Send` in Entra toekennen, dan kan de app bij élke mailbox in de
+gedeelde tenant; de begrenzing tot één mailbox gebeurt in stap 2, in Exchange
+zelf. De rechten `Mail.ReadWrite` + `Mail.Send` geeft het script daar, binnen de
+scope.
 
 1. **Entra ID › App registrations › New registration**. Naam bijvoorbeeld
    `De Koning Facturen`, accounts: *Single tenant*, geen redirect URI.
@@ -120,17 +144,12 @@ curl -sI http://127.0.0.1:8132/facturen/ | head -1                      # 401
 curl -sI -u 'GEBRUIKER:WACHTWOORD' http://127.0.0.1:8132/facturen/ | head -1   # 200
 ```
 
-**4.5 Bereikbaar maken via het tailnet**
+**4.5 Bereikbaar maken**
 
-```bash
-tailscale serve --bg --set-path /facturen http://127.0.0.1:8132
-tailscale serve status
-```
-
-Daarna staat het dashboard op `https://hfd-web01.tail20628d.ts.net/facturen/`,
-alleen voor apparaten in het tailnet. Het pad `/facturen` hoort bij
-`BASIS_PAD=/facturen` in de env: die twee moeten gelijk zijn. Zet je het op de
-root (`tailscale serve --bg http://127.0.0.1:8132`), maak `BASIS_PAD` dan leeg.
+Niet via het tailnet. Het portaal gaat publiek op
+`https://cms.dekoningtegelwerken.nl`, en pas als inloggen met Microsoft werkt:
+zie [`CMS-INSTALLATIE.md`](CMS-INSTALLATIE.md). Tot die tijd alleen lokaal:
+`curl -u bob:… http://127.0.0.1:8132/facturen/`.
 
 **4.6 De eerste rondes**
 
@@ -212,7 +231,24 @@ testmodus uit, staat automatisch doorsturen aan, en is de factuur betaald ná
 het moment waarop die schakelaar aanging? Elke overgeslagen factuur vertelt op
 zijn eigen pagina waarom hij niet automatisch meegaat.
 
-## 7. Bijwerken na nieuwe commits
+## 7. Mailsorteerder
+
+- De eerste ronde (een halve minuut na de start) legt alleen een **startpunt**
+  vast: bestaande inboxmail wordt nooit gesorteerd.
+- Ontbrekende mappen onder Inbox (`Offerteaanvragen`, `Klanten & projecten`,
+  `Leveranciers`, `Nieuwsbrieven & reclame`) worden bij de eerste echte ronde
+  aangemaakt, alleen als ze aan staan. `Facturen` is de map uit `M365_FOLDER`.
+- Regels, website-afzenders, de drempel (standaard 0,75) en de mappen stel je in
+  onder **Mail › Regels** en **Mail › Instellingen**.
+- Elke 5 minuten (`SORT_INTERVAL_MIN`) een controle; zodra het portaal publiek
+  is met SSO en `GRAPH_WEBHOOK_SECRET` gevuld is, komen er ook seintjes van
+  Microsoft (webhook op `/graph/notify`).
+- Er wordt nooit iets verwijderd of als gelezen gemarkeerd. Twijfel blijft in de
+  Inbox met de categorie **Controleren**.
+- De afzender, het onderwerp, de eerste 1500 tekens en de bijlagenamen van een
+  mail gaan naar Anthropic (Claude) als er geen regel of website-afzender past.
+
+## 8. Bijwerken na nieuwe commits
 
 ```bash
 /root/dekoning-tegelwerken/deploy/facturen-deploy.sh <branch>

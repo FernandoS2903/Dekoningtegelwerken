@@ -1,0 +1,15 @@
+# fail2ban-jail voor cms.dekoningtegelwerken.nl — VOORBEELD voor fase C.
+# Plaatsen als /etc/fail2ban/jail.d/dekoning-cms.local (pas na akkoord van Bob),
+# daarna: fail2ban-client reload && fail2ban-client status dekoning-cms
+#
+# Tien mislukkingen in tien minuten: een uur geblokkeerd. Ruim genoeg voor
+# iemand die een paar keer verkeerd inlogt.
+
+[dekoning-cms]
+enabled  = true
+port     = http,https
+filter   = dekoning-cms
+logpath  = /var/log/nginx/cms.dekoningtegelwerken.nl.access.log
+maxretry = 10
+findtime = 10m
+bantime  = 1h
