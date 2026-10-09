@@ -179,13 +179,49 @@ test('met sessie geven alle pagina\'s 200, met noindex, CSP en een CSRF-veld in 
   }
 });
 
-test('de startpagina toont de tegels Facturen, Mail en Offertes', async () => {
+test('het dashboard toont de KPI-kaarten, mail, de sidebar en de link naar Offertes', async () => {
   const cookie = await ingelogd(p);
   const html = await (await fetch(p.adres + '/', { headers: { cookie } })).text();
-  assert.match(html, /Facturen/);
+  for (const tekst of ['Openstaand', 'Verlopen', 'Betaald deze maand', 'Nog door te sturen', 'Te controleren', 'Actie vereist', 'Factuurbedrag per maand', 'Grootste leveranciers']) {
+    assert.match(html, new RegExp(tekst), tekst);
+  }
   assert.match(html, /gesorteerd vandaag/);
   assert.match(html, /href="https:\/\/de-koning-tegelwerken\.offerteknop\.nl\/offertes\/" rel="noopener noreferrer"/);
-  assert.match(html, /Welkom, Bob/);
+  assert.match(html, /<aside class="sidebar">/);
+  assert.match(html, /<img src="\/logo\.svg" alt="De Koning Tegelwerken"/);
+  assert.match(html, /profiel__naam">Bob Schol</);
+  for (const naam of ['Dashboard', 'Facturen', 'Leveranciers', 'Mail', 'Instellingen']) assert.match(html, new RegExp(`<span>${naam}</span>`), naam);
+  assert.equal((await fetch(p.adres + '/logo.svg')).status, 200);
+});
+
+test('leveranciers en de sortering van de lijst', async () => {
+  const cookie = await ingelogd(p);
+  voegFactuurToe(p.opslag, { message_id: 'lev-1', attachment_id: 'a1', leverancier: 'Aannemer Zuid', bedrag: 10 });
+  voegFactuurToe(p.opslag, { message_id: 'lev-2', attachment_id: 'a1', leverancier: 'Zand & Grind', bedrag: 999 });
+  const lev = await (await fetch(p.adres + '/facturen/leveranciers', { headers: { cookie } })).text();
+  assert.match(lev, /Aannemer Zuid/);
+  assert.match(lev, /Zand &amp; Grind/);
+  assert.match(lev, /href="\/facturen\/\?filter=alle&amp;zoek=Zand\+%26\+Grind"/);
+
+  const op = await (await fetch(p.adres + '/facturen/?filter=alle&sorteer=bedrag-af', { headers: { cookie } })).text();
+  assert.ok(op.indexOf('Zand &amp; Grind') < op.indexOf('Aannemer Zuid'), 'hoogste bedrag eerst');
+  const af = await (await fetch(p.adres + '/facturen/?filter=alle&sorteer=bedrag', { headers: { cookie } })).text();
+  assert.ok(af.indexOf('Aannemer Zuid') < af.indexOf('Zand &amp; Grind'), 'laagste bedrag eerst');
+  assert.match(op, /tabelkop__bedrag tabelkop--recht tabelkop--af/);
+
+  const onzin = await fetch(p.adres + '/facturen/?sorteer=drop+table', { headers: { cookie } });
+  assert.equal(onzin.status, 200);
+});
+
+test('een factuur als paneel: alleen de inhoud, met CSRF-velden en zonder sidebar', async () => {
+  const cookie = await ingelogd(p);
+  const factuur = voegFactuurToe(p.opslag, { message_id: 'paneel-1', attachment_id: 'a1' });
+  const html = await (await fetch(`${p.adres}/facturen/factuur/${factuur.id}?deel=paneel`, { headers: { cookie } })).text();
+  assert.ok(!html.includes('<!doctype html>'), 'geen hele pagina');
+  assert.ok(!html.includes('class="sidebar"'));
+  assert.match(html, /data-paneel-sluit/);
+  assert.match(html, /name="_csrf" value="/);
+  assert.match(html, /action="\/facturen\/factuur\/\d+\/betaald"[^>]*data-bevestig=/);
 });
 
 test('CSRF: zonder of met een fout token 403, van een andere site 403, met het juiste token door', async () => {
@@ -355,7 +391,7 @@ test('zonder SSO-instellingen: Basic Auth, en POST vraagt ook dan een CSRF-token
       const antwoord = await fetch(b.adres + pad, { headers: inlog });
       assert.equal(antwoord.status, 200, pad);
       const html = await antwoord.text();
-      assert.match(html, /lokaal, Basic Auth/, pad);
+      assert.match(html, /lokaal · Basic Auth/, pad);
       assert.ok(!/action="\/auth\/logout"/.test(html), pad + ': geen uitlogknop bij Basic Auth');
     }
 

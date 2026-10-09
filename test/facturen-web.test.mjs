@@ -124,6 +124,7 @@ test('het dashboard werkt onder een prefix: de links staan er ook onder', async 
   const html = await (await haal('/')).text();
   assert.match(html, /href="\/facturen\/dashboard\.css"/);
   assert.match(html, /action="\/facturen\/sync"/);
+  assert.match(html, /href="\/facturen\/\?filter=alle&amp;sorteer=leverancier"|href="\/facturen\/\?sorteer=leverancier"/);
   assert.ok(!/href="\/dashboard\.css"/.test(html), 'geen link buiten de prefix om');
 });
 

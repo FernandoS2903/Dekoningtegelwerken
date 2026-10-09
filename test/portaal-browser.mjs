@@ -22,7 +22,7 @@ import { maakSorteerOpslag } from '../service/facturen/lib/sorteer-opslag.mjs';
 import { maakSorteerder } from '../service/facturen/lib/sorteren.mjs';
 import { maakWebhook } from '../service/facturen/lib/webhook.mjs';
 import * as instellingen from '../service/facturen/lib/instellingen.mjs';
-import { nepGraph } from './facturen-hulp.mjs';
+import { nepGraph, voegFactuurToe, voegBetalingToe } from './facturen-hulp.mjs';
 import { nepMailbox } from './mail-hulp.mjs';
 
 const BREEDTES = [360, 390, 820, 1440];
@@ -63,6 +63,27 @@ VOORBEELD.forEach(([naam, adres, onderwerp, naar, bron, zekerheid, reden, status
 sorteerOpslag.voegRegelToe({ soort: 'domein', waarde: 'bouwmaat.nl', map: 'Nieuwsbrieven & reclame', door: 'bob' });
 sorteerOpslag.voegRegelToe({ soort: 'adres', waarde: 'facturen@tegelhandelzuid.nl', map: 'Facturen', door: 'bob' });
 
+// Facturen in alle standen, zodat tabel, dashboard en zijpaneel gevuld zijn.
+const FACTUREN = [
+  ['Tegelhandel Zuid B.V.', 1210, '2026-10-01', '2026-10-31', 'open'],
+  ['Bouwmaat Velsen', 348.7, '2026-09-20', '2026-09-30', 'open'],
+  ['Natuursteen Import', 5400, '2026-08-11', '2026-09-10', 'betaald'],
+  ['Van Dijk Voegmiddelen', 89.95, '2026-10-03', '2026-11-02', 'open'],
+  ['Een Leverancier Met Een Opvallend Lange Naam B.V.', 1899, '2026-07-02', '2026-08-01', 'betaald'],
+];
+FACTUREN.forEach(([naam, bedrag, datum, verval, status], i) => {
+  const f = voegFactuurToe(opslag, {
+    message_id: 'f' + i, attachment_id: 'a', ontvangen: datum + 'T09:00:00Z', afzender_naam: naam,
+    onderwerp: 'Factuur ' + (2000 + i), leverancier: naam, factuurnummer: '2026-' + (100 + i),
+    factuurdatum: datum, vervaldatum: verval, bedrag,
+  });
+  if (status === 'betaald') opslag.zetBetaald(f.id, { betaald_op: verval, betaald_via: 'handmatig' });
+});
+const { id: stuk } = opslag.voegFactuurToe({ message_id: 'stuk', attachment_id: '', onderwerp: 'Onleesbare scan', afzender_naam: 'Onbekend', ontvangen: '2026-10-04T09:00:00Z' });
+opslag.zetUitleesFout(stuk, 'het model weigerde dit document te lezen');
+voegBetalingToe(opslag, { id: '9001', bedrag: -89.95, tegenpartij_naam: 'V. Dijk', omschrijving: 'overboeking', tegenrekening_iban: null });
+opslag.zetSuggestie(4, '9001', 0.6);
+
 const mail = nepMailbox();
 const facturen = maakFacturenApp({ opslag, graph: nepGraph(), pdfMap: path.join(map, 'pdfs'), basisPad: '/facturen' });
 const sorteerder = maakSorteerder({ sorteerOpslag, mail, classificeerder: null, instellingenLezer: () => instellingen.lees(opslag) });
@@ -91,6 +112,9 @@ async function afdruk(naam) {
 const PAGINAS = [
   ['start', '/'],
   ['facturen', '/facturen/'],
+  ['facturen, alle, op bedrag', '/facturen/?filter=alle&sorteer=bedrag-af'],
+  ['factuur', '/facturen/factuur/1'],
+  ['leveranciers', '/facturen/leveranciers'],
   ['mail', '/mail/'],
   ['mail, filter controleren', '/mail/?status=controleren'],
   ['regels', '/mail/regels'],
@@ -133,7 +157,7 @@ for (const [naam, pad] of PAGINAS) {
     await browser.viewport(breedte, 900, breedte < 700);
     await browser.open(basis + pad, 500);
     // Alle "Andere map"-blokken open, zodat ook het formulier meetelt.
-    await browser.evalueer(`document.querySelectorAll('details').forEach((d) => { d.open = true; })`);
+    await browser.evalueer(`document.querySelectorAll('details.mailrij__anders').forEach((d) => { d.open = true; })`);
     await wacht(100);
     const r = await browser.evalueer(OVERFLOW);
     controleer(`${breedte} px: geen horizontale overflow`, r.paginaBreed <= r.venster + 1 && r.uit.length === 0,
@@ -146,6 +170,56 @@ for (const [naam, pad] of PAGINAS) {
   const teKlein = await browser.evalueer(KLIKVLAK);
   controleer('390 px: klikvlakken minstens 40 px', teKlein.length === 0, teKlein.slice(0, 4).join(' | '));
 }
+
+// -- zijpaneel op desktop: rij klikken, paneel laden, actie via fetch -------------
+console.log('\nzijpaneel');
+await browser.viewport(1440, 900, false);
+await browser.open(basis + '/facturen/?filter=alle', 600);
+await browser.evalueer(`document.querySelector('.rij[data-factuur="2"]').click()`);
+await wacht(700);
+const paneelStand = await browser.evalueer(`(() => {
+  const p = document.querySelector('[data-zijpaneel]');
+  return { open: !p.hidden && document.body.classList.contains('paneel-open'), kop: p.querySelector('h2')?.textContent || '',
+    url: location.pathname, actief: document.querySelector('.rij.actief')?.dataset.factuur || null,
+    pdf: Boolean(p.querySelector('.pdf, .maildump')), lijstZichtbaar: getComputedStyle(document.querySelector('[data-lijst]')).display !== 'none' };
+})()`);
+controleer('het paneel opent naast de lijst', paneelStand.open && paneelStand.lijstZichtbaar, JSON.stringify(paneelStand));
+controleer('het paneel toont de factuur en de URL verandert mee', /Bouwmaat/.test(paneelStand.kop) && paneelStand.url === '/facturen/factuur/2' && paneelStand.actief === '2', JSON.stringify(paneelStand));
+await afdruk('facturen-zijpaneel-1440');
+
+// Negeren vanuit het paneel: bevestiging, daarna via fetch; de lijst ververst.
+let dialoog = null;
+browser.opEvent('Page.javascriptDialogOpening', (p) => { dialoog = p.message; });
+browser.s('Runtime.evaluate', { expression: `document.querySelector('[data-zijpaneel] form[action$="/negeren"] button').click()` }).catch(() => {});
+await wacht(500);
+controleer('negeren vraagt eerst om bevestiging', /negeren/i.test(dialoog || ''), String(dialoog));
+await browser.s('Page.handleJavaScriptDialog', { accept: true });
+await wacht(900);
+const naActie = await browser.evalueer(`(() => ({
+  melding: document.querySelector('[data-zijpaneel] .melding')?.textContent.trim() || '',
+  vlag: document.querySelector('.rij[data-factuur="2"] .rij__status')?.textContent.trim() || '',
+  url: location.pathname + location.search,
+}))()`);
+controleer('de actie is verwerkt en het paneel toont de melding', /genegeerd/i.test(naActie.melding) && opslag.factuur(2).status === 'genegeerd', JSON.stringify(naActie));
+controleer('de lijst is ververst zonder herladen', /genegeerd/i.test(naActie.vlag), JSON.stringify(naActie));
+
+await browser.evalueer(`document.querySelector('[data-paneel-sluit]').click()`);
+await wacht(400);
+controleer('sluiten verbergt het paneel', await browser.evalueer(`document.querySelector('[data-zijpaneel]').hidden && !document.body.classList.contains('paneel-open')`));
+
+// Op mobiel opent een rij gewoon de pagina.
+await browser.viewport(390, 900, true);
+await browser.open(basis + '/facturen/?filter=alle', 500);
+await browser.evalueer(`document.querySelector('.rij[data-factuur="1"]').click()`);
+await wacht(600);
+controleer('op mobiel opent de factuurpagina', await browser.evalueer('location.pathname') === '/facturen/factuur/1');
+
+// Grafiek: tooltip bij focus op een staaf.
+await browser.viewport(1440, 900, false);
+await browser.open(basis + '/', 500);
+const tip = await browser.evalueer(`(() => { const s = document.querySelector('.staaf[data-aantal]:not([data-aantal="0"])'); if (!s) return null; s.focus(); const t = document.querySelector('.grafiek__tip'); return { hidden: t.hidden, tekst: t.textContent }; })()`);
+controleer('de grafiek toont een tooltip bij een staaf', tip && !tip.hidden && /€/.test(tip.tekst), JSON.stringify(tip));
+await afdruk('start-gevuld-1440');
 
 // -- Andere map: kiezen en versturen, met het CSRF-token uit de pagina -----
 console.log('\nandere map vanuit het logboek');

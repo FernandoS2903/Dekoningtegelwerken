@@ -113,6 +113,8 @@ await browser.s('Network.setExtraHTTPHeaders', {
 
 const PAGINAS = [
   ['overzicht', '/'],
+  ['dashboard', '/dashboard'],
+  ['leveranciers', '/leveranciers'],
   ['overzicht, filter alle', '/?filter=alle'],
   ['factuur', '/factuur/1'],
   ['factuur met voorstel', '/factuur/4'],
@@ -187,7 +189,7 @@ await browser.s('Page.enable');
 // Niet awaiten: een modale confirm blokkeert de pagina, dus het antwoord op
 // deze opdracht komt pas als de dialoog weer weg is.
 browser.s('Runtime.evaluate', {
-  expression: `document.querySelector('form[data-bevestig] button').click()`,
+  expression: `document.querySelector('form[action$="/doorsturen"] button').click()`,
 }).catch(() => { /* loopt af zodra de dialoog gesloten is */ });
 await wacht(600);
 controleer('er wordt om bevestiging gevraagd', Boolean(gevraagd), 'geen dialoog gezien');
