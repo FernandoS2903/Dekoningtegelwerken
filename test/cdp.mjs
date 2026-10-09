@@ -10,7 +10,10 @@ export async function startBrowser(chromePad, poort = 9333) {
     console.error('Zet CHROME op het pad van een (headless) Chromium.');
     process.exit(2);
   }
-  const proces = spawn(chromePad, ['--no-sandbox', '--headless', '--hide-scrollbars', `--remote-debugging-port=${poort}`, 'about:blank'], { stdio: 'ignore' });
+  // Altijd begrensd met timeout (serverafspraak, /root/CLAUDE.md): blijft de
+  // test hangen of valt de sessie weg, dan ruimt timeout de browser op.
+  const grens = String(Number(process.env.CHROME_TIMEOUT) || 180);
+  const proces = spawn('timeout', ['-k', '5', grens, chromePad, '--no-sandbox', '--headless', '--hide-scrollbars', `--remote-debugging-port=${poort}`, 'about:blank'], { stdio: 'ignore' });
   let wsUrl;
   for (let i = 0; i < 50 && !wsUrl; i++) {
     try { wsUrl = (await (await fetch(`http://127.0.0.1:${poort}/json/version`)).json()).webSocketDebuggerUrl; } catch { await wacht(100); }
