@@ -8,6 +8,7 @@
 // met gewone attributen.
 
 import { datumNl, datumTijdNl, escapeHtml as e, euro } from '../lib/hulp.mjs';
+import { VERSIE } from './statisch.mjs';
 
 export { e as escapeHtml };
 
@@ -66,7 +67,7 @@ export function pagina({
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>${e(titel)} — ${e(onderdeel)} · De Koning Tegelwerken</title>
-<link rel="stylesheet" href="${statisch}/dashboard.css">
+<link rel="stylesheet" href="${statisch}/dashboard.css?v=${VERSIE}">
 <link rel="icon" href="${statisch}/logo.svg" type="image/svg+xml">
 </head>
 <body class="${kader ? 'met-sidebar' : 'los'}">
@@ -85,7 +86,7 @@ ${inhoud}
 </main>
 <p class="voet">Intern ${kader ? 'portaal' : 'dashboard'} van De Koning Tegelwerken · Handsfree Digital</p>
 </div>
-<script src="${statisch}/dashboard.js" type="module"></script>
+<script src="${statisch}/dashboard.js?v=${VERSIE}" type="module"></script>
 </body>
 </html>
 `;

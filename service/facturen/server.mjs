@@ -258,7 +258,7 @@ export function maakFacturenApp({
       if (pad.length > 1 && pad.endsWith('/')) pad = pad.slice(0, -1);
       if (pad === '') pad = '/';
 
-      if (req.method === 'GET' && STATISCH[pad]) return stuurStatisch(res, pad);
+      if (req.method === 'GET' && STATISCH[pad]) return stuurStatisch(res, pad, { versie: url.searchParams.get('v') });
 
       const inst = leesInstellingen();
       const meldingen = meldingenUit(url.searchParams);

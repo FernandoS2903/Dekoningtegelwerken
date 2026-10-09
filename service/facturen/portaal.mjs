@@ -191,7 +191,7 @@ export function maakPortaal({
       const url = new URL(req.url, 'http://localhost');
       const pad = url.pathname;
 
-      if ((req.method === 'GET' || req.method === 'HEAD') && STATISCH[pad]) return stuurStatisch(res, pad);
+      if ((req.method === 'GET' || req.method === 'HEAD') && STATISCH[pad]) return stuurStatisch(res, pad, { versie: url.searchParams.get('v') });
       if (pad === '/graph/notify') return notify(req, res, url);
       if (pad.startsWith('/auth/')) return authRoute(req, res, url);
 

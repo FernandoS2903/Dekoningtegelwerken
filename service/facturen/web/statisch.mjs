@@ -2,8 +2,9 @@
 // de lettertypen van de site. Het portaal levert ze op de root uit, het losse
 // dashboard onder zijn eigen prefix.
 
+import crypto from 'node:crypto';
 import path from 'node:path';
-import { createReadStream, existsSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { kop, stuurTekst } from '../lib/web.mjs';
 
@@ -21,10 +22,23 @@ export const STATISCH = {
   '/logo.svg': [path.join(REPO, 'assets/brand/logo.svg'), 'image/svg+xml'],
 };
 
-export function stuurStatisch(res, pad) {
+// Versie van css en js, afgeleid van de inhoud: de pagina's linken naar
+// /dashboard.css?v=<versie>, zodat een browser na een uitrol nooit een oude
+// stylesheet uit zijn cache blijft gebruiken.
+export const VERSIE = (() => {
+  const h = crypto.createHash('sha256');
+  for (const pad of ['/dashboard.css', '/dashboard.js']) {
+    try { h.update(readFileSync(STATISCH[pad][0])); } catch { /* ontbreekt: dan telt hij niet mee */ }
+  }
+  return h.digest('hex').slice(0, 10);
+})();
+
+export function stuurStatisch(res, pad, { versie = null } = {}) {
   const [bestand, type] = STATISCH[pad];
   if (!existsSync(bestand)) return stuurTekst(res, 404, 'Niet gevonden.');
-  kop(res, 200, type, { 'cache-control': 'private, max-age=3600' });
+  // Met het juiste versienummer mag de browser lang cachen; zonder kort.
+  const lang = versie === VERSIE && (pad.endsWith('.css') || pad.endsWith('.js'));
+  kop(res, 200, type, { 'cache-control': lang ? 'private, max-age=31536000, immutable' : 'private, max-age=300' });
   createReadStream(bestand).pipe(res);
   return undefined;
 }
