@@ -175,7 +175,7 @@ test('met sessie geven alle pagina\'s 200, met noindex, CSP en een CSRF-veld in 
     const formulieren = html.match(/<form\b[^>]*method="post"[^>]*>/g) || [];
     const metToken = html.match(/<form\b[^>]*method="post"[^>]*><input type="hidden" name="_csrf" value="[^"]+">/g) || [];
     assert.equal(metToken.length, formulieren.length, pad + ': elk POST-formulier heeft _csrf');
-    assert.match(html, /href="\/dashboard\.css"/, pad);
+    assert.match(html, /href="\/dashboard\.css\?v=[0-9a-f]+"/, pad);
   }
 });
 
