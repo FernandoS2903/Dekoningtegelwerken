@@ -15,7 +15,30 @@ export const STANDAARD = {
   terugkijken_dagen: '365',
   laatste_sync: '',
   laatste_sync_resultaat: '',
+
+  // Mailsorteerder
+  sorteren: '1',
+  sorteer_drempel: '0.75',
+  sorteer_map_facturen: '1',
+  sorteer_map_offerteaanvragen: '1',
+  sorteer_map_klanten: '1',
+  sorteer_map_leveranciers: '1',
+  sorteer_map_nieuwsbrieven: '1',
+  website_afzenders: '',
 };
+
+// De mappen onder Inbox waar de sorteerder naartoe verplaatst. `sleutel` hoort
+// bij de instelling sorteer_map_<sleutel>; `naam` is de mapnaam in Outlook.
+export const SORTEER_MAPPEN = [
+  { sleutel: 'facturen', naam: 'Facturen', uitleg: 'facturen en creditnota\'s; hier pakt het factuurdashboard ze op' },
+  { sleutel: 'offerteaanvragen', naam: 'Offerteaanvragen', uitleg: 'aanvragen van (nieuwe) klanten' },
+  { sleutel: 'klanten', naam: 'Klanten & projecten', uitleg: 'lopende klanten, afspraken en werk in uitvoering' },
+  { sleutel: 'leveranciers', naam: 'Leveranciers', uitleg: 'orderbevestigingen, leveringen, offertes van leveranciers' },
+  { sleutel: 'nieuwsbrieven', naam: 'Nieuwsbrieven & reclame', uitleg: 'nieuwsbrieven, aanbiedingen en reclame' },
+];
+
+export const SORTEER_DREMPEL_MIN = 0.5;
+export const SORTEER_DREMPEL_MAX = 1.0;
 
 export const DREMPEL_MIN = 0.4;
 export const DREMPEL_MAX = 1.0;
@@ -39,8 +62,20 @@ export function lees(opslag) {
     terugkijkenDagen: Math.round(begrens(Number(ruw.terugkijken_dagen), TERUGKIJKEN_MIN, TERUGKIJKEN_MAX, 365)),
     laatsteSync: ruw.laatste_sync || '',
     laatsteSyncResultaat: ruw.laatste_sync_resultaat || '',
+    sorteren: ruw.sorteren === '1',
+    sorteerDrempel: begrens(Number(ruw.sorteer_drempel), SORTEER_DREMPEL_MIN, SORTEER_DREMPEL_MAX, 0.75),
+    sorteerMappen: Object.fromEntries(SORTEER_MAPPEN.map((m) => [m.naam, ruw['sorteer_map_' + m.sleutel] === '1'])),
+    websiteAfzenders: splitsAfzenders(ruw.website_afzenders),
   };
 }
+
+// Adressen en domeinen, gescheiden door komma's, spaties of regels.
+// "@voorbeeld.nl" en "voorbeeld.nl" betekenen allebei: het hele domein.
+export function splitsAfzenders(waarde) {
+  return String(waarde || '').split(/[\s,;]+/).map((s) => s.trim().toLowerCase().replace(/^@/, '')).filter(Boolean);
+}
+
+const IS_DOMEIN = /^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 
 export function splitsEmails(waarde) {
   return String(waarde || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -68,7 +103,9 @@ export function bewaar(opslag, nieuw, { nu = new Date().toISOString() } = {}) {
     schoon.doorstuur_tekst = String(nieuw.doorstuur_tekst || '').slice(0, 2000);
   }
 
-  for (const sleutel of ['auto_doorsturen', 'testmodus', 'outlook_categorie']) {
+  const vlaggen = ['auto_doorsturen', 'testmodus', 'outlook_categorie', 'sorteren',
+    ...SORTEER_MAPPEN.map((m) => 'sorteer_map_' + m.sleutel)];
+  for (const sleutel of vlaggen) {
     if (sleutel in nieuw) schoon[sleutel] = waarheid(nieuw[sleutel]) ? '1' : '0';
   }
 
@@ -88,6 +125,22 @@ export function bewaar(opslag, nieuw, { nu = new Date().toISOString() } = {}) {
     } else {
       schoon.terugkijken_dagen = String(n);
     }
+  }
+
+  if ('sorteer_drempel' in nieuw) {
+    const n = Number(String(nieuw.sorteer_drempel).replace(',', '.'));
+    if (!Number.isFinite(n) || n < SORTEER_DREMPEL_MIN || n > SORTEER_DREMPEL_MAX) {
+      fouten.push(`Sorteerdrempel moet tussen ${SORTEER_DREMPEL_MIN} en ${SORTEER_DREMPEL_MAX} liggen.`);
+    } else {
+      schoon.sorteer_drempel = String(Math.round(n * 100) / 100);
+    }
+  }
+
+  if ('website_afzenders' in nieuw) {
+    const lijst = splitsAfzenders(nieuw.website_afzenders);
+    const slecht = lijst.filter((a) => !(IS_EMAIL.test(a) || IS_DOMEIN.test(a)));
+    if (slecht.length) fouten.push('Geen geldig adres of domein: ' + slecht.join(', '));
+    else schoon.website_afzenders = [...new Set(lijst)].join(', ');
   }
 
   if (fouten.length) return { fouten, gewijzigd: [] };

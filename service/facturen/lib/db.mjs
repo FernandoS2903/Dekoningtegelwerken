@@ -12,7 +12,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { nuIso } from './hulp.mjs';
 
-export const SCHEMA_VERSIE = 1;
+export const SCHEMA_VERSIE = 2;
 
 // undefined -> null, en getallen/strings blijven zoals ze zijn.
 const w = (v) => (v === undefined || v === '' ? null : v);
@@ -87,6 +87,74 @@ const SCHEMA = `
   );
 
   CREATE INDEX IF NOT EXISTS logboek_factuur ON logboek (factuur_id, id);
+
+  -- Versie 2: mailsorteerder en portaal.
+
+  -- Eén regel per beslissing over een mail. message_id is het id bij
+  -- binnenkomst, huidig_id het id na de laatste verplaatsing (Graph geeft na
+  -- een move een nieuw id). internet_id blijft bij verplaatsen gelijk; daaraan
+  -- herkennen we een mail die al eens langs is geweest.
+  CREATE TABLE IF NOT EXISTS sorteer_log (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    tijd          TEXT NOT NULL,
+    message_id    TEXT,
+    huidig_id     TEXT,
+    internet_id   TEXT,
+    ontvangen     TEXT,
+    afzender_naam TEXT,
+    afzender      TEXT,
+    onderwerp     TEXT,
+    van_map       TEXT,
+    naar_map      TEXT,
+    huidige_map   TEXT,
+    bron          TEXT NOT NULL,
+    zekerheid     REAL,
+    reden         TEXT,
+    status        TEXT NOT NULL,
+    fout          TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS sorteer_log_internet ON sorteer_log (internet_id);
+  CREATE INDEX IF NOT EXISTS sorteer_log_tijd     ON sorteer_log (tijd);
+
+  -- Vaste regels: afzenderadres of domein -> map. Een regel wint altijd.
+  CREATE TABLE IF NOT EXISTS sorteer_regels (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    soort         TEXT NOT NULL CHECK (soort IN ('adres', 'domein')),
+    waarde        TEXT NOT NULL,
+    map           TEXT NOT NULL,
+    door          TEXT,
+    aangemaakt_op TEXT NOT NULL,
+    UNIQUE (soort, waarde)
+  );
+
+  -- Toestand van de sorteerder en de webhook (deltaLink, startmoment,
+  -- subscription). Geen instellingen: die staan in de tabel instellingen.
+  CREATE TABLE IF NOT EXISTS sorteer_staat (
+    sleutel TEXT PRIMARY KEY,
+    waarde  TEXT
+  );
+
+  -- Portaalsessies. id is een HMAC van het cookie, dus met alleen de
+  -- database kun je niet inloggen.
+  CREATE TABLE IF NOT EXISTS sessies (
+    id            TEXT PRIMARY KEY,
+    email         TEXT NOT NULL,
+    naam          TEXT,
+    csrf          TEXT NOT NULL,
+    aangemaakt_op TEXT NOT NULL,
+    verloopt_op   INTEGER NOT NULL,
+    bijgewerkt_op INTEGER NOT NULL
+  );
+
+  -- Lopende inlogpogingen (state, nonce en PKCE-verifier), tien minuten geldig.
+  CREATE TABLE IF NOT EXISTS oidc_pogingen (
+    state       TEXT PRIMARY KEY,
+    nonce       TEXT NOT NULL,
+    verifier    TEXT NOT NULL,
+    terug       TEXT,
+    verloopt_op INTEGER NOT NULL
+  );
 `;
 
 // Velden die het bewerkformulier en het uitlezen mogen zetten.
@@ -104,8 +172,10 @@ export function openDatabase(pad) {
 
   const versie = db.prepare('PRAGMA user_version').get().user_version;
   if (versie < SCHEMA_VERSIE) {
-    // Versie 1 is het eerste schema; latere migraties komen hier als
-    // losse stappen bij (if (versie < 2) { db.exec('ALTER TABLE ...') }).
+    // Versie 1 is het eerste schema. Versie 2 voegt alleen nieuwe tabellen
+    // toe (mailsorteerder, portaal); die maakt SCHEMA hierboven al aan.
+    // Latere migraties komen hier als losse stappen bij
+    // (if (versie < 3) { db.exec('ALTER TABLE ...') }).
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSIE}`);
   }
   return db;
