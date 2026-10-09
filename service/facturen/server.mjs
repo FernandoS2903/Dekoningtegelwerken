@@ -1,16 +1,25 @@
-// Factuurdashboard De Koning Tegelwerken.
+// Portaal De Koning Tegelwerken: factuurdashboard en mailsorteerder.
 //
 // Dependency-vrije Node 22-dienst (node:http, node:sqlite, ingebouwde fetch en
 // node:crypto), naar het patroon van handsfree-digital-werk/service. Luistert
-// op 127.0.0.1:8132 en is bereikbaar via `tailscale serve --set-path /facturen`
-// met daarbovenop Basic Auth. Nooit publiek.
+// alleen op 127.0.0.1:8132. Publiek wordt het pas via nginx op
+// https://cms.dekoningtegelwerken.nl, en alleen als het inloggen met
+// Microsoft (Entra SSO) is ingesteld. Zonder SSO-instellingen blijft het bij
+// Basic Auth op 127.0.0.1.
+//
+//   /             startpagina van het portaal (portaal.mjs)
+//   /facturen/    factuurdashboard (dit bestand, maakFacturenApp)
+//   /mail/        mailsorteerder: logboek, regels, instellingen (mail.mjs)
+//   /auth/...     inloggen, uitloggen, /auth/check voor nginx auth_request
+//   /graph/notify webhook van Microsoft Graph (zonder login, eigen controle)
 //
 // Starten:   node service/facturen/server.mjs
 // Instellen: /etc/dekoning/facturen.env (600), zie deploy/facturen.env.voorbeeld
 //
 // Ontbrekende koppelingen laten hun stap over: zonder Microsoft 365 worden er
-// geen mails gehaald, zonder bunq geen betalingen, zonder Claude-sleutel wordt
-// er niet uitgelezen. De dienst blijft staan en zegt in het scherm wat er mist.
+// geen mails gehaald of gesorteerd, zonder bunq geen betalingen, zonder
+// Claude-sleutel wordt er niet uitgelezen en alleen op regels gesorteerd. De
+// dienst blijft staan en zegt in het scherm wat er mist.
 //
 // Secrets staan alleen in de env en gaan nooit naar een logregel, een pagina
 // of het logboek.
@@ -22,35 +31,35 @@ import { createReadStream, existsSync, mkdirSync, realpathSync, statSync } from 
 import { fileURLToPath } from 'node:url';
 
 import { maakOpslag, openDatabase } from './lib/db.mjs';
-import { maakGraph } from './lib/graph.mjs';
+import { maakMailKoppeling } from './lib/mail/koppeling.mjs';
 import { maakClaude, STANDAARD_MODEL } from './lib/claude.mjs';
+import { maakClassificeerder, STANDAARD_SORTEER_MODEL } from './lib/classificeer.mjs';
 import { maakBunq } from './lib/bunq.mjs';
 import { maakSync } from './lib/sync.mjs';
+import { maakSorteerOpslag } from './lib/sorteer-opslag.mjs';
+import { maakSorteerder } from './lib/sorteren.mjs';
+import { maakWebhook } from './lib/webhook.mjs';
+import { maakSessies } from './lib/sessies.mjs';
+import { maakOidc, splitsLijst } from './lib/oidc.mjs';
 import { magAutomatisch, stuurDoor } from './lib/doorsturen.mjs';
 import * as instellingen from './lib/instellingen.mjs';
 import { naarBedrag, naarDatum, naarIban, nuIso, vandaag } from './lib/hulp.mjs';
+import {
+  MAX_BODY_BYTES, kop, leesBody, meldingenUit as meldingenVan, stuurHtml, stuurTekst, zelfdeHerkomst,
+} from './lib/web.mjs';
+import { maakMailApp } from './mail.mjs';
+import { maakPortaal } from './portaal.mjs';
 import { overzicht } from './web/overzicht.mjs';
 import { factuurPagina } from './web/factuur.mjs';
 import { instellingenPagina } from './web/instellingen.mjs';
 import { FILTERS } from './web/opmaak.mjs';
+import { STATISCH, stuurStatisch } from './web/statisch.mjs';
 
-const HIER = path.dirname(fileURLToPath(import.meta.url));
-const REPO = path.resolve(HIER, '..', '..');
+export { STATISCH };
+
 
 export const STANDAARD_POORT = 8132;
-export const MAX_BODY_BYTES = 64 * 1024;
-
-const CSP = [
-  "default-src 'none'",
-  "style-src 'self'",
-  "font-src 'self'",
-  "img-src 'self' data:",
-  "script-src 'self'",
-  "object-src 'self'",
-  "form-action 'self'",
-  "base-uri 'none'",
-  "frame-ancestors 'none'",
-].join('; ');
+export { MAX_BODY_BYTES };
 
 // Vaste meldingen na een actie. Een code in de URL in plaats van vrije tekst,
 // zodat er niets uit een verzoek in de pagina kan belanden.
@@ -71,40 +80,24 @@ const MELDINGEN = {
   opgeslagen: ['goed', 'Instellingen opgeslagen.'],
 };
 
-// -- de dienst in elkaar zetten -----------------------------------------
+// -- het factuurdashboard -------------------------------------------------
 // Alle koppelingen komen als argument binnen, zodat de tests ze kunnen
-// nabootsen zonder netwerk.
-export function maakServer({
+// nabootsen zonder netwerk. `handle(req, res, ctx)` doet alleen het
+// dashboard; inloggen en CSRF regelt wie hem aanroept (het portaal, of
+// maakServer hieronder met Basic Auth). In ctx: `kader` (portaalbalk en
+// CSRF-token voor de pagina's) en `body` (al gelezen formulier).
+export function maakFacturenApp({
   opslag,
   graph = null,
   claude = null,
   bunq = null,
   pdfMap,
-  gebruiker = '',
-  wachtwoord = '',
   basisPad = '',
   nu = () => vandaag(),
 }) {
   const basis = basisPad.replace(/\/+$/, '');
   const leesInstellingen = () => instellingen.lees(opslag);
   const sync = maakSync({ opslag, graph, claude, bunq, pdfMap, instellingenLezer: leesInstellingen });
-  const authKlaar = Boolean(gebruiker && wachtwoord);
-
-  // -- antwoorden ------------------------------------------------------
-  function kop(res, status, type, extra = {}) {
-    res.writeHead(status, {
-      'content-type': type,
-      'content-security-policy': CSP,
-      'x-content-type-options': 'nosniff',
-      'referrer-policy': 'no-referrer',
-      'x-robots-tag': 'noindex, nofollow',
-      'cache-control': 'no-store',
-      ...extra,
-    });
-  }
-
-  const stuurHtml = (res, status, html) => { kop(res, status, 'text/html; charset=utf-8'); res.end(html); };
-  const stuurTekst = (res, status, tekst) => { kop(res, status, 'text/plain; charset=utf-8'); res.end(tekst + '\n'); };
 
   function terug(res, pad, code = null) {
     const url = basis + pad + (code ? (pad.includes('?') ? '&' : '?') + 'm=' + code : '');
@@ -112,94 +105,7 @@ export function maakServer({
     res.end('');
   }
 
-  function meldingenUit(zoekparams) {
-    const code = zoekparams.get('m');
-    if (!code || !MELDINGEN[code]) return [];
-    const [soort, tekst] = MELDINGEN[code];
-    return [{ soort, tekst }];
-  }
-
-  // -- Basic Auth ------------------------------------------------------
-  // Vergelijken via een hash, zodat verschillende lengtes geen uitzondering
-  // geven en de vergelijking even lang duurt.
-  const afdruk = (waarde) => crypto.createHash('sha256').update(String(waarde)).digest();
-  const gebruikerAfdruk = afdruk(gebruiker);
-  const wachtwoordAfdruk = afdruk(wachtwoord);
-
-  function ingelogd(req) {
-    const kopregel = req.headers.authorization || '';
-    if (!kopregel.toLowerCase().startsWith('basic ')) return false;
-    let ontcijferd;
-    try {
-      ontcijferd = Buffer.from(kopregel.slice(6).trim(), 'base64').toString('utf8');
-    } catch {
-      return false;
-    }
-    const scheiding = ontcijferd.indexOf(':');
-    if (scheiding === -1) return false;
-    const naam = afdruk(ontcijferd.slice(0, scheiding));
-    const geheim = afdruk(ontcijferd.slice(scheiding + 1));
-    return crypto.timingSafeEqual(naam, gebruikerAfdruk) && crypto.timingSafeEqual(geheim, wachtwoordAfdruk);
-  }
-
-  function vraagInlog(res) {
-    kop(res, 401, 'text/plain; charset=utf-8', {
-      'www-authenticate': 'Basic realm="Facturen De Koning Tegelwerken", charset="UTF-8"',
-    });
-    res.end('Inloggen vereist.\n');
-  }
-
-  // Basic Auth stuurt zijn gegevens bij elk verzoek mee, ook bij een formulier
-  // op een andere site. Daarom moet een POST van dezelfde herkomst komen.
-  function zelfdeHerkomst(req) {
-    const site = req.headers['sec-fetch-site'];
-    if (site) return site === 'same-origin';
-    const origin = req.headers.origin;
-    if (origin) {
-      try {
-        return new URL(origin).host === req.headers.host;
-      } catch {
-        return false;
-      }
-    }
-    return false;
-  }
-
-  function leesBody(req) {
-    return new Promise((klaar, mislukt) => {
-      const delen = [];
-      let grootte = 0;
-      req.on('data', (deel) => {
-        grootte += deel.length;
-        if (grootte > MAX_BODY_BYTES) {
-          mislukt(new Error('te groot'));
-          req.destroy();
-          return;
-        }
-        delen.push(deel);
-      });
-      req.on('end', () => klaar(new URLSearchParams(Buffer.concat(delen).toString('utf8'))));
-      req.on('error', mislukt);
-    });
-  }
-
-  // -- statische bestanden ---------------------------------------------
-  const STATISCH = {
-    '/dashboard.css': [path.join(HIER, 'web', 'dashboard.css'), 'text/css; charset=utf-8'],
-    '/dashboard.js': [path.join(HIER, 'web', 'dashboard.js'), 'text/javascript; charset=utf-8'],
-    // De lettertypen van de site hergebruiken we; ze staan in de repo-kopie
-    // naast de dienst en worden alleen gelezen.
-    '/fonts/fraunces-latin-opsz-wght.woff2': [path.join(REPO, 'assets/fonts/fraunces-latin-opsz-wght.woff2'), 'font/woff2'],
-    '/fonts/inter-latin-wght.woff2': [path.join(REPO, 'assets/fonts/inter-latin-wght.woff2'), 'font/woff2'],
-  };
-
-  function stuurStatisch(res, pad) {
-    const [bestand, type] = STATISCH[pad];
-    if (!existsSync(bestand)) return stuurTekst(res, 404, 'Niet gevonden.');
-    kop(res, 200, type, { 'cache-control': 'private, max-age=3600' });
-    createReadStream(bestand).pipe(res);
-    return undefined;
-  }
+  const meldingenUit = (zoekparams) => meldingenVan(zoekparams, MELDINGEN);
 
   // -- PDF uitleveren --------------------------------------------------
   function stuurPdf(res, factuur) {
@@ -334,14 +240,10 @@ export function maakServer({
   }
 
   // -- de router -------------------------------------------------------
-  const server = http.createServer(async (req, res) => {
+  async function handle(req, res, ctx = {}) {
+    const kader = ctx.kader || null;
+    const lees = () => (ctx.body ? Promise.resolve(ctx.body) : leesBody(req));
     try {
-      if (!authKlaar) {
-        return stuurTekst(res, 503,
-          'Dit dashboard is nog niet ingesteld: DASHBOARD_USER en DASHBOARD_PASSWORD ontbreken in de env.');
-      }
-      if (!ingelogd(req)) return vraagInlog(res);
-
       const url = new URL(req.url, 'http://localhost');
       let pad = url.pathname;
       if (basis && pad.startsWith(basis)) pad = pad.slice(basis.length) || '/';
@@ -349,10 +251,6 @@ export function maakServer({
       if (pad === '') pad = '/';
 
       if (req.method === 'GET' && STATISCH[pad]) return stuurStatisch(res, pad);
-
-      if (req.method === 'POST' && !zelfdeHerkomst(req)) {
-        return stuurTekst(res, 403, 'Dit formulier moet van het dashboard zelf komen.');
-      }
 
       const inst = leesInstellingen();
       const meldingen = meldingenUit(url.searchParams);
@@ -363,7 +261,7 @@ export function maakServer({
         const filter = FILTERS.some(([s]) => s === gevraagd) ? gevraagd : 'open';
         const zoek = (url.searchParams.get('zoek') || '').trim().slice(0, 100);
         return stuurHtml(res, 200, overzicht({
-          basis, opslag, inst, filter, zoek, nu: nu(), meldingen, syncBezig: sync.bezig(),
+          basis, opslag, inst, filter, zoek, nu: nu(), meldingen, syncBezig: sync.bezig(), kader,
         }));
       }
 
@@ -379,11 +277,11 @@ export function maakServer({
 
       // Instellingen
       if (pad === '/instellingen' && req.method === 'GET') {
-        return stuurHtml(res, 200, instellingenPagina({ basis, opslag, inst, meldingen }));
+        return stuurHtml(res, 200, instellingenPagina({ basis, opslag, inst, meldingen, kader }));
       }
 
       if (pad === '/instellingen' && req.method === 'POST') {
-        const body = await leesBody(req);
+        const body = await lees();
         const { fouten } = instellingen.bewaar(opslag, {
           boekhouder_email: body.get('boekhouder_email') ?? '',
           doorstuur_tekst: body.get('doorstuur_tekst') ?? '',
@@ -398,7 +296,7 @@ export function maakServer({
           // Niet omleiden: de pagina opnieuw met de melding erbij, zodat
           // ingevulde waarden niet verdwijnen.
           return stuurHtml(res, 400, instellingenPagina({
-            basis, opslag, inst: leesInstellingen(),
+            basis, opslag, inst: leesInstellingen(), kader,
             meldingen: fouten.map((tekst) => ({ soort: 'fout', tekst })),
           }));
         }
@@ -415,7 +313,7 @@ export function maakServer({
         };
         opslag.log('info', 'Verbindingen getest: '
           + Object.entries(test).map(([naam, u]) => `${naam} ${u.ok ? 'ok' : 'niet ok'}`).join(', '));
-        return stuurHtml(res, 200, instellingenPagina({ basis, opslag, inst, test }));
+        return stuurHtml(res, 200, instellingenPagina({ basis, opslag, inst, test, kader }));
       }
 
       // Eén factuur
@@ -426,10 +324,10 @@ export function maakServer({
         const actie = factuurPad[2] || null;
 
         if (req.method === 'GET' && !actie) {
-          return stuurHtml(res, 200, factuurPagina({ basis, opslag, inst, factuur, nu: nu(), meldingen }));
+          return stuurHtml(res, 200, factuurPagina({ basis, opslag, inst, factuur, nu: nu(), meldingen, kader }));
         }
         if (req.method === 'GET' && actie === 'pdf') return stuurPdf(res, factuur);
-        if (req.method === 'POST' && actie) return doeActie(res, factuur, actie, await leesBody(req));
+        if (req.method === 'POST' && actie) return doeActie(res, factuur, actie, await lees());
       }
 
       return stuurTekst(res, 404, 'Niet gevonden.');
@@ -441,9 +339,66 @@ export function maakServer({
       } catch { /* database niet beschikbaar */ }
       return stuurTekst(res, 500, 'Er ging iets mis. De melding staat in het logboek.');
     }
+  }
+
+  return { handle, sync, opslag, basis };
+}
+
+// -- los factuurdashboard met Basic Auth -------------------------------------
+// Zonder portaal: het dashboard alleen, met Basic Auth en de controle op
+// dezelfde herkomst. Gebruikt door de tests van het dashboard.
+export function maakServer({ gebruiker = '', wachtwoord = '', ...opties }) {
+  const app = maakFacturenApp(opties);
+  const basic = maakBasicAuth({ gebruiker, wachtwoord, realm: 'Facturen De Koning Tegelwerken' });
+
+  const server = http.createServer(async (req, res) => {
+    if (!basic.klaar) {
+      return stuurTekst(res, 503,
+        'Dit dashboard is nog niet ingesteld: DASHBOARD_USER en DASHBOARD_PASSWORD ontbreken in de env.');
+    }
+    if (!basic.ingelogd(req)) return basic.vraagInlog(res);
+    if (req.method === 'POST' && !zelfdeHerkomst(req)) {
+      return stuurTekst(res, 403, 'Dit formulier moet van het dashboard zelf komen.');
+    }
+    return app.handle(req, res, {});
   });
 
-  return { server, sync, opslag, basis };
+  return { server, sync: app.sync, opslag: app.opslag, basis: app.basis };
+}
+
+// Basic Auth. Vergelijken via een hash, zodat verschillende lengtes geen
+// uitzondering geven en de vergelijking even lang duurt.
+export function maakBasicAuth({ gebruiker = '', wachtwoord = '', realm = 'Portaal De Koning Tegelwerken' }) {
+  const afdruk = (waarde) => crypto.createHash('sha256').update(String(waarde)).digest();
+  const gebruikerAfdruk = afdruk(gebruiker);
+  const wachtwoordAfdruk = afdruk(wachtwoord);
+
+  // Geeft de gebruikersnaam terug, of null.
+  function ingelogd(req) {
+    const kopregel = req.headers.authorization || '';
+    if (!kopregel.toLowerCase().startsWith('basic ')) return null;
+    let ontcijferd;
+    try {
+      ontcijferd = Buffer.from(kopregel.slice(6).trim(), 'base64').toString('utf8');
+    } catch {
+      return null;
+    }
+    const scheiding = ontcijferd.indexOf(':');
+    if (scheiding === -1) return null;
+    const naam = afdruk(ontcijferd.slice(0, scheiding));
+    const geheim = afdruk(ontcijferd.slice(scheiding + 1));
+    const ok = crypto.timingSafeEqual(naam, gebruikerAfdruk) && crypto.timingSafeEqual(geheim, wachtwoordAfdruk);
+    return ok ? gebruiker : null;
+  }
+
+  function vraagInlog(res) {
+    kop(res, 401, 'text/plain; charset=utf-8', {
+      'www-authenticate': `Basic realm="${realm}", charset="UTF-8"`,
+    });
+    res.end('Inloggen vereist.\n');
+  }
+
+  return { klaar: Boolean(gebruiker && wachtwoord), ingelogd, vraagInlog };
 }
 
 function tekst(waarde, max) {
@@ -460,6 +415,8 @@ export function uitEnv(env = process.env) {
     pdfMap: path.join(dataMap, 'pdfs'),
     dbPad: path.join(dataMap, 'facturen.db'),
     bunqStatePad: path.join(dataMap, 'bunq_state.json'),
+    // Alleen nog voor het losse dashboard (maakServer); in het portaal staat
+    // het factuurdashboard altijd onder /facturen.
     basisPad: env.BASIS_PAD || '',
     gebruiker: env.DASHBOARD_USER || '',
     wachtwoord: env.DASHBOARD_PASSWORD || '',
@@ -480,7 +437,36 @@ export function uitEnv(env = process.env) {
       omgeving: env.BUNQ_ENV === 'sandbox' ? 'sandbox' : 'production',
       ibans: String(env.BUNQ_ACCOUNT_IBANS || '').split(',').map((s) => naarIban(s)).filter(Boolean),
     },
+    mailProvider: (env.MAIL_PROVIDER || 'm365').trim().toLowerCase(),
+    sorteren: {
+      model: env.SORT_MODEL || STANDAARD_SORTEER_MODEL,
+      minuten: Math.max(1, Number(env.SORT_INTERVAL_MIN) || 5),
+    },
+    webhookGeheim: env.GRAPH_WEBHOOK_SECRET || '',
+    portaal: {
+      baseUrl: String(env.PORTAL_BASE_URL || '').trim().replace(/\/+$/, ''),
+      // De portaal-app staat in dezelfde tenant als de mail-app.
+      tenantId: env.ENTRA_TENANT_ID || env.M365_TENANT_ID || '',
+      clientId: env.ENTRA_PORTAL_CLIENT_ID || '',
+      clientSecret: env.ENTRA_PORTAL_CLIENT_SECRET || '',
+      toegestaan: splitsLijst(env.PORTAL_ALLOWED_EMAILS),
+      sessieGeheim: env.SESSION_SECRET || '',
+      offertesUrl: String(env.OFFERTES_URL || '').trim(),
+    },
   };
+}
+
+// Is inloggen met Microsoft compleet ingesteld? Pas dan vervalt Basic Auth
+// en mag het portaal via nginx publiek. Half ingesteld telt als niet.
+export function ssoStatus(portaal) {
+  const ontbreekt = [];
+  if (!/^https:\/\/[^/\s]+$/.test(portaal.baseUrl)) ontbreekt.push('PORTAL_BASE_URL (https://host, zonder pad)');
+  if (!/^[0-9a-f-]{36}$/i.test(portaal.tenantId)) ontbreekt.push('M365_TENANT_ID (als GUID)');
+  if (!portaal.clientId) ontbreekt.push('ENTRA_PORTAL_CLIENT_ID');
+  if (!portaal.clientSecret) ontbreekt.push('ENTRA_PORTAL_CLIENT_SECRET');
+  if (!portaal.toegestaan.length) ontbreekt.push('PORTAL_ALLOWED_EMAILS');
+  if (String(portaal.sessieGeheim).length < 32) ontbreekt.push('SESSION_SECRET (minstens 32 tekens)');
+  return { aan: ontbreekt.length === 0, ontbreekt };
 }
 
 function start() {
@@ -488,10 +474,13 @@ function start() {
   mkdirSync(cfg.pdfMap, { recursive: true });
 
   const opslag = maakOpslag(openDatabase(cfg.dbPad));
+  const sorteerOpslag = maakSorteerOpslag(opslag.db);
   const logger = (niveau, bericht) => opslag.log(niveau, bericht);
+  const leesInstellingen = () => instellingen.lees(opslag);
 
-  const graph = maakGraph({ ...cfg.m365 });
+  const mail = maakMailKoppeling({ provider: cfg.mailProvider, ...cfg.m365 });
   const claude = maakClaude({ ...cfg.claude, log: logger });
+  const classificeerder = maakClassificeerder({ apiKey: cfg.claude.apiKey, model: cfg.sorteren.model });
   const bunq = maakBunq({
     apiKey: cfg.bunq.apiKey,
     omgeving: cfg.bunq.omgeving,
@@ -500,37 +489,82 @@ function start() {
     log: logger,
   });
 
-  const { server, sync } = maakServer({
-    opslag, graph, claude, bunq,
-    pdfMap: cfg.pdfMap,
-    gebruiker: cfg.gebruiker,
-    wachtwoord: cfg.wachtwoord,
-    basisPad: cfg.basisPad,
+  // Het factuurdashboard leest de map Facturen via dezelfde mailkoppeling.
+  const facturen = maakFacturenApp({ opslag, graph: mail, claude, bunq, pdfMap: cfg.pdfMap, basisPad: '/facturen' });
+  const sorteerder = maakSorteerder({ sorteerOpslag, mail, classificeerder, instellingenLezer: leesInstellingen, log: logger });
+
+  const sso = ssoStatus(cfg.portaal);
+  const webhook = maakWebhook({
+    mail, sorteerOpslag, sorteerder,
+    geheim: cfg.webhookGeheim,
+    notificatieUrl: cfg.portaal.baseUrl ? cfg.portaal.baseUrl + '/graph/notify' : '',
+    actief: sso.aan,
+    log: logger,
+  });
+  const mailApp = maakMailApp({
+    opslag, sorteerOpslag, sorteerder, webhook, mail, classificeerder,
+    basisPad: '/mail', sorteerMinuten: cfg.sorteren.minuten,
+  });
+
+  let auth;
+  if (sso.aan) {
+    const sessies = maakSessies({ db: opslag.db, geheim: cfg.portaal.sessieGeheim });
+    const oidc = maakOidc({ ...cfg.portaal, pogingen: sessies.pogingen });
+    auth = { modus: 'sso', sessies, oidc, baseUrl: cfg.portaal.baseUrl };
+  } else {
+    auth = {
+      modus: 'basic',
+      basic: maakBasicAuth({ gebruiker: cfg.gebruiker, wachtwoord: cfg.wachtwoord }),
+      // Alleen voor de CSRF-tokens; zonder SESSION_SECRET één per start.
+      geheim: cfg.portaal.sessieGeheim || crypto.randomBytes(32).toString('hex'),
+    };
+  }
+
+  const { server } = maakPortaal({
+    opslag, sorteerOpslag, facturen, mailApp, webhook, auth,
+    offertesUrl: cfg.portaal.offertesUrl,
+    log: logger,
   });
 
   const ontbreekt = [
-    !cfg.gebruiker || !cfg.wachtwoord ? 'DASHBOARD_USER/DASHBOARD_PASSWORD' : null,
-    !graph.beschikbaar ? 'Microsoft 365' : null,
+    !sso.aan && (!cfg.gebruiker || !cfg.wachtwoord) ? 'DASHBOARD_USER/DASHBOARD_PASSWORD' : null,
+    !mail.beschikbaar ? 'Microsoft 365' : null,
     !claude.beschikbaar ? 'Claude' : null,
     !bunq.beschikbaar ? 'bunq' : null,
   ].filter(Boolean);
   if (ontbreekt.length) {
     console.warn(nuIso() + ' niet ingesteld: ' + ontbreekt.join(', ') + ' (die stappen worden overgeslagen)');
   }
+  console.log(nuIso() + (sso.aan
+    ? ' inloggen: Microsoft (SSO) voor ' + cfg.portaal.baseUrl
+    : ' inloggen: Basic Auth, alleen lokaal (SSO mist: ' + sso.ontbreekt.join(', ') + ')'));
+  if (!webhook.actief) console.log(nuIso() + ' webhook uit: de mailsorteerder pollt alleen');
 
   server.listen(cfg.poort, '127.0.0.1', () => {
-    console.log(`${nuIso()} factuurdashboard luistert op 127.0.0.1:${cfg.poort}`
-      + `${cfg.basisPad ? ' onder ' + cfg.basisPad : ''}, data in ${cfg.dataMap}`);
+    console.log(`${nuIso()} portaal luistert op 127.0.0.1:${cfg.poort}, data in ${cfg.dataMap}`);
   });
 
-  // De timer start pas na de eerste wachttijd; direct bij het opstarten
-  // synchroniseren zou een herstart een dure bezigheid maken.
-  const timer = setInterval(() => {
-    sync.draai({ aanleiding: 'timer' }).catch((fout) => {
+  // De factuurronde start pas na de eerste wachttijd; direct bij het
+  // opstarten synchroniseren zou een herstart een dure bezigheid maken.
+  const factuurTimer = setInterval(() => {
+    facturen.sync.draai({ aanleiding: 'timer' }).catch((fout) => {
       console.error(nuIso() + ' sync mislukt: ' + fout.message);
     });
   }, cfg.syncMinuten * 60 * 1000);
-  timer.unref();
+  factuurTimer.unref();
+
+  // Sorteren is goedkoop (een delta query); de eerste ronde na een halve
+  // minuut, zodat een nieuw startpunt of een subscription snel klaarstaat.
+  const sorteerRonde = async () => {
+    await sorteerder.draai({ aanleiding: 'timer' });
+    await webhook.onderhoud();
+  };
+  setTimeout(() => sorteerRonde().catch(() => {}), 30 * 1000).unref();
+  setInterval(() => sorteerRonde().catch((fout) => {
+    console.error(nuIso() + ' sorteren mislukt: ' + fout.message);
+  }), cfg.sorteren.minuten * 60 * 1000).unref();
+
+  if (auth.sessies) setInterval(() => auth.sessies.opruimen(), 60 * 60 * 1000).unref();
 
   for (const signaal of ['SIGTERM', 'SIGINT']) {
     process.on(signaal, () => {

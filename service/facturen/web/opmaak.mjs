@@ -15,35 +15,76 @@ export const MENU = [
   { pad: '/instellingen', naam: 'Instellingen' },
 ];
 
-export function pagina({ titel, basis = '', actief = '/', inhoud, meldingen = [] }) {
+// `kader` is er alleen binnen het portaal: dan komt de portaalbalk bovenaan
+// (Start, Facturen, Mail, de ingelogde gebruiker en Uitloggen), komen css en
+// js van de root, en krijgt elk POST-formulier het CSRF-token als verborgen
+// veld. Zonder kader is het de losse pagina van het factuurdashboard.
+export function pagina({
+  titel, basis = '', actief = '/', inhoud, meldingen = [], kader = null,
+  menu = MENU, onderdeel = 'Facturen',
+}) {
   const b = basis;
-  return `<!doctype html>
+  const statisch = kader ? '' : b;
+  const html = `<!doctype html>
 <html lang="nl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>${e(titel)} — Facturen De Koning Tegelwerken</title>
-<link rel="stylesheet" href="${b}/dashboard.css">
+<title>${e(titel)} — ${e(onderdeel)} De Koning Tegelwerken</title>
+<link rel="stylesheet" href="${statisch}/dashboard.css">
 </head>
 <body>
-<header class="kop">
+${kader ? portaalBalk(kader, onderdeel) : ''}<header class="kop${kader ? ' kop--sub' : ''}">
   <div class="kop__binnen">
-    <p class="kop__naam">Facturen <span>De Koning Tegelwerken</span></p>
-    <nav aria-label="Hoofdmenu">
-      ${MENU.map((m) => `<a href="${b}${m.pad === '/' ? '/' : m.pad}"${m.pad === actief ? ' aria-current="page"' : ''}>${e(m.naam)}</a>`).join('\n      ')}
-    </nav>
+    <p class="kop__naam">${e(onderdeel)} <span>De Koning Tegelwerken</span></p>
+    ${menu.length ? `<nav aria-label="${e(onderdeel)}">
+      ${menu.map((m) => `<a href="${b}${m.pad === '/' ? '/' : m.pad}"${m.pad === actief ? ' aria-current="page"' : ''}>${e(m.naam)}</a>`).join('\n      ')}
+    </nav>` : ''}
   </div>
 </header>
 <main>
 ${meldingen.map(melding).join('\n')}
 ${inhoud}
 </main>
-<p class="voet">Intern dashboard, alleen via het tailnet. Gebouwd door Handsfree Digital.</p>
-<script src="${b}/dashboard.js" type="module"></script>
+<p class="voet">Intern ${kader ? 'portaal' : 'dashboard'} van De Koning Tegelwerken. Gebouwd door Handsfree Digital.</p>
+<script src="${statisch}/dashboard.js" type="module"></script>
 </body>
 </html>
 `;
+  return kader ? metCsrf(html, kader.csrf) : html;
+}
+
+export const PORTAAL_MENU = [
+  { pad: '/', naam: 'Start', onderdeel: 'Portaal' },
+  { pad: '/facturen/', naam: 'Facturen', onderdeel: 'Facturen' },
+  { pad: '/mail/', naam: 'Mail', onderdeel: 'Mail' },
+];
+
+function portaalBalk(kader, onderdeel) {
+  return `<div class="portaalbalk">
+  <div class="kop__binnen">
+    <nav aria-label="Portaal">
+      ${PORTAAL_MENU.map((m) => `<a href="${m.pad}"${m.onderdeel === onderdeel ? ' aria-current="page"' : ''}>${e(m.naam)}</a>`).join('\n      ')}
+    </nav>
+    <div class="portaalbalk__gebruiker">
+      <span>${e(kader.naam || kader.email || '')}</span>
+      ${kader.modus === 'sso'
+    ? '<form method="post" action="/auth/logout"><button class="knop knop--rustig knop--klein" type="submit">Uitloggen</button></form>'
+    : '<span class="portaalbalk__modus">lokaal, Basic Auth</span>'}
+    </div>
+  </div>
+</div>
+`;
+}
+
+// Zet het CSRF-token als eerste veld in elk formulier met method="post".
+// Alle formulieren komen uit onze eigen sjablonen; het token zelf is
+// base64url en heeft geen escaping nodig, maar krijgt die toch.
+export function metCsrf(html, token) {
+  if (!token) return html;
+  return html.replace(/<form\b[^>]*\bmethod="post"[^>]*>/gi,
+    (tag) => `${tag}<input type="hidden" name="_csrf" value="${e(token)}">`);
 }
 
 export function melding({ soort = 'info', tekst }) {

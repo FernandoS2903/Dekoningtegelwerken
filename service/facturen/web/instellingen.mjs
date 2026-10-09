@@ -4,19 +4,19 @@ import { escapeHtml as e } from '../lib/hulp.mjs';
 import { DREMPEL_MAX, DREMPEL_MIN, TERUGKIJKEN_MAX, TERUGKIJKEN_MIN } from '../lib/instellingen.mjs';
 import { geschiedenis, pagina } from './opmaak.mjs';
 
-function schakel(naam, label, uitleg, aan) {
+export function schakel(naam, label, uitleg, aan) {
   return `<div class="schakel">
   <input type="checkbox" id="s-${naam}" name="${naam}" value="1"${aan ? ' checked' : ''}>
   <label for="s-${naam}">${e(label)}<span class="uitleg">${uitleg}</span></label>
 </div>`;
 }
 
-function uitslagRegel(naam, uitslag) {
+export function uitslagRegel(naam, uitslag) {
   if (!uitslag) return `<li><strong>${e(naam)}</strong> — nog niet getest</li>`;
   return `<li><strong>${e(naam)}</strong> — <span class="${uitslag.ok ? 'ja' : 'nee'}">${uitslag.ok ? 'in orde' : 'werkt niet'}</span>: ${e(uitslag.melding)}</li>`;
 }
 
-export function instellingenPagina({ basis, opslag, inst, test = null, meldingen = [] }) {
+export function instellingenPagina({ basis, opslag, inst, test = null, meldingen = [], kader = null }) {
   const inhoud = `<h1>Instellingen</h1>
 
 <form method="post" action="${basis}/instellingen">
@@ -94,5 +94,5 @@ export function instellingenPagina({ basis, opslag, inst, test = null, meldingen
 </section>
 `;
 
-  return pagina({ titel: 'Instellingen', basis, actief: '/instellingen', inhoud, meldingen });
+  return pagina({ titel: 'Instellingen', basis, actief: '/instellingen', inhoud, meldingen, kader });
 }

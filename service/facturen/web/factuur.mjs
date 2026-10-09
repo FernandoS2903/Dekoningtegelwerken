@@ -31,7 +31,7 @@ function betalingBlok(betaling, { score, basis, factuurId, voorstel }) {
 </section>`;
 }
 
-export function factuurPagina({ basis, opslag, inst, factuur, nu = vandaag(), meldingen = [] }) {
+export function factuurPagina({ basis, opslag, inst, factuur, nu = vandaag(), meldingen = [], kader = null }) {
   const naam = factuur.leverancier || factuur.afzender_naam || factuur.afzender_email || '(onbekende afzender)';
   const gekoppeld = opslag.betaling(factuur.bunq_betaling_id);
   const voorstel = factuur.status === 'open' ? opslag.betaling(factuur.suggestie_betaling_id) : null;
@@ -148,5 +148,5 @@ ${factuur.uitlees_status === 'geen_factuur' ? '<div class="melding"><p>Volgens h
 </div>
 `;
 
-  return pagina({ titel: naam, basis, actief: '/', inhoud, meldingen });
+  return pagina({ titel: naam, basis, actief: '/', inhoud, meldingen, kader });
 }

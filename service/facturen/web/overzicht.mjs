@@ -5,7 +5,7 @@ import { datumTijdNl, escapeHtml as e, euro } from '../lib/hulp.mjs';
 import { vatSamen } from '../lib/sync.mjs';
 import { filterbalk, maandGrafiek, pagina, rij, tegel, topLeveranciers } from './opmaak.mjs';
 
-export function overzicht({ basis, opslag, inst, filter, zoek, nu, meldingen = [], syncBezig = false }) {
+export function overzicht({ basis, opslag, inst, filter, zoek, nu, meldingen = [], syncBezig = false, kader = null }) {
   const t = opslag.tegels(nu);
   const regels = opslag.lijst(filter, zoek, nu);
 
@@ -63,7 +63,7 @@ ${regels.length
 ${regels.length >= 500 ? '<p class="tegel__bij">Alleen de eerste 500 regels worden getoond; verfijn met het zoekveld.</p>' : ''}
 `;
 
-  return pagina({ titel: 'Overzicht', basis, actief: '/', inhoud, meldingen });
+  return pagina({ titel: 'Overzicht', basis, actief: '/', inhoud, meldingen, kader });
 }
 
 // Alleen gebruikt in de tegel-tekst hierboven; los gehouden zodat de test
