@@ -251,7 +251,22 @@ met onderaan zijn antwoorden en correcties bij de go voor fase B.
 - **Fase B (klaar):** gebouwd, getest en gepusht; het systeem is niet
   aangeraakt (alleen een alleen-lezen controle van de delta query op de
   mailbox en een `--droog` van het deploy-script).
-- **Fase C (open):** zie [`deploy/CMS-INSTALLATIE.md`](../deploy/CMS-INSTALLATIE.md).
+- **Fase C (stap 1–6 klaar, 9 okt 2026, 16:20–16:30 CEST):** DNS `cms` →
+  178.104.144.203 (bij Namecheap; het domein staat níet bij Cloudflare, al
+  heeft Bob daar ook records). Certificaat tot 7 jan 2027 (certbot, webroot).
+  Env aangevuld met `GRAPH_WEBHOOK_SECRET` en `OFFERTES_URL` (back-up ernaast,
+  600). Versie ec325f2 in `/opt/dekoning-facturen`, unit bijgewerkt, dienst
+  herstart: SSO aan, schema 2. Vhost `cms.dekoningtegelwerken.nl.conf` in
+  sites-enabled, fail2ban-jail `dekoning-cms` actief. Van buitenaf: http→https,
+  `/`→`/auth/login`→Microsoft, `/auth/check` 401, `/graph/notify` met fout
+  geheim 401, HSTS/CSP/noindex aanwezig. Sorteerder: startpunt 14:20 UTC,
+  mappen `Klanten & projecten`, `Leveranciers`, `Nieuwsbrieven & reclame`
+  aangemaakt (14:24), webhook-subscription `d5ebf7c7-…` geldig tot 12 okt
+  (de eerste poging om 14:20 faalde nog omdat 443 toen niet bestond).
+  **Stap 7 open:** Bob kan niet inloggen als info@ (geen toegang tot die MFA).
+  Geen bypass bouwen; oplossing: zijn beheerdersaccount toewijzen op de
+  enterprise app én toevoegen aan `PORTAL_ALLOWED_EMAILS` (daarna herstart).
+  Wacht op het adres. Eerste gesorteerde mail nog niet gezien.
 
 ## Mailtoegang (besluit Bob, 9 okt 2026)
 
