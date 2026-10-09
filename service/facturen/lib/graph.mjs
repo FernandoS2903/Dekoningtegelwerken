@@ -1,18 +1,44 @@
 // Microsoft Graph, app-only (client credentials).
 //
 // De app heeft in Entra géén Mail-permissions; de toegang loopt via Exchange
-// RBAC for Applications en is daar beperkt tot één mailbox (zie
-// deploy/Setup-MailboxScope.ps1). Daarom spreken we de mailbox altijd aan als
+// RBAC for Applications en is daar beperkt tot één mailbox (scope op
+// info@dekoningtegelwerken.nl, zie deploy/Setup-MailboxScope.ps1). De tenant
+// wordt gedeeld met andere mailboxen, dus nooit Entra Mail-rechten toevoegen:
+// die gelden tenant-breed. We spreken de mailbox altijd aan als
 // /users/{mailbox}/... en nooit tenant-breed.
 //
-// Wat deze module doet: token halen en cachen, de map onder Inbox vinden,
-// mails en PDF-bijlagen ophalen, een mail doorsturen en een categorie zetten.
+// Met RBAC staat er geen roles-claim in het token. Of de toegang werkt, test
+// je dus echt op de mailbox (zie test()), niet aan het token.
+//
+// Wat deze module doet: token halen en cachen, mappen onder Inbox vinden en
+// aanmaken, mails en PDF-bijlagen ophalen, de Inbox volgen met een delta
+// query, mails verplaatsen, doorsturen en een categorie geven, en de
+// webhook-subscription beheren. 429 en 503 met Retry-After vangt http.mjs op.
+//
+// De rest van de dienst praat via de vaste mailinterface (lib/mail/), niet
+// rechtstreeks met deze module; zie lib/mail/m365.mjs.
 
 import { HttpFout, jsonOfFout, vraag } from './http.mjs';
 
 export const GRAPH = 'https://graph.microsoft.com/v1.0';
 export const SCOPE = 'https://graph.microsoft.com/.default';
 export const USER_AGENT = 'dekoning-facturen/1.0';
+
+// Velden die de sorteerder van een nieuwe mail nodig heeft. De inhoud zelf
+// (tekst, bijlagenamen) wordt pas opgehaald als er echt geclassificeerd moet
+// worden.
+export const DELTA_SELECT = [
+  'id', 'internetMessageId', 'subject', 'from', 'receivedDateTime',
+  'hasAttachments', 'isDraft', 'flag', 'categories',
+].join(',');
+
+// Een delta-ronde loopt nooit eindeloos door: na zoveel pagina's stopt hij
+// met een fout, zodat een kapotte nextLink de dienst niet vasthoudt.
+export const MAX_DELTA_PAGINAS = 200;
+
+// Mail-subscriptions mogen hooguit iets minder dan 7 dagen lopen; we nemen
+// er 3 en verlengen ruim op tijd (zie lib/webhook.mjs).
+export const SUBSCRIPTION_MINUTEN = 3 * 24 * 60;
 
 // Enkele quotes in een OData-filter worden verdubbeld.
 const odataTekst = (waarde) => String(waarde).replaceAll("'", "''");
@@ -186,6 +212,113 @@ export function maakGraph({
         body: { categories: [...huidig, categorie] },
       });
       return true;
+    },
+
+    // -- sorteren ----------------------------------------------------------
+    // Eén delta-ronde op de Inbox. Met een deltaLink krijg je wat er sinds de
+    // vorige ronde veranderde. Zonder deltaLink begint hij bij `vanaf`: het
+    // filter op receivedDateTime zorgt dat er niets historisch meekomt en dat
+    // de eerste ronde alleen een deltaLink oplevert.
+    // Een verlopen deltaLink geeft 410; dat handelt de sorteerder af.
+    async inboxDelta({ deltaLink = null, vanaf = null } = {}) {
+      let url = deltaLink;
+      if (!url) {
+        const filter = encodeURIComponent(`receivedDateTime ge ${vanaf || new Date(nu()).toISOString()}`);
+        url = `${basis()}/mailFolders/inbox/messages/delta?$select=${DELTA_SELECT}&$filter=${filter}`;
+      }
+
+      const berichten = [];
+      for (let pagina = 0; pagina < MAX_DELTA_PAGINAS; pagina++) {
+        const data = await graph(url, { volledig: true, headers: { prefer: 'odata.maxpagesize=50' } });
+        berichten.push(...(data.value || []));
+        if (data['@odata.deltaLink']) return { berichten, deltaLink: data['@odata.deltaLink'] };
+        url = data['@odata.nextLink'];
+        if (!url) throw new Error('delta query gaf geen nextLink en geen deltaLink');
+      }
+      throw new Error(`delta query liep langer dan ${MAX_DELTA_PAGINAS} pagina's`);
+    },
+
+    // Alleen de namen, voor de classificatie; de bijlagen zelf gaan nooit mee.
+    async bijlageNamen(messageId) {
+      const data = await graph(`/messages/${encodeURIComponent(messageId)}/attachments?$select=name,isInline`);
+      return (data.value || []).filter((b) => !b.isInline && b.name).map((b) => String(b.name));
+    },
+
+    // Verplaatst een mail. Graph geeft de mail in de nieuwe map terug, met
+    // een nieuw id; dat id is vanaf nu het enige dat werkt. De leesstatus
+    // verandert niet.
+    async verplaats(messageId, mapId) {
+      const data = await graph(`/messages/${encodeURIComponent(messageId)}/move`, {
+        methode: 'POST',
+        body: { destinationId: mapId },
+      });
+      if (!data || !data.id) throw new Error('verplaatsen gaf geen nieuw id terug');
+      return data.id;
+    },
+
+    // De directe submappen van de Inbox.
+    async inboxMappen() {
+      const data = await graph('/mailFolders/inbox/childFolders?$select=id,displayName&$top=100');
+      return (data.value || []).map((m) => ({ id: m.id, naam: m.displayName }));
+    },
+
+    // Zoekt een submap van de Inbox op naam en maakt hem aan als hij er niet
+    // is. Bestaat hij intussen toch (409), dan zoeken we opnieuw.
+    async inboxMap(naam, { aanmaken = true } = {}) {
+      const zoek = async () => {
+        const filter = encodeURIComponent(`displayName eq '${odataTekst(naam)}'`);
+        const uit = await graph(`/mailFolders/inbox/childFolders?$select=id,displayName&$filter=${filter}`);
+        const gevonden = (uit.value || [])[0];
+        return gevonden ? { id: gevonden.id, naam: gevonden.displayName, nieuw: false } : null;
+      };
+
+      const bestaand = await zoek();
+      if (bestaand || !aanmaken) return bestaand;
+      try {
+        const gemaakt = await graph('/mailFolders/inbox/childFolders', {
+          methode: 'POST',
+          body: { displayName: naam, isHidden: false },
+        });
+        return { id: gemaakt.id, naam: gemaakt.displayName, nieuw: true };
+      } catch (fout) {
+        if (fout instanceof HttpFout && fout.status === 409) {
+          const alsnog = await zoek();
+          if (alsnog) return alsnog;
+        }
+        throw fout;
+      }
+    },
+
+    // -- webhook-subscription --------------------------------------------
+    // Alleen `created` op de Inbox. De notificatie zelf vertrouwen we niet;
+    // hij is alleen een seintje om de delta-ronde te draaien.
+    async maakSubscription({ notificatieUrl, clientState, verlooptOp }) {
+      const data = await graph(`${GRAPH}/subscriptions`, {
+        volledig: true,
+        methode: 'POST',
+        body: {
+          changeType: 'created',
+          notificationUrl: notificatieUrl,
+          resource: `users/${mailbox}/mailFolders('inbox')/messages`,
+          expirationDateTime: verlooptOp,
+          clientState,
+          latestSupportedTlsVersion: 'v1_2',
+        },
+      });
+      return { id: data.id, verlooptOp: data.expirationDateTime };
+    },
+
+    async verlengSubscription(id, verlooptOp) {
+      const data = await graph(`${GRAPH}/subscriptions/${encodeURIComponent(id)}`, {
+        volledig: true,
+        methode: 'PATCH',
+        body: { expirationDateTime: verlooptOp },
+      });
+      return { id: data.id, verlooptOp: data.expirationDateTime };
+    },
+
+    async verwijderSubscription(id) {
+      await graph(`${GRAPH}/subscriptions/${encodeURIComponent(id)}`, { volledig: true, methode: 'DELETE' });
     },
 
     async test() {
