@@ -378,3 +378,57 @@ zodra bekend, bunq-sleutel, boekhouderadres, back-up van
 `/var/lib/dekoning-facturen`. Verder AVG: mailinhoud (1500 tekens) gaat naar
 Anthropic als er geen regel past.
 
+---
+
+# Redesign portaal (9 oktober 2026, `feature/portaal-redesign`)
+
+Opdracht van Bob (chat, 9 okt): het facturenportaal moderniseren tot een
+rustig financieel dashboard, met behoud van alle functies, synchronisaties
+en koppelingen. De tekst brak af in punt 6 ("Toon facturen als compacte,
+overzicht…"); dat is ingevuld als compacte kaarten per factuur op mobiel.
+Branch vanaf `main` (= 8c332c5, het portaal is op 9 okt naar main gegaan).
+
+## Wat er veranderde (alleen `service/facturen/web/`, routes en db-queries)
+
+- **Sidebar** (`opmaak.mjs`): één vast menu op desktop (Dashboard, Facturen,
+  Leveranciers, Mail, Instellingen; Offertes als externe link eronder), logo
+  bovenaan, profiel met Uitloggen onderaan. Op mobiel een compacte kop met
+  een `<details>`-menu (werkt zonder JS). De dubbele horizontale navigatie is
+  weg; Mail en Instellingen hebben tabbladen (`subnav`).
+- **Dashboard** (`/`, ook `/facturen/dashboard`): paginatitel met rechts de
+  synchronisatiestatus en de knop; KPI-kaarten (openstaand, verlopen, betaald
+  deze maand, nog door te sturen, te controleren), maandgrafiek met tooltip
+  (SVG + `dashboard.js`, geen bibliotheek), grootste leveranciers, **Actie
+  vereist** (`opslag.actieVereist`: uitlezen mislukt, betaling bevestigen,
+  verlopen, nog doorsturen) en de mailtellingen.
+- **Facturen** (`/facturen/`): tabel op desktop (CSS grid, geen `<table>`,
+  kaarten op mobiel), hele rij klikbaar, zoeken, statusfilters, sortering
+  via kolomkoppen en een select (`SORTERINGEN` in `db.mjs`, whitelist).
+- **Leveranciers** (`/facturen/leveranciers`, `opslag.leveranciers`):
+  aantal, open, totaal, laatste factuur; klik = factuurlijst gefilterd op
+  die naam (`zoek`). Geen eigen gegevens.
+- **Factuur**: op desktop (≥ 64em) in een zijpaneel naast de lijst
+  (`?deel=paneel` geeft alleen de inhoud; `dashboard.js` laadt hem via fetch,
+  zet de URL met pushState, verstuurt formulieren via fetch en ververst de
+  lijst). Vanaf 90em staan lijst en paneel naast elkaar, daaronder vervangt
+  het paneel de lijst. Op mobiel en zonder JS: de gewone pagina.
+- **Bevestiging** bij betaald, negeren, koppelen en doorsturen; knoppen gaan
+  na verzenden op slot (`data-bezig`). Serverkant was al idempotent.
+- **CSP**: `connect-src 'self'` erbij (fetch werd anders geblokkeerd;
+  gevonden in de browsertest).
+- `/logo.svg` wordt door de dienst uitgeleverd; `facturen-deploy.sh` neemt
+  `assets/brand/logo.svg` mee.
+
+## Getest
+
+- `node --test`: 183/183. `portaal-browser.mjs`: 56/56 (nu met facturen,
+  zijpaneel-flow incl. negeren via fetch, mobiel, tooltip);
+  `facturen-browser.mjs`: 45/45. Klikvlakken ≥ 48 px op mobiel (`--tik`
+  3rem, op desktop 2,5rem).
+
+## Open
+
+- Nog niet uitgerold op cms.; wacht op akkoord van Bob (en zijn eerste
+  login, fase C stap 7).
+- Punt 6 en verder van de opdracht ontbreken nog.
+
