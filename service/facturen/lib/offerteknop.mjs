@@ -68,6 +68,19 @@ export function isLokaal(req) {
   return true;
 }
 
+// Een pad binnen Offerteknop: begint met één slash, geen tweede host.
+export const IS_OFFERTEKNOP_PAD = /^\/(?!\/)[A-Za-z0-9_\-./?=&%+]*$/;
+
+// Van een URL in Offerteknop (bewerk_url) naar het pad erbinnen.
+export function offerteknopPad(url) {
+  try {
+    const u = new URL(String(url || ''), 'https://x');
+    return u.pathname + u.search;
+  } catch {
+    return '/offertes/';
+  }
+}
+
 export class OfferteknopFout extends Error {
   constructor(status, melding) { super(melding); this.name = 'OfferteknopFout'; this.status = status; }
 }
@@ -126,6 +139,18 @@ export function maakOfferteknop({
     },
     offerte: (id) => roep('GET', `/api/tenant/offertes/${encodeURIComponent(String(id))}`),
     concept: (body) => roep('POST', '/api/tenant/offertes/concept', body),
+
+    // Eenmalige inloglink voor Offerteknop (route /inloggen-via-koppeling
+    // daar): payload met slug, e-mail, verloop (60 s) en jti, ondertekend met
+    // de API-sleutel. De gebruiker van het portaal moet daar beheerder zijn.
+    inlogToken({ email, nuMs = nu() }) {
+      if (!beschikbaar) throw new OfferteknopFout(503, 'Offerteknop is niet ingesteld.');
+      const payload = Buffer.from(JSON.stringify({
+        slug: tenant, email: String(email || '').trim().toLowerCase(),
+        exp: Math.floor(nuMs / 1000) + 60, jti: crypto.randomBytes(12).toString('hex'),
+      })).toString('base64url');
+      return payload + '.' + crypto.createHmac('sha256', sleutelIn).update(payload).digest('base64url');
+    },
 
     // Inkomend van Offerteknop: {ok} of {fout}. `pad` is pad plus query.
     controleer({ methode, pad, koppen, body }) {

@@ -106,8 +106,8 @@ function initialen(naam) {
 function sidebar(kader, onderdeel) {
   const items = HOOFDMENU.map((m) => `<a href="${m.pad}"${m.onderdeel === onderdeel ? ' aria-current="page"' : ''}>${icoon(m.icoon)}<span>${e(m.naam)}</span></a>`).join('\n      ');
   // Offerteknop zelf (eigen login) als externe link onder het menu.
-  const offertes = kader.offertesUrl
-    ? `<a class="sidebar__extern" href="${e(kader.offertesUrl)}" rel="noopener noreferrer" target="_blank">${icoon('extern')}<span>Offerteknop</span></a>`
+  const offertes = kader.offertesUrl || kader.offertesOpen
+    ? `<a class="sidebar__extern" href="${e(kader.offertesOpen || kader.offertesUrl)}" rel="noopener noreferrer" target="_blank">${icoon('extern')}<span>Offerteknop</span></a>`
     : '';
   const profiel = `<div class="profiel">
       <span class="profiel__initialen" aria-hidden="true">${e(initialen(kader.naam || kader.email))}</span>

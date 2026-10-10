@@ -9,6 +9,7 @@ import { INBOX_NAAM } from './lib/classificeer.mjs';
 import { nuIso } from './lib/hulp.mjs';
 import { kop, leesBody, meldingenUit, stuurHtml, stuurTekst } from './lib/web.mjs';
 import { BRON_NAAM, STATUS_NAAM, logboekPagina, mailInstellingenPagina, regelsPagina } from './web/mail.mjs';
+import { offerteknopPad } from './lib/offerteknop.mjs';
 
 const MELDINGEN = {
   gestart: ['info', 'De ronde is gestart. Vernieuw de pagina over een paar seconden.'],
@@ -85,7 +86,9 @@ export function maakMailApp({
       try {
         const { bewerkUrl } = await offertes.conceptUitMail(regel, { gebruiker });
         if (!bewerkUrl) return terug(res, '/', 'offerte-fout');
-        kop(res, 303, 'text/plain; charset=utf-8', { location: bewerkUrl });
+        // Via de eenmalige inloglink als die er is, anders de editor zelf.
+        const open = offertes.openUrl ? offertes.openUrl(offerteknopPad(bewerkUrl)) : '';
+        kop(res, 303, 'text/plain; charset=utf-8', { location: open || bewerkUrl });
         return res.end('');
       } catch (fout) {
         opslag.log('error', 'Concept-offerte maken uit een mail mislukt: ' + fout.message);

@@ -183,7 +183,7 @@ export function maakPortaal({
     return stuurHtml(res, 200, facturen.dashboard({
       kader,
       mail: sorteerOpslag.tellingen({ vandaagVanaf: middernachtAmsterdam(), weekVanaf: week }),
-      offertesUrl,
+      offertesUrl: offertes && offertes.metSso && offertes.metSso() ? offertes.openUrl('/offertes/') : offertesUrl,
       offertes: offertes ? offertes.tellingen(vandaag()) : null,
     }));
   }
@@ -216,7 +216,11 @@ export function maakPortaal({
         }
       }
 
-      const kader = { naam: persoon.naam, email: persoon.email, modus: persoon.modus, csrf: persoon.csrf, offertesUrl };
+      const kader = {
+        naam: persoon.naam, email: persoon.email, modus: persoon.modus, csrf: persoon.csrf, offertesUrl,
+        // Met de koppeling gaat de link naar Offerteknop via de eenmalige inloglink.
+        offertesOpen: offertes && offertes.metSso && offertes.metSso() ? offertes.openUrl('/offertes/') : '',
+      };
       const ctx = { kader, body };
 
       if (pad === '/' && req.method === 'GET') return start(res, kader);

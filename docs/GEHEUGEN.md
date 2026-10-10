@@ -463,7 +463,7 @@ geen git-remote.
 |---|---|
 | `lib/offerteknop.mjs` | HMAC-client (sleutel `OFFERTEKNOP_API_SLEUTEL`) en controle van wat Offerteknop stuurt (`OFFERTEKNOP_WEBHOOK_SLEUTEL`); `isLokaal` (geen `X-Forwarded-For`) |
 | `lib/offerte-opslag.mjs` | schema 3: `offertes_spiegel`, `offerte_concepten`, `webhook_gebeurtenissen`, `intern_replay`, `mail_relay_log`, `aanvragen` (wizard, voorbereid) |
-| `offertes.mjs`, `web/offertes.mjs` | pagina **Offertes** (filters, zoeken, Bijwerken, rijen openen in Offerteknop), blok op het dashboard (concepten, wacht op akkoord, geaccepteerd deze maand met bedrag, verlopen), `conceptUitMail` |
+| `offertes.mjs`, `web/offertes.mjs` | pagina **Offertes** (filters, zoeken, Bijwerken, rijen openen in Offerteknop), blok op het dashboard (concepten, wacht op akkoord, geaccepteerd deze maand met bedrag, verlopen), `conceptUitMail`; `/offertes/open?naar=` = eenmalige inloglink naar Offerteknop (60 s, eenmalig, ondertekend met de API-sleutel; het portaaladres moet daar beheerder zijn). Vraag Bob 10 okt: "Kunnen we vanuit cms SSO naar de offertepagina doen?" |
 | `intern.mjs` | `/intern/offerteknop/webhook` en `/intern/mail/verstuur` (alleen lokaal, HMAC, replay; ontvanger moet het klantadres van de offerte zijn of de mailbox zelf; 20 per uur, 100 per dag; bijlagen tot 3,5 MB) |
 | `lib/aanvraag.mjs` | Claude haalt naam, telefoon, e-mail, adres en omschrijving uit een aanvraagmail (terugval: afzender) |
 | `mail.mjs`, `web/mail.mjs` | knop **Maak offerte** bij mail in Offerteaanvragen → concept in Offerteknop, door naar de editor; tweede klik opent hetzelfde |

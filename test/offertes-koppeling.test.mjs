@@ -94,7 +94,7 @@ async function bouw() {
   const webhook = maakWebhook({ mail, sorteerOpslag, sorteerder, geheim: 'x'.repeat(40), notificatieUrl: '', actief: false });
   const offerteknop = maakOfferteknop({ baseUrl: nep.basis, tenant: TENANT, sleutelIn: SLEUTEL_IN, sleutelUit: SLEUTEL_UIT });
   const aanvraagLezer = { beschikbaar: true, aanroepen: [], async lees(invoer) { this.aanroepen.push(invoer); return { velden: { ...terugval(invoer), naam: 'Piet Aanvrager', telefoon: '06 1234 5678', adres: 'Dorpsstraat 1', postcode_plaats: 'IJmuiden', omschrijving: 'Badkamer: 8 m2 vloer, 30 m2 wand, 60x60.' }, bron: 'nep' }; } };
-  const offertes = maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail, aanvraagLezer, basisPad: '/offertes' });
+  const offertes = maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail, aanvraagLezer, basisPad: '/offertes', publiekeUrl: 'https://de-koning-tegelwerken.offerteknop.nl/offertes/' });
   const intern = maakIntern({ offerteOpslag, offerteknop, mail, limiet: { uur: 2, dag: 100 }, log: (n, b) => opslag.log(n, b) });
   const mailApp = maakMailApp({ opslag, sorteerOpslag, sorteerder, webhook, mail, classificeerder: nepClassificeerder(), offertes, basisPad: '/mail' });
   const auth = { modus: 'basic', basic: maakBasicAuth({ gebruiker: 'bob', wachtwoord: 'test-wachtwoord' }), geheim: GEHEIM };
@@ -145,7 +145,7 @@ test('bijwerken haalt de lijst ondertekend op; filters en zoeken werken; rijen l
   assert.match(html, /2 offertes/);
   assert.match(html, /OFF-2026-0001/);
   assert.match(html, /CONCEPT-0002/);
-  assert.ok(html.includes(`href="${BEWERK(1)}"`), 'rij linkt naar de editor in Offerteknop');
+  assert.ok(html.includes(`href="/offertes/open?naar=${encodeURIComponent('/offertes/prijsboek-offerte.html?id=1')}"`), 'rij linkt via de eenmalige inloglink naar de editor');
   const wacht = await (await haal('/offertes/?filter=wacht')).text();
   assert.match(wacht, /1 offerte\b/);
   assert.match(wacht, /OFF-2026-0001/);
@@ -229,7 +229,8 @@ test('Maak offerte bij een mail in Offerteaanvragen: concept met klantgegevens e
   assert.match(pagina, new RegExp(`action="/mail/log/${regel.id}/offerte"`), 'knop Maak offerte');
   const r = await post(`/mail/log/${regel.id}/offerte`);
   assert.equal(r.status, 303);
-  assert.equal(r.headers.get('location'), BEWERK(70));
+  assert.match(r.headers.get('location'), /^\/offertes\/open\?naar=/);
+  assert.equal(new URL(r.headers.get('location'), 'http://x').searchParams.get('naar'), '/offertes/prijsboek-offerte.html?id=70');
   assert.equal(p.nep.stand.concepten.length, 1);
   const body = p.nep.stand.concepten[0].body;
   assert.equal(body.bron, 'portaal-mail');
@@ -244,7 +245,7 @@ test('Maak offerte bij een mail in Offerteaanvragen: concept met klantgegevens e
   /* tweede klik: geen tweede concept, zelfde editor */
   const nogmaals = await post(`/mail/log/${regel.id}/offerte`);
   assert.equal(nogmaals.status, 303);
-  assert.equal(nogmaals.headers.get('location'), BEWERK(70));
+  assert.equal(new URL(nogmaals.headers.get('location'), 'http://x').searchParams.get('naar'), '/offertes/prijsboek-offerte.html?id=70');
   assert.equal(p.nep.stand.concepten.length, 1);
   const daarna = await (await haal('/mail/')).text();
   assert.match(daarna, /Offerte openen/);
@@ -265,4 +266,28 @@ test('aanvraag lezen: JSON van het model wordt streng gelezen, terugval gebruikt
   assert.equal(tv.naam, 'x');
   assert.equal(tv.email, 'x@y.nl');
   assert.equal(tv.omschrijving, 'tekst');
+});
+
+test('/offertes/open: eenmalige inloglink naar Offerteknop, ondertekend met de API-sleutel, met het pad erbij', async () => {
+  const r = await haal('/offertes/open?naar=' + encodeURIComponent('/offertes/prijsboek-offerte.html?id=1'));
+  assert.equal(r.status, 302);
+  const naar = new URL(r.headers.get('location'));
+  assert.equal(naar.origin, 'https://de-koning-tegelwerken.offerteknop.nl');
+  assert.equal(naar.pathname, '/inloggen-via-koppeling');
+  assert.equal(naar.searchParams.get('naar'), '/offertes/prijsboek-offerte.html?id=1');
+  const [payload, handtekening] = naar.searchParams.get('t').split('.');
+  const p2 = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+  assert.equal(p2.slug, TENANT);
+  assert.equal(p2.email, 'bob');
+  assert.ok(p2.exp * 1000 > Date.now() && p2.exp * 1000 < Date.now() + 61 * 1000);
+  assert.match(p2.jti, /^[0-9a-f]{24}$/);
+  assert.equal(handtekening, crypto.createHmac('sha256', SLEUTEL_IN).update(payload).digest('base64url'));
+  assert.equal(r.headers.get('cache-control'), 'no-store');
+  /* een vreemd pad valt terug op de offertelijst; zonder login geen link */
+  const raar = await haal('/offertes/open?naar=' + encodeURIComponent('https://evil.example/'));
+  assert.equal(new URL(raar.headers.get('location')).searchParams.get('naar'), '/offertes/');
+  assert.equal((await fetch(p.adres + '/offertes/open?naar=%2Foffertes%2F')).status, 401);
+  /* de sidebar en het dashboard gaan ook via de inloglink */
+  const dashboard = await (await haal('/')).text();
+  assert.match(dashboard, /href="\/offertes\/open\?naar=%2Foffertes%2F"/);
 });

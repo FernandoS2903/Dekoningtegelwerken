@@ -5,8 +5,8 @@
 
 import { nuIso } from './lib/hulp.mjs';
 import { OFFERTE_FILTERS } from './lib/offerte-opslag.mjs';
-import { OfferteknopFout } from './lib/offerteknop.mjs';
-import { kop, leesBody, meldingenUit, stuurHtml, stuurTekst } from './lib/web.mjs';
+import { IS_OFFERTEKNOP_PAD, OfferteknopFout, offerteknopPad } from './lib/offerteknop.mjs';
+import { doorsturen, kop, leesBody, meldingenUit, stuurHtml, stuurTekst } from './lib/web.mjs';
 import { offertesPagina } from './web/offertes.mjs';
 
 const MELDINGEN = {
@@ -17,8 +17,19 @@ const MELDINGEN = {
 
 export const STAAT_LAATSTE_SYNC = 'offertes_laatste_sync';
 
-export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = null, aanvraagLezer = null, basisPad = '/offertes', log = (n, b) => opslag.log(n, b) }) {
+export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = null, aanvraagLezer = null, basisPad = '/offertes', publiekeUrl = '', log = (n, b) => opslag.log(n, b) }) {
   const basis = basisPad.replace(/\/+$/, '');
+  // De publieke host van Offerteknop (voor de inloglink): uit OFFERTES_URL.
+  let publiek = '';
+  try { publiek = publiekeUrl ? new URL(publiekeUrl).origin : ''; } catch { publiek = ''; }
+  const metSso = () => Boolean(offerteknop.beschikbaar && publiek);
+
+  // /offertes/open?naar=<pad>: eenmalig inloggen in Offerteknop en door naar
+  // het pad; zonder koppeling gewoon de link zelf.
+  function openUrl(pad) {
+    const doel = IS_OFFERTEKNOP_PAD.test(pad) ? pad : '/offertes/';
+    return metSso() ? `${basis}/open?naar=${encodeURIComponent(doel)}` : (publiek ? publiek + doel : '');
+  }
   let bezig = false;
 
   function terug(res, pad, code) {
@@ -95,8 +106,19 @@ export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = nul
       const filter = OFFERTE_FILTERS.some(([s]) => s === gevraagd) ? gevraagd : 'open';
       const zoek = (url.searchParams.get('zoek') || '').trim().slice(0, 100);
       return stuurHtml(res, 200, offertesPagina({
-        basis, offerteOpslag, offerteknop, filter, zoek, meldingen, kader, laatsteSync: offerteOpslag.staat(STAAT_LAATSTE_SYNC),
+        basis, offerteOpslag, offerteknop, filter, zoek, meldingen, kader, laatsteSync: offerteOpslag.staat(STAAT_LAATSTE_SYNC), openUrl,
       }));
+    }
+
+    if (pad === '/open' && req.method === 'GET') {
+      const naar = String(url.searchParams.get('naar') || '/offertes/');
+      const doel = IS_OFFERTEKNOP_PAD.test(naar) ? naar : '/offertes/';
+      if (!metSso()) return publiek ? doorsturen(res, 302, publiek + doel) : terug(res, '/', 'niet-ingesteld');
+      const email = kader?.email || '';
+      if (!email) return stuurTekst(res, 403, 'Inloggen in Offerteknop vraagt een e-mailadres; log in met Microsoft.');
+      const token = offerteknop.inlogToken({ email });
+      log('info', `Naar Offerteknop via de koppeling: ${email} -> ${doel}`);
+      return doorsturen(res, 302, `${publiek}/inloggen-via-koppeling?${new URLSearchParams({ t: token, naar: doel })}`, { 'cache-control': 'no-store' });
     }
 
     if (pad === '/sync' && req.method === 'POST') {
@@ -116,7 +138,10 @@ export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = nul
   }
 
   // Het concept dat al bij deze logregel hoort, of null (voor de Mail-pagina).
-  const conceptVan = (r) => (r.internet_id ? offerteOpslag.conceptBijReferentie(r.internet_id) : null) || offerteOpslag.conceptBijLog(r.id);
+  const conceptVan = (r) => {
+    const c = (r.internet_id ? offerteOpslag.conceptBijReferentie(r.internet_id) : null) || offerteOpslag.conceptBijLog(r.id);
+    return c ? { ...c, open_url: openUrl(offerteknopPad(c.bewerk_url)) || c.bewerk_url } : null;
+  };
 
-  return { handle, basis, bijwerken, conceptUitMail, conceptVan, tellingen: (nu) => offerteOpslag.tellingen(nu) };
+  return { handle, basis, bijwerken, conceptUitMail, conceptVan, openUrl, metSso, tellingen: (nu) => offerteOpslag.tellingen(nu) };
 }

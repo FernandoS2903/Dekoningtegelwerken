@@ -250,6 +250,14 @@ curl -s -o /dev/null -w 'cms /intern/ -> %{http_code}\n' https://cms.dekoningteg
 curl -s -o /dev/null -w 'ok /api/tenant/ -> %{http_code}\n' https://de-koning-tegelwerken.offerteknop.nl/api/tenant/offertes   # 404
 ```
 
+**Eén keer inloggen.** Elke link naar Offerteknop in het portaal (Offertes,
+"Nieuwe offerte", "Maak offerte", de sidebar) loopt via `/offertes/open`: een
+eenmalige inloglink (60 seconden, eenmalig) ondertekend met de API-sleutel van
+de koppeling. Offerteknop logt je in als het e-mailadres waarmee je in het
+portaal zit **beheerder van de tenant** is. Controleer dat in Offerteknop
+(tenant DKT, beheerders) of voeg je portaaladres daar als beheerder toe; anders
+krijg je een melding en moet je daar met het wachtwoord inloggen.
+
 Daarna in de browser:
 
 1. Portaal › **Offertes** › Bijwerken: de lijst komt op (leeg is goed als er

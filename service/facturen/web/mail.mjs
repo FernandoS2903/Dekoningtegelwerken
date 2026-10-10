@@ -94,7 +94,7 @@ function logRij(r, basis, { concept = null, offerteknop = false } = {}) {
   const inOfferteaanvragen = (r.huidige_map || r.naar_map) === 'Offerteaanvragen';
   if (offerteknop && r.afzender && r.bron !== 'handmatig' && inOfferteaanvragen) {
     acties.push(concept
-      ? `<a class="knop knop--rustig knop--klein" href="${e(concept.bewerk_url || '#')}" target="_blank" rel="noopener noreferrer">Offerte openen ↗</a>`
+      ? `<a class="knop knop--rustig knop--klein" href="${e(concept.open_url || concept.bewerk_url || '#')}" target="_blank" rel="noopener noreferrer">Offerte openen ↗</a>`
       : `<form method="post" action="${basis}/log/${r.id}/offerte" data-bevestig="Een concept-offerte maken in Offerteknop uit deze mail? De gegevens van de aanvrager en de foto's gaan mee; je komt in de editor terecht.">
       <button class="knop knop--klein" type="submit">Maak offerte</button>
     </form>`);

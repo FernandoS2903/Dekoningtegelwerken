@@ -18,13 +18,16 @@ export function offerteVlag(o) {
   return `<span class="vlag vlag--${STATUS_KLASSE[o.status] || 'genegeerd'}">${e(STATUS_NAAM[o.status] || o.status)}</span>`;
 }
 
-function offerteRij(o) {
+import { offerteknopPad } from '../lib/offerteknop.mjs';
+
+function offerteRij(o, openUrl) {
   const sub = [];
   if (o.projectadres) sub.push(o.projectadres);
   if (o.klanttype === 'zakelijk') sub.push('zakelijk');
   if (o.bron && o.bron !== 'handmatig') sub.push('via ' + o.bron.replace('portaal-mail', 'mail'));
   const wanneer = o.beslist_op || o.verstuurd_op || o.gewijzigd_op;
-  return `<li><a class="rij rij--offerte" href="${e(o.bewerk_url || '#')}" target="_blank" rel="noopener noreferrer">
+  const href = openUrl ? openUrl(offerteknopPad(o.bewerk_url)) : (o.bewerk_url || '#');
+  return `<li><a class="rij rij--offerte" href="${e(href)}" target="_blank" rel="noopener noreferrer">
   <span class="rij__naam"><span>${e(o.klant_naam || '(geen klant)')}</span>${sub.length ? `<small>${e(sub.join(' · '))}</small>` : ''}</span>
   <span class="rij__nummer">${e(o.nummer_str || '—')}</span>
   <span class="rij__datum"><small>aangemaakt</small>${e(datumNl(o.datum || o.aangemaakt_op))}</span>
@@ -55,10 +58,10 @@ function filterbalk(basis, actief, zoek) {
 </div>`;
 }
 
-export function offertesPagina({ basis, offerteOpslag, offerteknop, filter, zoek, meldingen = [], kader = null, laatsteSync = null }) {
+export function offertesPagina({ basis, offerteOpslag, offerteknop, filter, zoek, meldingen = [], kader = null, laatsteSync = null, openUrl = null }) {
   const regels = offerteOpslag.lijst({ filter, zoek });
   const totaal = regels.reduce((som, o) => som + (Number(o.bedrag_incl_cent) || 0), 0);
-  const nieuwUrl = offerteknop.beschikbaar && kader?.offertesUrl ? kader.offertesUrl.replace(/\/?$/, '/?nieuw=offerte') : '';
+  const nieuwUrl = openUrl ? openUrl('/offertes/?nieuw=offerte') : (offerteknop.beschikbaar && kader?.offertesUrl ? kader.offertesUrl.replace(/\/?$/, '/?nieuw=offerte') : '');
 
   const inhoud = `${offerteknop.beschikbaar ? '' : `<p class="melding melding--fout">De koppeling met Offerteknop is niet ingesteld (${e(offerteknop.ontbreekt.join(', '))}). De lijst hieronder is wat er eerder is opgehaald.</p>`}
 ${filterbalk(basis, filter, zoek)}
@@ -75,11 +78,11 @@ ${filterbalk(basis, filter, zoek)}
     <span class="tabelkop__bedrag tabelkop--recht">Bedrag incl.</span>
     <span class="tabelkop__status">Status</span>
   </li>
-${regels.map(offerteRij).join('\n')}
+${regels.map((o) => offerteRij(o, openUrl)).join('\n')}
 </ul>`
     : `<p class="leeg">Geen offertes in deze selectie${zoek ? ` voor "${e(zoek)}"` : ''}.</p>`}
 </div>
-<p class="tegel__bij">Een offerte opent in Offerteknop, in een nieuw tabblad (eigen login). Wijzigingen daar komen binnen seconden hier terug.</p>
+<p class="tegel__bij">Een offerte opent in Offerteknop, in een nieuw tabblad${openUrl ? ', zonder opnieuw in te loggen' : ' (eigen login)'}. Wijzigingen daar komen binnen seconden hier terug.</p>
 `;
 
   const kopActies = `<div class="syncstatus">

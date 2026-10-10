@@ -541,7 +541,7 @@ function start() {
   const offerteOpslag = maakOfferteOpslag(opslag.db);
   const offerteknop = maakOfferteknop(cfg.offerteknop);
   const aanvraagLezer = maakAanvraagLezer({ apiKey: cfg.claude.apiKey, model: cfg.sorteren.model });
-  const offertes = maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail, aanvraagLezer, basisPad: '/offertes', log: logger });
+  const offertes = maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail, aanvraagLezer, basisPad: '/offertes', publiekeUrl: cfg.portaal.offertesUrl, log: logger });
   const intern = maakIntern({ offerteOpslag, offerteknop, mail, log: logger });
   const mailApp = maakMailApp({
     opslag, sorteerOpslag, sorteerder, webhook, mail, classificeerder, offertes,
