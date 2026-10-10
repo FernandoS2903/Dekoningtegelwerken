@@ -477,10 +477,30 @@ nagebootst Offerteknop dat de HMAC controleert). Browsertests 56/56 en 45/45.
 Niet getest: de echte Graph `sendMail` (pas live met een proefofferte naar Bob
 zelf).
 
-## Wat Bob nog zelf moet doen
+## Live (fase C, 10 oktober 2026, met akkoord van Bob per stap)
 
-Zie `deploy/CMS-INSTALLATIE.md` §8: sleutels, `app.env` en `facturen.env`,
-Offerteknop mergen en uitrollen (back-up per tenant), portaal uitrollen,
-nginx-blokken, in DKT de verzendroute "eigen mailbox", proefofferte. Open: de
-negen prijsvragen (de startprijzen staan als aanname excl. btw in het
-prijsboek), wizard-backend als aparte opdracht.
+- Offerteknop: `main` = ffa0213 (featurebranch fast-forward, na het invoegen
+  van 7b98306 van Bob), uitgerold met `deploy/uitrollen.sh` vanuit
+  `/root/ok-main` om 10:18 CEST; back-ups `offertes-voor-offertes-api-20261010-1014.db`
+  per tenant en `tenants.voor-offertes-api-20261010-1014.db`. DKT: rekenmodel
+  prijsboek, 15 startregels geseed, template `offerte_verzending` vernieuwd
+  (bekijklink), `offerte_herinnering` erbij; beide portaaladressen als
+  eigenaar toegevoegd (wachtwoord willekeurig, nergens getoond).
+- Env: `TENANT_KOPPELINGEN` in `app.env`, `OFFERTEKNOP_*` in `facturen.env`
+  (back-ups `*.bak-20261010-1016` ernaast, alleen gevuld/leeg gecontroleerd).
+- Portaal: `main` = f6fb667, uitgerold en herstart 10:24 CEST; journal noemt
+  alleen bunq als niet ingesteld. Eerste offerteronde 10:24:48 (0 offertes).
+- nginx: `/intern/` (cms) en `/api/tenant/` (Offerteknop) geven van buiten 404;
+  back-ups van de vhosts in `/root/vhost-werk/*.bak-20261010-1026`.
+- Bob klikte om 10:24 CEST via de koppeling door naar Offerteknop en was daar
+  ingelogd als info@dekoningtegelwerken.nl (eerste gebruik van
+  `/inloggen-via-koppeling`).
+
+## Nog te doen (Bob)
+
+In Offerteknop (DKT): Instellingen › E-mail › "Via mijn eigen mailbox" kiezen
+(staat nu op platform); btw-nummer en IBAN bij Bedrijfsgegevens, huisstijl en
+`algemene-voorwaarden.pdf`; een proefofferte naar het eigen adres (controle:
+Verzonden items van info@, bekijklink, akkoord met naam en vinkje, status in
+het portaal). Open: de negen prijsvragen (de startprijzen staan als aanname
+excl. btw in het prijsboek), wizard-backend als aparte opdracht.
