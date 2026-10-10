@@ -238,6 +238,46 @@ export function maakGraph({
       throw new Error(`delta query liep langer dan ${MAX_DELTA_PAGINAS} pagina's`);
     },
 
+    // Afbeeldingsbijlagen (jpeg, png, webp) met inhoud, voor een concept-
+    // offerte uit een aanvraag. Inline plaatjes (handtekeningen) niet.
+    async fotoBijlagen(messageId, { maxBytes = 8 * 1024 * 1024 } = {}) {
+      const data = await graph(`/messages/${encodeURIComponent(messageId)}/attachments`);
+      const uit = [];
+      let totaal = 0;
+      for (const b of data.value || []) {
+        if (b['@odata.type'] !== '#microsoft.graph.fileAttachment' || b.isInline || !b.contentBytes) continue;
+        const type = String(b.contentType || '').toLowerCase();
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) continue;
+        const grootte = Number(b.size) || Math.floor(String(b.contentBytes).length * 3 / 4);
+        if (totaal + grootte > maxBytes) break;
+        totaal += grootte;
+        uit.push({ naam: String(b.name || 'foto'), type, inhoud_b64: String(b.contentBytes) });
+      }
+      return uit;
+    },
+
+    // Verstuurt een mail vanuit de mailbox (Mail.Send via de RBAC-scope) en
+    // bewaart hem in Verzonden items. Bijlagen als base64; Graph accepteert
+    // zo tot ongeveer 3 MB per bijlage.
+    async stuurMail({ aan, onderwerp, html = null, tekst = null, bijlagen = [], replyTo = null }) {
+      const message = {
+        subject: String(onderwerp || ''),
+        body: html ? { contentType: 'HTML', content: String(html) } : { contentType: 'Text', content: String(tekst || '') },
+        toRecipients: (Array.isArray(aan) ? aan : [aan]).map((adres) => ({ emailAddress: { address: String(adres) } })),
+      };
+      if (replyTo) message.replyTo = [{ emailAddress: { address: String(replyTo) } }];
+      if (bijlagen.length) {
+        message.attachments = bijlagen.map((b) => ({
+          '@odata.type': '#microsoft.graph.fileAttachment',
+          name: String(b.naam || 'bijlage'),
+          contentType: String(b.type || 'application/octet-stream'),
+          contentBytes: String(b.inhoud_b64 || ''),
+        }));
+      }
+      await graph('/sendMail', { methode: 'POST', body: { message, saveToSentItems: true } });
+      return { verzonden: true };
+    },
+
     // Alleen de namen, voor de classificatie; de bijlagen zelf gaan nooit mee.
     async bijlageNamen(messageId) {
       const data = await graph(`/messages/${encodeURIComponent(messageId)}/attachments?$select=name,isInline`);

@@ -427,6 +427,11 @@ mobiel (360 px) én desktop is nagelopen en de tests groen zijn.
 
 **Oplevering**: echte aanvragen komen binnen als dossier + mail; Bob zet units en vhost aan.
 
+> **Achterhaald (besluit Bob, 10 oktober 2026):** offertes, calculatie en de
+> conceptofferte leven in **Offerteknop** (tenant De Koning Tegelwerken); het
+> portaal koppelt via een API. Zie `docs/opdrachten/offertesysteem.md`. Stap 4
+> en 5 hieronder gelden alleen nog als historie.
+
 ### Stap 4 — Beheer, calculatieregels, statussen, conceptofferte/PDF
 
 4a. Inloggen, dashboard (nieuw, te beoordelen, offertes openstaand, akkoord, recent),

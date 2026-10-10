@@ -49,6 +49,11 @@ import {
 } from './lib/web.mjs';
 import { maakMailApp } from './mail.mjs';
 import { maakPortaal } from './portaal.mjs';
+import { maakOffertesApp } from './offertes.mjs';
+import { maakIntern } from './intern.mjs';
+import { maakOfferteknop } from './lib/offerteknop.mjs';
+import { maakOfferteOpslag } from './lib/offerte-opslag.mjs';
+import { maakAanvraagLezer } from './lib/aanvraag.mjs';
 import { dashboardPagina, overzicht } from './web/overzicht.mjs';
 import { leveranciersPagina } from './web/leveranciers.mjs';
 import { factuurPagina } from './web/factuur.mjs';
@@ -109,9 +114,9 @@ export function maakFacturenApp({
   const meldingenUit = (zoekparams) => meldingenVan(zoekparams, MELDINGEN);
 
   // Het dashboard; het portaal zet het op /, met de mailtellingen erbij.
-  function dashboard({ meldingen = [], kader = null, mail = null, offertesUrl = '' } = {}) {
+  function dashboard({ meldingen = [], kader = null, mail = null, offertesUrl = '', offertes = null } = {}) {
     return dashboardPagina({
-      basis, opslag, inst: leesInstellingen(), nu: nu(), meldingen, syncBezig: sync.bezig(), kader, mail, offertesUrl,
+      basis, opslag, inst: leesInstellingen(), nu: nu(), meldingen, syncBezig: sync.bezig(), kader, mail, offertesUrl, offertes,
     });
   }
 
@@ -476,6 +481,14 @@ export function uitEnv(env = process.env) {
       sessieGeheim: env.SESSION_SECRET || '',
       offertesUrl: String(env.OFFERTES_URL || '').trim(),
     },
+    // Koppeling met Offerteknop (lib/offerteknop.mjs); de sleutels blijven in de env.
+    offerteknop: {
+      baseUrl: String(env.OFFERTEKNOP_URL || 'http://127.0.0.1:3100').trim(),
+      tenant: String(env.OFFERTEKNOP_TENANT || '').trim().toLowerCase(),
+      sleutelIn: env.OFFERTEKNOP_API_SLEUTEL || '',
+      sleutelUit: env.OFFERTEKNOP_WEBHOOK_SLEUTEL || '',
+      minuten: Math.max(5, Number(env.OFFERTEKNOP_SYNC_MIN) || 15),
+    },
   };
 }
 
@@ -524,8 +537,14 @@ function start() {
     actief: sso.aan,
     log: logger,
   });
+  // Offerteknop: lijst, concept uit een mail, webhook en mailrelay.
+  const offerteOpslag = maakOfferteOpslag(opslag.db);
+  const offerteknop = maakOfferteknop(cfg.offerteknop);
+  const aanvraagLezer = maakAanvraagLezer({ apiKey: cfg.claude.apiKey, model: cfg.sorteren.model });
+  const offertes = maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail, aanvraagLezer, basisPad: '/offertes', log: logger });
+  const intern = maakIntern({ offerteOpslag, offerteknop, mail, log: logger });
   const mailApp = maakMailApp({
-    opslag, sorteerOpslag, sorteerder, webhook, mail, classificeerder,
+    opslag, sorteerOpslag, sorteerder, webhook, mail, classificeerder, offertes,
     basisPad: '/mail', sorteerMinuten: cfg.sorteren.minuten,
   });
 
@@ -544,7 +563,7 @@ function start() {
   }
 
   const { server } = maakPortaal({
-    opslag, sorteerOpslag, facturen, mailApp, webhook, auth,
+    opslag, sorteerOpslag, facturen, mailApp, webhook, auth, offertes, intern,
     offertesUrl: cfg.portaal.offertesUrl,
     log: logger,
   });
@@ -554,6 +573,7 @@ function start() {
     !mail.beschikbaar ? 'Microsoft 365' : null,
     !claude.beschikbaar ? 'Claude' : null,
     !bunq.beschikbaar ? 'bunq' : null,
+    !offerteknop.beschikbaar ? 'Offerteknop (' + offerteknop.ontbreekt.join(', ') + ')' : null,
   ].filter(Boolean);
   if (ontbreekt.length) {
     console.warn(nuIso() + ' niet ingesteld: ' + ontbreekt.join(', ') + ' (die stappen worden overgeslagen)');
@@ -588,6 +608,15 @@ function start() {
   }), cfg.sorteren.minuten * 60 * 1000).unref();
 
   if (auth.sessies) setInterval(() => auth.sessies.opruimen(), 60 * 60 * 1000).unref();
+
+  // Offertelijst: vangnet naast de webhook, elke OFFERTEKNOP_SYNC_MIN minuten.
+  if (offerteknop.beschikbaar) {
+    const offerteRonde = () => offertes.bijwerken().catch((fout) => {
+      console.error(nuIso() + ' offertelijst bijwerken mislukt: ' + fout.message);
+    });
+    setTimeout(offerteRonde, 45 * 1000).unref();
+    setInterval(offerteRonde, cfg.offerteknop.minuten * 60 * 1000).unref();
+  }
 
   for (const signaal of ['SIGTERM', 'SIGINT']) {
     process.on(signaal, () => {

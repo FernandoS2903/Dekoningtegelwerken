@@ -25,6 +25,11 @@
 //   mapZoeken(naam)                      -> {id, naam} of null, maakt niets aan
 //   inhoud(id, {maxTekens})              -> {tekst, bijlagen: [namen]} voor de classificatie
 //   test()                               -> {ok, melding}; test echt op de mailbox
+//   bijlagen(id)                         -> [{naam, type, inhoud_b64}]: foto's, voor een
+//                                           concept-offerte uit een aanvraag
+//   verstuurMail({aan, onderwerp, html, tekst, bijlagen, replyTo})
+//                                        -> mail vanuit de mailbox zelf (Verzonden items);
+//                                           de mailrelay voor Offerteknop (intern.mjs)
 //
 //   Factuurdashboard (lezen van de map Facturen; bestaande namen):
 //   mapInfo(), mails({vanaf, bekend}), pdfBijlagen(id), mailTekst(id),
@@ -44,7 +49,7 @@ import { maakM365Koppeling } from './m365.mjs';
 export const INBOX = 'inbox';
 
 export const KERN = ['nieuweBerichten', 'verplaats', 'categorie', 'doorsturen', 'mapAanmaken'];
-export const ONDERSTEUNEND = ['mapZoeken', 'inhoud', 'test'];
+export const ONDERSTEUNEND = ['mapZoeken', 'inhoud', 'test', 'bijlagen', 'verstuurMail'];
 export const FACTUREN = ['mapInfo', 'mails', 'pdfBijlagen', 'mailTekst', 'stuurDoor', 'voegCategorieToe'];
 
 export const PROVIDERS = ['m365'];

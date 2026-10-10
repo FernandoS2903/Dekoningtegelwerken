@@ -18,6 +18,7 @@ export const HOOFDMENU = [
   { pad: '/', naam: 'Dashboard', onderdeel: 'Dashboard', icoon: 'dashboard' },
   { pad: '/facturen/', naam: 'Facturen', onderdeel: 'Facturen', icoon: 'facturen' },
   { pad: '/facturen/leveranciers', naam: 'Leveranciers', onderdeel: 'Leveranciers', icoon: 'leveranciers' },
+  { pad: '/offertes/', naam: 'Offertes', onderdeel: 'Offertes', icoon: 'offertes' },
   { pad: '/mail/', naam: 'Mail', onderdeel: 'Mail', icoon: 'mail' },
   { pad: '/facturen/instellingen', naam: 'Instellingen', onderdeel: 'Instellingen', icoon: 'instellingen' },
 ];
@@ -34,6 +35,7 @@ const ICONEN = {
   facturen: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 16h6"/>',
   leveranciers: '<path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M10 20v-6h4v6"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 7l9 6 9-6"/>',
+  offertes: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/><path d="M10 9.5h2"/>',
   instellingen: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   sluit: '<path d="M6 6l12 12M18 6L6 18"/>',
@@ -103,8 +105,9 @@ function initialen(naam) {
 // werkt ook zonder JavaScript.
 function sidebar(kader, onderdeel) {
   const items = HOOFDMENU.map((m) => `<a href="${m.pad}"${m.onderdeel === onderdeel ? ' aria-current="page"' : ''}>${icoon(m.icoon)}<span>${e(m.naam)}</span></a>`).join('\n      ');
+  // Offerteknop zelf (eigen login) als externe link onder het menu.
   const offertes = kader.offertesUrl
-    ? `<a class="sidebar__extern" href="${e(kader.offertesUrl)}" rel="noopener noreferrer" target="_blank">${icoon('extern')}<span>Offertes</span></a>`
+    ? `<a class="sidebar__extern" href="${e(kader.offertesUrl)}" rel="noopener noreferrer" target="_blank">${icoon('extern')}<span>Offerteknop</span></a>`
     : '';
   const profiel = `<div class="profiel">
       <span class="profiel__initialen" aria-hidden="true">${e(initialen(kader.naam || kader.email))}</span>

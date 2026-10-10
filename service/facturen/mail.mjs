@@ -17,6 +17,8 @@ const MELDINGEN = {
   verplaatst: ['goed', 'De mail is verplaatst.'],
   'verplaatst-regel': ['goed', 'De mail is verplaatst en er is een regel gemaakt voor de volgende keer.'],
   'actie-fout': ['fout', 'Dat lukte niet. De reden staat in het logboek onder Facturen › Instellingen.'],
+  'offerte-fout': ['fout', 'De concept-offerte kon niet gemaakt worden. De reden staat in het logboek onder Facturen › Instellingen.'],
+  'offerte-niet-ingesteld': ['fout', 'De koppeling met Offerteknop is niet ingesteld.'],
   'regel-toegevoegd': ['goed', 'Regel opgeslagen.'],
   'regel-weg': ['goed', 'Regel verwijderd.'],
   opgeslagen: ['goed', 'Instellingen opgeslagen.'],
@@ -33,6 +35,7 @@ export function maakMailApp({
   webhook,
   mail,
   classificeerder = null,
+  offertes = null,
   basisPad = '/mail',
   sorteerMinuten = 5,
 }) {
@@ -63,10 +66,31 @@ export function maakMailApp({
         bron: keuze(url.searchParams.get('bron') || '', Object.keys(BRON_NAAM)),
         status: keuze(url.searchParams.get('status') || '', Object.keys(STATUS_NAAM)),
       };
+      const rijen = sorteerOpslag.logLijst({ ...filter, max: 300 });
+      // Welke mails al een concept-offerte hebben (knop wordt een link).
+      const concepten = offertes ? Object.fromEntries(rijen.map((r) => [r.id, offertes.conceptVan ? offertes.conceptVan(r) : null]).filter(([, c]) => c)) : {};
       return stuurHtml(res, 200, logboekPagina({
-        ...gemeen, filter, meldingen, bezig: sorteerder.bezig(),
-        rijen: sorteerOpslag.logLijst({ ...filter, max: 300 }),
+        ...gemeen, filter, meldingen, bezig: sorteerder.bezig(), rijen, concepten, offerteknop: Boolean(offertes),
       }));
+    }
+
+    // Maak offerte: een concept in Offerteknop uit deze mail, daarna door
+    // naar de editor daar. Een tweede klik opent hetzelfde concept.
+    const maakOfferte = pad.match(/^\/log\/(\d+)\/offerte$/);
+    if (maakOfferte && req.method === 'POST') {
+      await lees();
+      if (!offertes) return terug(res, '/', 'offerte-niet-ingesteld');
+      const regel = sorteerOpslag.logRegel(Number(maakOfferte[1]));
+      if (!regel) return stuurTekst(res, 404, 'Mail niet gevonden in het logboek.');
+      try {
+        const { bewerkUrl } = await offertes.conceptUitMail(regel, { gebruiker });
+        if (!bewerkUrl) return terug(res, '/', 'offerte-fout');
+        kop(res, 303, 'text/plain; charset=utf-8', { location: bewerkUrl });
+        return res.end('');
+      } catch (fout) {
+        opslag.log('error', 'Concept-offerte maken uit een mail mislukt: ' + fout.message);
+        return terug(res, '/', fout.status === 503 ? 'offerte-niet-ingesteld' : 'offerte-fout');
+      }
     }
 
     if (pad === '/sorteer' && req.method === 'POST') {

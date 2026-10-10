@@ -438,3 +438,49 @@ binnenkwam.
 
 - Punt 6 en verder van de redesign-opdracht ontbreken nog.
 
+
+---
+
+# Offertesysteem: koppeling met Offerteknop (10 oktober 2026, `feature/offertes-koppeling`)
+
+Opdracht letterlijk in `docs/opdrachten/offertesysteem.md` (met het akkoord van
+Bob op fase A: De Koning is de eerste tegelzetter op Offerteknop, blauwdruk voor
+de volgende). Besluit: offertes leven in Offerteknop (tenant
+`de-koning-tegelwerken`); het portaal koppelt via een API. De eigen
+offertemodule uit `docs/PLAN.md` stap 4/5 is daarmee achterhaald.
+
+Het hoofdwerk staat in de Offerteknop-repo (branch `feature/offertes-tenant-api`,
+worktree `/root/ok-offertes`; rapport `docs/OFFERTES-TENANT-API-RAPPORT.md`
+daar): tenant-API met HMAC, prijsboek als rekenmodel voor tegelzetters,
+nummering `OFF-{jaar}-{volgnr}`, akkoordlink met naam/vinkje en PDF-hash,
+webhook en de verzendroute "eigen mailbox". Let op: `/root/offerteknop-app`
+stond 94 commits achter `main`; `main` staat in `/root/ok-main`. Die repo heeft
+geen git-remote.
+
+## Wat er in dit portaal bijkwam
+
+| Bestand | Wat |
+|---|---|
+| `lib/offerteknop.mjs` | HMAC-client (sleutel `OFFERTEKNOP_API_SLEUTEL`) en controle van wat Offerteknop stuurt (`OFFERTEKNOP_WEBHOOK_SLEUTEL`); `isLokaal` (geen `X-Forwarded-For`) |
+| `lib/offerte-opslag.mjs` | schema 3: `offertes_spiegel`, `offerte_concepten`, `webhook_gebeurtenissen`, `intern_replay`, `mail_relay_log`, `aanvragen` (wizard, voorbereid) |
+| `offertes.mjs`, `web/offertes.mjs` | pagina **Offertes** (filters, zoeken, Bijwerken, rijen openen in Offerteknop), blok op het dashboard (concepten, wacht op akkoord, geaccepteerd deze maand met bedrag, verlopen), `conceptUitMail` |
+| `intern.mjs` | `/intern/offerteknop/webhook` en `/intern/mail/verstuur` (alleen lokaal, HMAC, replay; ontvanger moet het klantadres van de offerte zijn of de mailbox zelf; 20 per uur, 100 per dag; bijlagen tot 3,5 MB) |
+| `lib/aanvraag.mjs` | Claude haalt naam, telefoon, e-mail, adres en omschrijving uit een aanvraagmail (terugval: afzender) |
+| `mail.mjs`, `web/mail.mjs` | knop **Maak offerte** bij mail in Offerteaanvragen → concept in Offerteknop, door naar de editor; tweede klik opent hetzelfde |
+| `lib/graph.mjs`, `lib/mail/*` | `stuurMail` (Mail.Send via de bestaande RBAC-scope, Verzonden items) en `fotoBijlagen`; interface `verstuurMail`, `bijlagen` |
+| `deploy/` | env `OFFERTEKNOP_*`, vhost `location ^~ /intern/ { return 404; }`, `CMS-INSTALLATIE.md` §8 |
+
+## Getest
+
+`node --test`: 190/190 (incl. `test/offertes-koppeling.test.mjs` met een
+nagebootst Offerteknop dat de HMAC controleert). Browsertests 56/56 en 45/45.
+Niet getest: de echte Graph `sendMail` (pas live met een proefofferte naar Bob
+zelf).
+
+## Wat Bob nog zelf moet doen
+
+Zie `deploy/CMS-INSTALLATIE.md` §8: sleutels, `app.env` en `facturen.env`,
+Offerteknop mergen en uitrollen (back-up per tenant), portaal uitrollen,
+nginx-blokken, in DKT de verzendroute "eigen mailbox", proefofferte. Open: de
+negen prijsvragen (de startprijzen staan als aanname excl. btw in het
+prijsboek), wizard-backend als aparte opdracht.

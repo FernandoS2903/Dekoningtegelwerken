@@ -50,6 +50,8 @@ export function maakPortaal({
   mailApp,
   webhook,
   auth,
+  offertes = null,
+  intern = null,
   offertesUrl = '',
   log = () => {},
 }) {
@@ -182,6 +184,7 @@ export function maakPortaal({
       kader,
       mail: sorteerOpslag.tellingen({ vandaagVanaf: middernachtAmsterdam(), weekVanaf: week }),
       offertesUrl,
+      offertes: offertes ? offertes.tellingen(vandaag()) : null,
     }));
   }
 
@@ -193,6 +196,11 @@ export function maakPortaal({
 
       if ((req.method === 'GET' || req.method === 'HEAD') && STATISCH[pad]) return stuurStatisch(res, pad, { versie: url.searchParams.get('v') });
       if (pad === '/graph/notify') return notify(req, res, url);
+      // Offerteknop -> portaal: eigen handtekening, geen login (intern.mjs).
+      if (pad.startsWith('/intern/')) {
+        if (!intern) return stuurTekst(res, 404, 'Niet gevonden.');
+        return intern.handle(req, res, url);
+      }
       if (pad.startsWith('/auth/')) return authRoute(req, res, url);
 
       const persoon = wie(req, res);
@@ -212,9 +220,10 @@ export function maakPortaal({
       const ctx = { kader, body };
 
       if (pad === '/' && req.method === 'GET') return start(res, kader);
-      if (pad === '/facturen' || pad === '/mail') return doorsturen(res, 301, pad + '/' + url.search);
+      if (pad === '/facturen' || pad === '/mail' || pad === '/offertes') return doorsturen(res, 301, pad + '/' + url.search);
       if (pad.startsWith('/facturen/')) return facturen.handle(req, res, ctx);
       if (pad.startsWith('/mail/')) return mailApp.handle(req, res, ctx);
+      if (pad.startsWith('/offertes/') && offertes) return offertes.handle(req, res, ctx);
 
       return stuurTekst(res, 404, 'Niet gevonden.');
     } catch (fout) {

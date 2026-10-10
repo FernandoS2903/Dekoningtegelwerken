@@ -212,6 +212,60 @@ curl -sI https://$H/ | grep -i -E '^(strict-transport-security|x-robots-tag|cont
 4. **Mail › Instellingen › Verbindingen testen**: mailbox in orde, de mappen
    bestaan (ontbrekende worden bij de eerste ronde aangemaakt), Claude in orde.
 
+## 8. Koppeling met Offerteknop (opdracht 10 oktober 2026)
+
+Volgorde: eerst Offerteknop (de API), dan het portaal, dan nginx aan beide
+kanten, dan testen. Alles met bevestiging per stap; sleutels alleen in env.
+
+```bash
+# 1. Twee sleutels, elk een richting; nooit tonen, nooit in de repo.
+IN=$(openssl rand -hex 32); UIT=$(openssl rand -hex 32)
+
+# 2. Offerteknop: app.env (bestaat; 640 root:offerteknop) krijgt een regel erbij.
+#    webhook_url en mailer_url wijzen naar het portaal op 127.0.0.1:8132.
+cp /etc/offerteknop/app.env /etc/offerteknop/app.env.bak-$(date +%Y%m%d-%H%M)
+printf '%s\n' "TENANT_KOPPELINGEN='{\"de-koning-tegelwerken\":{\"in\":\"$IN\",\"uit\":\"$UIT\",\"webhook_url\":\"http://127.0.0.1:8132/intern/offerteknop/webhook\",\"mailer_url\":\"http://127.0.0.1:8132/intern/mail/verstuur\"}}'" >> /etc/offerteknop/app.env
+
+# 3. Portaal: facturen.env (600 root:root) krijgt de spiegelbeeldige sleutels.
+cp /etc/dekoning/facturen.env /etc/dekoning/facturen.env.bak-$(date +%Y%m%d-%H%M)
+printf 'OFFERTEKNOP_URL=http://127.0.0.1:3100\nOFFERTEKNOP_TENANT=de-koning-tegelwerken\nOFFERTEKNOP_API_SLEUTEL=%s\nOFFERTEKNOP_WEBHOOK_SLEUTEL=%s\n' "$IN" "$UIT" >> /etc/dekoning/facturen.env
+unset IN UIT
+# Controle (alleen gevuld/leeg, nooit een waarde):
+grep -c '^TENANT_KOPPELINGEN=' /etc/offerteknop/app.env
+for v in OFFERTEKNOP_URL OFFERTEKNOP_TENANT OFFERTEKNOP_API_SLEUTEL OFFERTEKNOP_WEBHOOK_SLEUTEL; do grep -q "^$v=." /etc/dekoning/facturen.env && echo "$v: gevuld" || echo "$v: LEEG"; done
+
+# 4. Offerteknop uitrollen (vanuit een worktree van main na de merge van
+#    feature/offertes-tenant-api; eerst een back-up per tenant zoals altijd),
+#    daarna de DKT-templates op de codeversie zetten (bekijklink in de mail):
+#    cd /opt/offerteknop-app && sudo -u offerteknop env $(grep -v '^#' /etc/offerteknop/app.env | xargs -d '\n') node scripts/mailtemplate-vernieuwen.js de-koning-tegelwerken offerte_verzending
+
+# 5. Portaal uitrollen en herstarten (stap 4 hierboven, met de nieuwe branch),
+#    dan in de journal: "niet ingesteld" mag Offerteknop NIET meer noemen.
+
+# 6. nginx: /intern/ (cms) en /api/tenant/ (Offerteknop) bestaan van buiten niet.
+#    cms:          deploy/nginx/cms.dekoningtegelwerken.nl.conf (location ^~ /intern/ { return 404; })
+#    Offerteknop:  deploy/nginx/offerteknop-tenants.conf en het domein-sjabloon (location ^~ /api/tenant/ { return 404; })
+nginx -t && systemctl reload nginx
+curl -s -o /dev/null -w 'cms /intern/ -> %{http_code}\n' https://cms.dekoningtegelwerken.nl/intern/mail/verstuur       # 404
+curl -s -o /dev/null -w 'ok /api/tenant/ -> %{http_code}\n' https://de-koning-tegelwerken.offerteknop.nl/api/tenant/offertes   # 404
+```
+
+Daarna in de browser:
+
+1. Portaal › **Offertes** › Bijwerken: de lijst komt op (leeg is goed als er
+   nog geen offertes zijn). Het dashboard toont het blok Offertes.
+2. Offerteknop (tenant DKT) › Instellingen › **E-mail** › "Via mijn eigen
+   mailbox" kiezen en opslaan (de keuze staat er alleen als de koppeling werkt).
+   Vul bij Bedrijfsgegevens ook btw-nummer en IBAN in; zet een
+   `algemene-voorwaarden.pdf` in de datamap als die er is.
+3. Een proefofferte naar je eigen adres: Offertes › Nieuwe offerte, klant met
+   jouw adres, een regel uit het Prijsboek, Verstuur. De mail hoort in
+   **Verzonden items** van info@ te staan; de bekijklink en het akkoord met
+   naam en vinkje werken. In het portaal verspringt de status binnen seconden
+   (webhook); anders binnen een kwartier (vangnet).
+4. Mail › bij een mail in Offerteaanvragen: **Maak offerte** opent een concept
+   in Offerteknop met de gegevens uit de mail.
+
 ## Terugdraaien
 
 ```bash

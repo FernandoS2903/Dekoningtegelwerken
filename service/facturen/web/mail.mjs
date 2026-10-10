@@ -78,7 +78,7 @@ function webhookTekst(w, minuten) {
   return `Seintjes van Microsoft staan aan${w.verlooptOp ? `, geldig tot ${datumTijdNl(w.verlooptOp)}` : ''}; daarnaast elke ${minuten} minuten een controle.`;
 }
 
-function logRij(r, basis) {
+function logRij(r, basis, { concept = null, offerteknop = false } = {}) {
   const afzender = r.afzender_naam ? `${r.afzender_naam} <${r.afzender || ''}>` : (r.afzender || '(onbekende afzender)');
   const onder = [
     datumTijdNl(r.tijd),
@@ -89,6 +89,16 @@ function logRij(r, basis) {
   if (r.huidige_map && r.huidige_map !== r.naar_map) onder.push(`staat nu in ${r.huidige_map}`);
 
   const acties = [];
+  // Maak offerte: bij een mail in Offerteaanvragen (of een mail die daar
+  // thuishoort), zolang Offerteknop gekoppeld is.
+  const inOfferteaanvragen = (r.huidige_map || r.naar_map) === 'Offerteaanvragen';
+  if (offerteknop && r.afzender && r.bron !== 'handmatig' && inOfferteaanvragen) {
+    acties.push(concept
+      ? `<a class="knop knop--rustig knop--klein" href="${e(concept.bewerk_url || '#')}" target="_blank" rel="noopener noreferrer">Offerte openen ↗</a>`
+      : `<form method="post" action="${basis}/log/${r.id}/offerte" data-bevestig="Een concept-offerte maken in Offerteknop uit deze mail? De gegevens van de aanvrager en de foto's gaan mee; je komt in de editor terecht.">
+      <button class="knop knop--klein" type="submit">Maak offerte</button>
+    </form>`);
+  }
   if (r.bron !== 'handmatig') {
     if (r.huidige_map && r.huidige_map !== INBOX_NAAM) {
       acties.push(`<form method="post" action="${basis}/log/${r.id}/terug">
@@ -126,7 +136,7 @@ function logRij(r, basis) {
 </li>`;
 }
 
-export function logboekPagina({ basis, rijen, filter, status, webhook, minuten, meldingen = [], kader = null, bezig = false }) {
+export function logboekPagina({ basis, rijen, filter, status, webhook, minuten, meldingen = [], kader = null, bezig = false, concepten = {}, offerteknop = false }) {
   const inhoud = `<p>Nieuwe mail in de Inbox wordt in de juiste map gezet. Twijfelgevallen blijven in de Inbox met de
   categorie <strong>Controleren</strong>. Er wordt nooit iets verwijderd of als gelezen gemarkeerd.</p>
 <ul class="uitslag">
@@ -146,7 +156,7 @@ export function logboekPagina({ basis, rijen, filter, status, webhook, minuten, 
 </form>
 
 ${rijen.length
-    ? `<ul class="lijst">\n${rijen.map((r) => logRij(r, basis)).join('\n')}\n</ul>`
+    ? `<ul class="lijst">\n${rijen.map((r) => logRij(r, basis, { concept: concepten[r.id] || null, offerteknop })).join('\n')}\n</ul>`
     : '<p class="leeg">Nog niets in het logboek' + (filter.map || filter.bron || filter.status ? ' met dit filter' : '') + '.</p>'}
 `;
   return mailPagina({ titel: 'Mail', basis, actief: '/', inhoud, meldingen, kader });

@@ -66,6 +66,8 @@ export function maakM365Koppeling({ graph = null, ...opties } = {}) {
     },
 
     test: () => g.test(),
+    bijlagen: (id, opties2) => g.fotoBijlagen(id, opties2),
+    verstuurMail: (opties2) => g.stuurMail(opties2),
 
     // -- factuurdashboard ---------------------------------------------------
     mapInfo: () => g.mapInfo(),

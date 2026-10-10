@@ -6,6 +6,7 @@ import { vatSamen } from '../lib/sync.mjs';
 import {
   filterbalk, maandGrafiek, pagina, rij, syncStatus, tabelKop, tegel, topLeveranciers, vlag, factuurNaam,
 } from './opmaak.mjs';
+import { offertesPaneel } from './offertes.mjs';
 
 function kpiKaarten(t, inst, basis) {
   const stand = inst.testmodus ? 'testmodus' : inst.autoDoorsturen ? 'automatisch' : 'met de knop';
@@ -34,7 +35,7 @@ function actieVereist(lijst, basis, nu) {
 
 // Het dashboard: op het portaal de startpagina (/), met de facturen onder
 // `basis` (/facturen). `mail` is optioneel: de tellingen van de sorteerder.
-export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncBezig = false, kader = null, mail = null, offertesUrl = '' }) {
+export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncBezig = false, kader = null, mail = null, offertesUrl = '', offertes = null }) {
   const t = opslag.tegels(nu);
   const samenvatting = vatSamen(inst.laatsteSyncResultaat);
   const acties = opslag.actieVereist(nu, 8);
@@ -47,8 +48,8 @@ export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncB
       <li><a href="/mail/?map=Offerteaanvragen"><strong>${mail.offertesWeek}</strong> offerteaanvragen (7 dagen)</a></li>
       ${mail.fouten ? `<li><a href="/mail/?status=fout" class="let"><strong>${mail.fouten}</strong> fout${mail.fouten === 1 ? '' : 'en'} bij het sorteren</a></li>` : ''}
     </ul>
-    ${offertesUrl ? `<p class="tegel__bij"><a href="${e(offertesUrl)}" rel="noopener noreferrer" target="_blank">Offertebeheer openen ↗</a> (eigen login)</p>` : ''}
   </section>` : '';
+  const offertesBlok = offertes ? offertesPaneel(offertes, '/offertes', offertesUrl) : '';
 
   const inhoud = `${kpiKaarten(t, inst, basis)}
 
@@ -66,6 +67,7 @@ export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncB
     <h2 id="kop-acties">Actie vereist${acties.length ? ` <span class="telling">${acties.length}</span>` : ''}</h2>
     ${actieVereist(acties, basis, nu)}
   </section>
+  ${offertesBlok}
   ${mailBlok}
 </div>
 `;

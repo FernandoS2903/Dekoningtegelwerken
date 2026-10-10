@@ -12,7 +12,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { nuIso } from './hulp.mjs';
 
-export const SCHEMA_VERSIE = 2;
+export const SCHEMA_VERSIE = 3;
 
 // undefined -> null, en getallen/strings blijven zoals ze zijn.
 const w = (v) => (v === undefined || v === '' ? null : v);
@@ -155,6 +155,95 @@ const SCHEMA = `
     terug       TEXT,
     verloopt_op INTEGER NOT NULL
   );
+
+  -- Versie 3: koppeling met Offerteknop (lib/offerte-opslag.mjs).
+
+  -- Kopie van de offertelijst uit de tenant-API van Offerteknop. id is het
+  -- id van de offerte daar; status is de klantstatus (concept, verstuurd,
+  -- bekeken, geaccepteerd, afgewezen, verlopen, ingetrokken).
+  CREATE TABLE IF NOT EXISTS offertes_spiegel (
+    id               INTEGER PRIMARY KEY,
+    nummer           TEXT,
+    nummer_str       TEXT,
+    versie           INTEGER NOT NULL DEFAULT 1,
+    status           TEXT NOT NULL,
+    status_intern    TEXT,
+    gearchiveerd     INTEGER NOT NULL DEFAULT 0,
+    klant_naam       TEXT,
+    klant_email      TEXT,
+    klant_telefoon   TEXT,
+    klanttype        TEXT,
+    projectadres     TEXT,
+    bedrag_excl_cent INTEGER,
+    bedrag_incl_cent INTEGER,
+    btw_pct          REAL,
+    datum            TEXT,
+    aangemaakt_op    TEXT,
+    gewijzigd_op     TEXT,
+    verstuurd_op     TEXT,
+    bekeken_op       TEXT,
+    beslist_op       TEXT,
+    geldig_tot       TEXT,
+    verlopen_op      TEXT,
+    ingetrokken_op   TEXT,
+    bron             TEXT,
+    referentie       TEXT,
+    bewerk_url       TEXT,
+    bijgewerkt_op    TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS offertes_spiegel_status ON offertes_spiegel (status, gearchiveerd);
+
+  -- Welke mail (sorteer_log) of website-aanvraag welk concept werd.
+  CREATE TABLE IF NOT EXISTS offerte_concepten (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    bron           TEXT NOT NULL,
+    referentie     TEXT,
+    sorteer_log_id INTEGER,
+    aanvraag_id    INTEGER,
+    offerte_id     INTEGER NOT NULL,
+    bewerk_url     TEXT,
+    door           TEXT,
+    tijd           TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS offerte_concepten_ref ON offerte_concepten (referentie);
+  CREATE INDEX IF NOT EXISTS offerte_concepten_log ON offerte_concepten (sorteer_log_id);
+
+  -- Ontvangen webhook-gebeurtenissen (id van Offerteknop), tegen dubbele aflevering.
+  CREATE TABLE IF NOT EXISTS webhook_gebeurtenissen (
+    id          TEXT PRIMARY KEY,
+    gebeurtenis TEXT NOT NULL,
+    offerte_id  INTEGER,
+    tijd        TEXT NOT NULL
+  );
+
+  -- Replaycache van de ondertekende verzoeken op /intern/.
+  CREATE TABLE IF NOT EXISTS intern_replay (
+    handtekening TEXT PRIMARY KEY,
+    verloopt     INTEGER NOT NULL
+  );
+
+  -- Mails die Offerteknop via onze mailbox verstuurde (limiet en logboek).
+  CREATE TABLE IF NOT EXISTS mail_relay_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    tijd       TEXT NOT NULL,
+    offerte_id INTEGER,
+    aan        TEXT NOT NULL,
+    onderwerp  TEXT,
+    status     TEXT NOT NULL,
+    fout       TEXT
+  );
+  CREATE INDEX IF NOT EXISTS mail_relay_tijd ON mail_relay_log (tijd);
+
+  -- Website-aanvragen van de offertewizard (voorbereid; backend volgt).
+  CREATE TABLE IF NOT EXISTS aanvragen (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    tijd       TEXT NOT NULL,
+    bron       TEXT NOT NULL,
+    velden     TEXT NOT NULL,
+    bestanden  TEXT,
+    status     TEXT NOT NULL DEFAULT 'nieuw',
+    offerte_id INTEGER
+  );
 `;
 
 // Velden die het bewerkformulier en het uitlezen mogen zetten.
@@ -186,8 +275,9 @@ export function openDatabase(pad) {
 
   const versie = db.prepare('PRAGMA user_version').get().user_version;
   if (versie < SCHEMA_VERSIE) {
-    // Versie 1 is het eerste schema. Versie 2 voegt alleen nieuwe tabellen
-    // toe (mailsorteerder, portaal); die maakt SCHEMA hierboven al aan.
+    // Versie 1 is het eerste schema. Versie 2 (mailsorteerder, portaal) en
+    // versie 3 (koppeling Offerteknop) voegen alleen nieuwe tabellen toe;
+    // die maakt SCHEMA hierboven al aan.
     // Latere migraties komen hier als losse stappen bij
     // (if (versie < 3) { db.exec('ALTER TABLE ...') }).
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSIE}`);
