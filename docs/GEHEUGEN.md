@@ -1,6 +1,6 @@
 # Geheugen — stand van zaken dekoningtegelwerken.nl
 
-Bijgewerkt: 5 oktober 2026. Live: 1b, wizard, 1c, de logo/slider-fix, de mobiele
+Bijgewerkt: 11 oktober 2026 (website: 5 oktober). Live: 1b, wizard, 1c, de logo/slider-fix, de mobiele
 hero, het lettertype, de mobiele polish en de leesbaarheid van de hero-kop
 (`main` = 8802784; de laatste sitewijziging daarin is 5edaacf).
 Werk dit bestand bij aan het eind van elke fase.
@@ -25,7 +25,7 @@ Werk dit bestand bij aan het eind van elke fase.
 | Mobiele polish (4 okt 2026) | `feature/mobiele-polish` (bovenop lettertype): heroblok ± 40 px hoger, werkgebied 88% wit, offerteknop 50 px met 17 px tekst (16 px op 360), trust-balk op één regel met korte labels (Persoonlijk / Strak afgewerkt / Duidelijk; volledige titel voor schermlezers), specialismen op 360 px op één regel. **Live sinds 4 okt 2026** (`main` = fb98311). |
 | Leesbaarheid hero-kop (4 okt 2026) | `feature/hero-leesbaarheid`: verduistering op de plek van de kop (mobiel verticaal vanaf ± 18%, desktop vanaf links) en kop op gewicht 440. Contrast onder de letters van ± 3:1 (slechtste plek 1,3–2,1) naar 6,4–8:1 (slechtste plek ≥ 3,9). **Live sinds 4 okt 2026** (`main` = 5edaacf). |
 | Stap 2 — offertewizard `/offerte` | Klaar op `feature/fase-2-offertewizard` (bovenop 1b): zes stappen uit `data/wizard.json` (ruimte → oppervlak → tegels → foto's → plattegrond → contact), vervolgvragen per ruimte, lengte × breedte, uploads met miniaturen, sessionStorage, samenvatting in het formaat "Nieuwe aanvraag – Badkamer, 1971 RA / Badkamer: vloer ±8 m², wanden ±31 m² · Inloopdouche …". **Zonder backend verstuurt hij niets**: de bezoeker krijgt de samenvatting om via WhatsApp/e-mail door te sturen of te kopiëren. Op de preview; in `main` (de2ce63), **live sinds 4 okt 2026** (uitgerold door Bob). |
-| Stap 3 — backend | Niet begonnen. De wizard is er klaar voor: `data-endpoint` op het formulier zetten, dan gaan antwoorden + bestanden als multipart naar die URL. |
+| Stap 3 — backend | Gebouwd op 11 okt 2026 op `feature/portaal-inkoop-verkoop-aanvragen`, in de portaaldienst (zie onderaan: "Aanvraagformulier en portaal inkoop/verkoop"). |
 | Stap 4 — beheer, calculatie, offertes, project-CMS | Niet begonnen. |
 | Stap 5 — plattegrondanalyse, AI-conceptcalculatie | Niet begonnen. |
 
@@ -501,6 +501,77 @@ zelf).
 In Offerteknop (DKT): Instellingen › E-mail › "Via mijn eigen mailbox" kiezen
 (staat nu op platform); btw-nummer en IBAN bij Bedrijfsgegevens, huisstijl en
 `algemene-voorwaarden.pdf`; een proefofferte naar het eigen adres (controle:
-Verzonden items van info@, bekijklink, akkoord met naam en vinkje, status in
-het portaal). Open: de negen prijsvragen (de startprijzen staan als aanname
-excl. btw in het prijsboek), wizard-backend als aparte opdracht.
+Verzonden items van info@, bekijklink, akkoord met naam en vinkje). Open: de
+negen prijsvragen (de startprijzen staan als aanname excl. btw in het
+prijsboek). De wizard-backend is op 11 oktober gebouwd (hieronder); de pagina
+Offertes in het portaal is toen vervallen.
+
+---
+
+# Aanvraagformulier en portaal inkoop/verkoop (11 oktober 2026, `feature/portaal-inkoop-verkoop-aanvragen`)
+
+Opdracht van Bob (chat, 11 okt): (1) het portaal netjes scheiden in inkoop en
+verkoop, de pagina Offertes vervalt, "Facturen" heet "Inkoopfacturen"; (2) elke
+aanvraag van het formulier op de site server-side doorsturen naar Offerteknop
+(tenant DKT, "Nieuwe aanvraag"), met de mail naar info@ als vangnet. Fase A
+vond dat de wizard nog géén backend en géén mail had; Bob bevestigde de
+scope-uitbreiding. Besluiten: backend in de bestaande dienst (geen 8130), mail
+via Graph vanuit de mailbox zelf, vangnetmail blijft in de Inbox (geen "Maak
+offerte"-herkenning), geen opruimen na 12 maanden, geen Graph-uploadsessie.
+Branch vanaf `main` (dd3811c). Niet gemerged; mergen en uitrollen doet Bob.
+
+## Portaal
+
+- `web/opmaak.mjs`: `MENUGROEPEN` (Dashboard / Inkoop: Inkoopfacturen,
+  Leveranciers / Verkoop: Offerteknop, extern met icoon / Algemeen: Mail,
+  Instellingen), groepskop in de stijl van `.tabelkop`; `offerteknopLink(kader)`
+  = eenmalige inloglink, anders OFFERTES_URL. Zelfde groepen in het mobiele menu.
+- Dashboard: uitlegregel "inkoopkant", tegel "Te betalen", grafiek "Inkoop per
+  maand", blok **Verkoop** (`verkoopPaneel`) met de knop naar Offerteknop en,
+  alleen als er iets is, het aantal website-aanvragen dat wacht of gestopt is.
+- Weg: `web/offertes.mjs`, de routes `/offertes/` (gaat nu door naar
+  Offerteknop) en `/offertes/sync`, `bijwerken`/`tellingen`, de 15-minutentimer,
+  `lijst`/`tellingen`/`OFFERTE_FILTERS` in `lib/offerte-opslag.mjs`. Blijven:
+  webhook (vult `offertes_spiegel`, nergens getoond), mailrelay, "Maak offerte",
+  `/offertes/open`. Geen tabel of rij verwijderd; `offertes_spiegel` had 1 rij.
+- Labels: menu, titels, kolomkop bij Leveranciers, tabblad Instellingen,
+  "← Alle inkoopfacturen", meldingen "Instellingen › Inkoopfacturen", realm.
+  URL's onder `/facturen/` ongewijzigd.
+
+## Aanvraagformulier
+
+| Bestand | Wat |
+|---|---|
+| `aanvraag.mjs` | `POST /api/aanvraag/indienen` zonder login (portaal.mjs laat het door vóór de login): Origin/Referer-allowlist (`AANVRAAG_ORIGINS`), honeypot `website` (stil 200), minimale invultijd 3 s via veld `t`, rate limit 5/uur per IP, daglimiet 100, max 2 links, bestanden op magic bytes (jpeg/png/webp; pdf alleen als plattegrond), ≤ 8 MB per stuk, ≤ 12 stuks, body ≤ 24 MB. Eerst bestanden naar `<statusmap>/aanvragen/<uuid>/` (0700/0600), dan de rij, dan `{ok, referentie}`; daarna meteen een ronde van de wachtrij. 4xx als `{error, veld}`. |
+| `lib/multipart.mjs` | multipart/form-data-lezer zonder dependencies, `typeUitInhoud` |
+| `lib/aanvraag-velden.mjs` | `valideer` (zelfde regels als `js/wizard.js`), `samenvatting` (zelfde tekst als de wizard), `verdeelBijlagen` (tegelfoto, plattegrond, dan foto's; grenzen Offerteknop 10 / 8 MB / 20 MB), `naarContract` (het contract van 11 okt) |
+| `lib/aanvraag-opslag.mjs`, `lib/db.mjs` | schema **4**: kolommen op `aanvragen` (referentie, bestandsmap, mail_status, koppeling_status, fouten, offerte_id/nummer, pogingen, volgende_poging); migratie met ALTER TABLE, unieke index op referentie, `busy_timeout` |
+| `lib/aanvraag-koppeling.mjs` | Bearer-client voor `AANVRAAG_OFFERTEKNOP_URL` (standaard `http://127.0.0.1:3100/api/aanvragen/website`), sleutel `AANVRAAG_OFFERTEKNOP_SLEUTEL` (64 hex); uitkomsten klaar / herhaal (5xx, netwerk, 429 met Retry-After) / stop (400, 413, 415) / auth (401, 403) |
+| `lib/aanvraag-doorsturen.mjs` | de wachtrij: per aanvraag mail (Graph `stuurMail` naar `AANVRAAG_MAIL_NAAR`, standaard de mailbox; Reply-To de aanvrager; bijlagen tot 3 MB, de rest "niet meegestuurd" in de tekst) en Offerteknop; wachttijd 1, 2, 4 … 60 min, na 30 pogingen gestopt (auth: na 6); ontbrekende sleutel of mailbox telt niet als poging. Ronde elke minuut (`server.mjs`). |
+| site | `data/wizard.json`: `endpoint`, `maxFotos` 8; generator zet `data-endpoint` en het verborgen veld `t`; `js/wizard.js`: verkleinen tot JPEG ≤ 1600 px (origineel bij HEIC), 8 MB-grens, 4xx-melding bij het veld, storing → handmatige route zoals eerder |
+| deploy | `dekoningtegelwerken.nl.conf`: `limit_req_zone dkt_aanvraag` + `location ^~ /api/aanvraag/` → 8132 (24 MB); `facturen.env.voorbeeld`: `AANVRAAG_*`; `CMS-INSTALLATIE.md` §9 |
+
+Niet gebouwd (besluit Bob): opruimen na 12 maanden, Graph-uploadsessie,
+"Maak offerte"-herkenning van de vangnetmail, een pagina Aanvragen.
+
+## Getest (11 okt 2026)
+
+- `node --test test/*.test.mjs`: **199/199** (incl. `test/aanvraag.test.mjs`,
+  9 tests: multipart, validatie, contract, weigeringen, volledige aanvraag met
+  mail en Offerteknop nagebootst, herkansingen met 500/429/400/401, zonder
+  sleutel, limieten, schemamigratie 3 → 4). Geen echte mail, geen netwerk.
+- `portaal-browser.mjs` 56/56, `facturen-browser.mjs` 45/45,
+  `interactie.mjs` alle controles (wizard: zonder dienst handmatig, 400 bij het
+  veld, 200 bedankscherm), `schermafdruk.mjs` zonder overflow.
+- Proefstart met lege env op een vrije poort: de journal noemt
+  "Offerteknop-aanvragen (AANVRAAG_OFFERTEKNOP_SLEUTEL; website-aanvragen
+  blijven in de wachtrij)".
+- **Niet getest:** echte Graph `sendMail` naar info@ en het echte endpoint van
+  Offerteknop (wordt parallel gebouwd); de live database is niet aangeraakt.
+
+## Wat Bob moet doen
+
+Zie `deploy/CMS-INSTALLATIE.md` §9: mergen, back-up van de database, portaal
+uitrollen, `AANVRAAG_OFFERTEKNOP_SLEUTEL` in de env zodra Offerteknop hem
+heeft, herstart, de live nginx-vhost vervangen door het voorbeeld
+(`/api/aanvraag/`), site uitrollen, proefaanvraag.

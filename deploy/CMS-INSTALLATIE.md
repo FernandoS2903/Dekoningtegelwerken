@@ -194,7 +194,7 @@ curl -sI https://$H/ | grep -i -E '^(strict-transport-security|x-robots-tag|cont
 ## 7. Inloggen en de eerste gesorteerde mail
 
 1. Bob opent `https://cms.dekoningtegelwerken.nl`, logt in met Microsoft en ziet
-   de startpagina met de tegels Facturen, Mail en Offertes.
+   het dashboard met de inkoopcijfers, het blok Verkoop (Offerteknop) en Mail.
 2. Binnen vijf minuten (`SORT_INTERVAL_MIN`) maakt de dienst de
    webhook-subscription aan. Controle:
 
@@ -250,8 +250,9 @@ curl -s -o /dev/null -w 'cms /intern/ -> %{http_code}\n' https://cms.dekoningteg
 curl -s -o /dev/null -w 'ok /api/tenant/ -> %{http_code}\n' https://de-koning-tegelwerken.offerteknop.nl/api/tenant/offertes   # 404
 ```
 
-**Eén keer inloggen.** Elke link naar Offerteknop in het portaal (Offertes,
-"Nieuwe offerte", "Maak offerte", de sidebar) loopt via `/offertes/open`: een
+**Eén keer inloggen.** Elke link naar Offerteknop in het portaal (de sidebar
+onder Verkoop, het blok Verkoop op het dashboard, "Maak offerte") loopt via
+`/offertes/open`: een
 eenmalige inloglink (60 seconden, eenmalig) ondertekend met de API-sleutel van
 de koppeling. Offerteknop logt je in als het e-mailadres waarmee je in het
 portaal zit **beheerder van de tenant** is. Controleer dat in Offerteknop
@@ -260,8 +261,9 @@ krijg je een melding en moet je daar met het wachtwoord inloggen.
 
 Daarna in de browser:
 
-1. Portaal › **Offertes** › Bijwerken: de lijst komt op (leeg is goed als er
-   nog geen offertes zijn). Het dashboard toont het blok Offertes.
+1. Portaal › sidebar › **Offerteknop** (onder Verkoop): je komt zonder opnieuw
+   inloggen in de offertelijst van de tenant. (De pagina Offertes in het
+   portaal is op 11 oktober 2026 vervallen; offertes leven alleen in Offerteknop.)
 2. Offerteknop (tenant DKT) › Instellingen › **E-mail** › "Via mijn eigen
    mailbox" kiezen en opslaan (de keuze staat er alleen als de koppeling werkt).
    Vul bij Bedrijfsgegevens ook btw-nummer en IBAN in; zet een
@@ -273,6 +275,61 @@ Daarna in de browser:
    (webhook); anders binnen een kwartier (vangnet).
 4. Mail › bij een mail in Offerteaanvragen: **Maak offerte** opent een concept
    in Offerteknop met de gegevens uit de mail.
+
+## 9. Aanvraagformulier van de website en portaal inkoop/verkoop (11 oktober 2026)
+
+Branch `feature/portaal-inkoop-verkoop-aanvragen`. Twee dingen: het portaal
+scheidt inkoop (dit portaal) en verkoop (Offerteknop), en het aanvraagformulier
+op dekoningtegelwerken.nl/offerte/ krijgt zijn backend in dezelfde dienst:
+`POST /api/aanvraag/indienen` (service/facturen/aanvraag.mjs). Elke aanvraag
+wordt opgeslagen (database + bestanden in `/var/lib/dekoning-facturen/aanvragen/`),
+gemaild naar info@ (vangnet, via Graph vanuit de mailbox zelf, Reply-To de
+aanvrager) en via een wachtrij met herkansingen doorgestuurd naar Offerteknop
+(`POST /api/aanvragen/website`, Bearer-sleutel per tenant). Zonder sleutel
+blijft het doorsturen wachten; de mail gaat intussen gewoon.
+
+Volgorde, alles door Bob:
+
+```bash
+# 1. Mergen en uitrollen (portaal) — geen schema-ingreep nodig: de dienst
+#    voegt bij de start de wachtrij-kolommen aan de tabel aanvragen toe
+#    (schema 3 -> 4, bestaande rijen blijven; er waren er 0).
+cd /root/dekoning-tegelwerken && git fetch && git merge --ff-only origin/feature/portaal-inkoop-verkoop-aanvragen   # op main
+git push origin main && git branch -f main origin/main
+cp /var/lib/dekoning-facturen/facturen.db /root/facturen.db.voor-aanvragen-$(date +%Y%m%d-%H%M)   # back-up (als root leesbaar)
+deploy/facturen-deploy.sh main
+
+# 2. Env: de Bearer-sleutel voor de aanvragen (Offerteknop maakt hem aan per
+#    tenant na de uitrol van feature/website-aanvragen daar). Zolang hij leeg
+#    is, werkt alles behalve het doorsturen.
+cp /etc/dekoning/facturen.env /etc/dekoning/facturen.env.bak-$(date +%Y%m%d-%H%M)
+printf 'AANVRAAG_OFFERTEKNOP_URL=http://127.0.0.1:3100/api/aanvragen/website\nAANVRAAG_OFFERTEKNOP_SLEUTEL=<64 hex uit Offerteknop, tenant DKT>\n' >> /etc/dekoning/facturen.env
+grep -q '^AANVRAAG_OFFERTEKNOP_SLEUTEL=.' /etc/dekoning/facturen.env && echo 'sleutel: gevuld' || echo 'sleutel: LEEG (wachtrij wacht)'
+
+# 3. Dienst herstarten; de journal noemt "Offerteknop-aanvragen" alleen als de sleutel ontbreekt.
+systemctl restart dekoning-facturen && sleep 2 && journalctl -u dekoning-facturen --since '-1 min' --no-pager | tail -5
+
+# 4. nginx van de LIVE site: de location voor /api/aanvraag/ en de limit_req_zone
+#    erbij (deploy/dekoningtegelwerken.nl.conf is het voorbeeld; de live vhost is een kopie).
+cp /etc/nginx/sites-enabled/dekoningtegelwerken.nl.conf /root/vhost-werk/dekoningtegelwerken.nl.conf.bak-$(date +%Y%m%d-%H%M)
+cp /root/dekoning-tegelwerken/deploy/dekoningtegelwerken.nl.conf /etc/nginx/sites-enabled/dekoningtegelwerken.nl.conf
+nginx -t && systemctl reload nginx
+
+# 5. Site uitrollen (wizard met data-endpoint, verkleinen van foto's, 8 foto's).
+deploy/live-deploy.sh --forceer
+
+# 6. Controle van buiten: 403 zonder Origin (de dienst antwoordt, nginx stuurt door).
+curl -s -o /dev/null -w 'aanvraag zonder herkomst -> %{http_code}\n' -X POST https://dekoningtegelwerken.nl/api/aanvraag/indienen   # 403
+```
+
+Daarna een echte proefaanvraag via https://dekoningtegelwerken.nl/offerte/ met
+een eigen adres: binnen een minuut een mail in de Inbox van info@ (afzender
+info@, Reply-To het opgegeven adres, onderwerp "Nieuwe aanvraag – …"), de
+aanvraag in Offerteknop als "Nieuwe aanvraag" (als de sleutel er is), en in
+het portaal onder Instellingen › Inkoopfacturen › Logboek de regels
+"Aanvraag #1 ontvangen", "mail … verstuurd" en "doorgestuurd naar Offerteknop".
+Blijft iets hangen, dan meldt het blok Verkoop op het dashboard hoeveel
+aanvragen wachten of gestopt zijn.
 
 ## Terugdraaien
 

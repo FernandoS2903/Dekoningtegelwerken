@@ -7,7 +7,7 @@ herladen en certificaten aanvragen blijft handwerk.
 | Bestand | Wat |
 |---|---|
 | `preview.dekoningtegelwerken.nl.conf` | nginx-vhost voor de preview: wachtwoord, `X-Robots-Tag: noindex`, een robots.txt die alles weigert, strikte CSP. Root `/var/www/preview.dekoningtegelwerken`. |
-| `dekoningtegelwerken.nl.conf` | nginx-vhost voor de **live site**: openbaar en indexeerbaar, `www` stuurt door naar het kale domein, HSTS, dezelfde strikte CSP, fonts en beelden 30 dagen in de cache. Root `/var/www/dekoningtegelwerken`. |
+| `dekoningtegelwerken.nl.conf` | nginx-vhost voor de **live site**: openbaar en indexeerbaar, `www` stuurt door naar het kale domein, HSTS, dezelfde strikte CSP, fonts en beelden 30 dagen in de cache, en `/api/aanvraag/` (het aanvraagformulier) naar het portaal op 127.0.0.1:8132 met een eigen rate limit en bodylimiet van 24 MB. Root `/var/www/dekoningtegelwerken`. |
 | `live-deploy.sh` | Zet **alleen `main`** live, op dezelfde manier als `preview-deploy.sh`, maar pas na een voorcontrole: weigert zolang `placeholdersTonen` aan staat, telefoon/e-mail/KvK leeg zijn, er voorbeeldprojecten zijn of sfeerbeelden als project op de site staan. Herlaadt niets. |
 | `preview-deploy.sh` | Zet een branch (gecommitte staat, via `git archive`) met rsync in de preview-map, zonder `.git`, `docs/`, `deploy/`, `_sjablonen/`, `service/`, `test/` en markdown. Stopt als de gegenereerde pagina's niet actueel zijn. Herlaadt niets. |
 
