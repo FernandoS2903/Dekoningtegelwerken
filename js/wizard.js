@@ -7,10 +7,18 @@
 //   bestanden kunnen daar niet in en moeten na herladen opnieuw gekozen worden.
 // - Uploads blijven in de browser. Miniaturen via canvas als data-URL, want de
 //   CSP staat blob:-afbeeldingen niet toe.
-// - Versturen: heeft het formulier data-endpoint (stap 3, backend), dan gaat de
-//   aanvraag daarheen. Zo niet, dan wordt er niets verstuurd en krijgt de bezoeker
-//   de samenvatting om zelf door te sturen. Er wordt nooit gedaan alsof iets
-//   verstuurd is.
+// - Versturen: heeft het formulier data-endpoint (de aanvraagdienst in
+//   service/facturen/aanvraag.mjs, via nginx), dan gaat de aanvraag daarheen als
+//   multipart. Een 4xx met een JSON-melding wordt bij de juiste stap getoond;
+//   bij een storing (5xx, geen verbinding) of zonder endpoint wordt er niets
+//   verstuurd en krijgt de bezoeker de samenvatting om zelf door te sturen. Er
+//   wordt nooit gedaan alsof iets verstuurd is.
+// - Foto's worden vóór het versturen in de browser verkleind tot JPEG van
+//   hooguit 1600 px, zodat een aanvraag met acht foto's binnen de grenzen van
+//   de mail en van Offerteknop blijft. Lukt verkleinen niet (bijv. HEIC in een
+//   browser die dat niet kan lezen), dan gaat het origineel mee, tot 8 MB.
+// - Het verborgen veld t krijgt bij het laden het tijdstip; de dienst weigert
+//   aanvragen die binnen een paar seconden na het laden al verstuurd zijn.
 
 const $ = (sel, ouder = document) => ouder.querySelector(sel);
 const $$ = (sel, ouder = document) => [...ouder.querySelectorAll(sel)];
@@ -33,12 +41,14 @@ function initWizard(form) {
   let huidig = 0;
 
   vulPeriodes($('[data-periode]', form));
+  const tijdVeld = $('[data-wizard-tijd]', form);
+  if (tijdVeld) tijdVeld.value = String(Date.now());
 
   /* -- opslaan en herstellen ------------------------------------------------ */
   const bewaar = () => {
     const data = {};
     for (const el of form.elements) {
-      if (!el.name || el.type === 'file' || el.name === 'website') continue;
+      if (!el.name || el.type === 'file' || el.name === 'website' || el.name === 't') continue;
       if (el.type === 'checkbox' || el.type === 'radio') {
         if (el.checked) (data[el.name] ||= []).push(el.value);
       } else data[el.name] = el.value;
@@ -51,7 +61,7 @@ function initWizard(form) {
     try { data = JSON.parse(sessionStorage.getItem(OPSLAG) || 'null'); } catch { data = null; }
     if (!data) return 0;
     for (const el of form.elements) {
-      if (!el.name || !(el.name in data)) continue;
+      if (!el.name || !(el.name in data) || el.name === 't') continue;
       if (el.type === 'checkbox' || el.type === 'radio') el.checked = data[el.name].includes(el.value);
       else if (el.type !== 'file') el.value = data[el.name];
     }
@@ -209,20 +219,47 @@ function initWizard(form) {
     const endpoint = form.dataset.endpoint;
     if (endpoint) {
       verstuur.disabled = true;
+      verstuur.setAttribute('aria-busy', 'true');
       try {
         const fd = new FormData(form);
         for (const [k, lijst] of Object.entries(bestanden)) lijst.forEach((b) => fd.append(k, b.bestand, b.bestand.name));
         const antwoord = await fetch(endpoint, { method: 'POST', body: fd });
-        if (!antwoord.ok) throw new Error(String(antwoord.status));
-        try { sessionStorage.removeItem(OPSLAG); } catch { /* niets */ }
-        return toonKlaar(sv, true);
+        if (antwoord.ok) {
+          try { sessionStorage.removeItem(OPSLAG); } catch { /* niets */ }
+          return toonKlaar(sv, true);
+        }
+        // De dienst zegt wat er mis is (controle, te groot, te vaak): tonen bij
+        // de stap waar het veld staat, niets anders doen.
+        if (antwoord.status >= 400 && antwoord.status < 500) {
+          let melding = null;
+          try { melding = await antwoord.json(); } catch { melding = null; }
+          if (melding && melding.error) {
+            toon(stapVanVeld(melding.veld));
+            fout(melding.error, melding.veld ? $(`[name="${melding.veld}"]`, form) : null);
+            return;
+          }
+        }
+        // 5xx of een onbekend antwoord: hieronder de handmatige route
       } catch {
+        // geen verbinding: niets kwijt, wel de handmatige route aanbieden
+      } finally {
         verstuur.disabled = false;
-        // niet gelukt: niets kwijt, wel de handmatige route aanbieden
+        verstuur.removeAttribute('aria-busy');
       }
     }
     toonKlaar(sv, false);
   });
+
+  // Bij welke stap hoort een veldnaam uit een foutmelding van de dienst?
+  const stapVanVeld = (veld) => {
+    const v = String(veld || '');
+    if (/^(ruimte|anders|extra-)/.test(v)) return 0;
+    if (/^(m2-|wand-|onbekend-)/.test(v)) return 1;
+    if (/^(tegels|formaat|tegelfoto)/.test(v)) return 2;
+    if (v === 'fotos') return 3;
+    if (v === 'plattegrond') return 4;
+    return totaal - 1;
+  };
 
   const toonKlaar = async (sv, verzonden) => {
     form.hidden = true;
@@ -266,8 +303,10 @@ function initUpload(blok, bestanden, bijgewerkt) {
   const lijst = $('[data-upload-lijst]', blok);
   const status = $('[data-upload-status]', blok);
   const meerdere = naam === 'fotos';
-  const max = meerdere ? Number(document.querySelector('[data-wizard]')?.dataset.maxFotos) || 12 : 1;
-  const MAX_MB = 20;
+  const max = meerdere ? Number(document.querySelector('[data-wizard]')?.dataset.maxFotos) || 8 : 1;
+  // Na het verkleinen; alleen een PDF of een foto die niet verkleind kon
+  // worden komt in de buurt. Dezelfde grens als de dienst en Offerteknop.
+  const MAX_MB = 8;
 
   const teken = () => {
     lijst.replaceChildren(...bestanden[naam].map((b, i) => {
@@ -302,14 +341,15 @@ function initUpload(blok, bestanden, bijgewerkt) {
       const nieuw = [...invoer.files];
       invoer.value = '';
       const meldingen = [];
-      for (const bestand of nieuw) {
-        const isBeeld = bestand.type.startsWith('image/');
-        const isPdf = bestand.type === 'application/pdf';
-        if (!isBeeld && !(isPdf && naam === 'plattegrond')) { meldingen.push(`${bestand.name} is geen foto${naam === 'plattegrond' ? ' of PDF' : ''}.`); continue; }
-        if (bestand.size > MAX_MB * 1024 * 1024) { meldingen.push(`${bestand.name} is groter dan ${MAX_MB} MB.`); continue; }
+      for (const origineel of nieuw) {
+        const isBeeld = origineel.type.startsWith('image/');
+        const isPdf = origineel.type === 'application/pdf';
+        if (!isBeeld && !(isPdf && naam === 'plattegrond')) { meldingen.push(`${origineel.name} is geen foto${naam === 'plattegrond' ? ' of PDF' : ''}.`); continue; }
+        const { bestand, miniatuur: mini } = isBeeld ? await verklein(origineel) : { bestand: origineel, miniatuur: null };
+        if (bestand.size > MAX_MB * 1024 * 1024) { meldingen.push(`${origineel.name} is groter dan ${MAX_MB} MB.`); continue; }
         if (!meerdere) bestanden[naam] = [];
         if (bestanden[naam].length >= max) { meldingen.push(`Maximaal ${max} foto's.`); break; }
-        bestanden[naam].push({ bestand, miniatuur: isBeeld ? await miniatuur(bestand) : null });
+        bestanden[naam].push({ bestand, miniatuur: mini });
       }
       teken();
       const n = bestanden[naam].length;
@@ -319,17 +359,41 @@ function initUpload(blok, bestanden, bijgewerkt) {
   }
 }
 
-/** Kleine vierkante JPEG-miniatuur als data-URL (geen blob: vanwege de CSP). */
-async function miniatuur(bestand, maat = 192) {
+/**
+ * Verkleint een foto tot JPEG van hooguit `maxZijde` px en maakt tegelijk de
+ * vierkante miniatuur (data-URL, geen blob: vanwege de CSP). Lukt het lezen
+ * niet (bijv. HEIC in een browser die dat niet kan), dan blijft het origineel
+ * en is er geen miniatuur; de dienst beoordeelt dan de inhoud.
+ */
+async function verklein(bestand, { maxZijde = 1600, miniMaat = 192, kwaliteit = 0.82 } = {}) {
+  let bron;
   try {
-    const bron = await createImageBitmap(bestand);
-    const canvas = Object.assign(document.createElement('canvas'), { width: maat, height: maat });
-    const kant = Math.min(bron.width, bron.height);
-    canvas.getContext('2d').drawImage(bron, (bron.width - kant) / 2, (bron.height - kant) / 2, kant, kant, 0, 0, maat, maat);
-    bron.close?.();
-    return canvas.toDataURL('image/jpeg', 0.75);
+    bron = await createImageBitmap(bestand);
   } catch {
-    return null; // bijv. HEIC in een browser die dat niet kan tonen: dan alleen de naam
+    return { bestand, miniatuur: null };
+  }
+  try {
+    const mini = document.createElement('canvas');
+    mini.width = miniMaat; mini.height = miniMaat;
+    const kant = Math.min(bron.width, bron.height);
+    mini.getContext('2d').drawImage(bron, (bron.width - kant) / 2, (bron.height - kant) / 2, kant, kant, 0, 0, miniMaat, miniMaat);
+    const miniatuur = mini.toDataURL('image/jpeg', 0.75);
+
+    const schaal = Math.min(1, maxZijde / Math.max(bron.width, bron.height));
+    const klein = schaal < 1 || bestand.type !== 'image/jpeg' || bestand.size > 1.5 * 1024 * 1024;
+    if (!klein) return { bestand, miniatuur };
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bron.width * schaal));
+    canvas.height = Math.max(1, Math.round(bron.height * schaal));
+    canvas.getContext('2d').drawImage(bron, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', kwaliteit));
+    if (!blob || blob.size >= bestand.size) return { bestand, miniatuur };
+    const naam = bestand.name.replace(/\.[^.]*$/, '') + '.jpg';
+    return { bestand: new File([blob], naam, { type: 'image/jpeg', lastModified: bestand.lastModified }), miniatuur };
+  } catch {
+    return { bestand, miniatuur: null };
+  } finally {
+    bron.close?.();
   }
 }
 

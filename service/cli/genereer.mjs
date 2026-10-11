@@ -266,9 +266,13 @@ function wizardBlok() {
     + `<div class="veld"><label for="periode">Wanneer wil je het laten uitvoeren?</label><select id="periode" name="periode" data-periode><option value="">Kies een periode</option><option>Zo snel mogelijk</option><option>Nog niet bekend</option></select></div>`
     + `<div class="veld"><label for="toelichting">Toelichting <span class="wizard__optioneel">(optioneel)</span></label><textarea id="toelichting" name="toelichting" rows="3" maxlength="1500"></textarea></div>`
     + `</div><label class="vink vink--privacy"><input type="checkbox" name="privacy" value="ja" required><span>Ik ga akkoord met de <a href="/privacy/">privacyverklaring</a>.</span></label>`
-    + `<input class="wizard__honing" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">`;
+    + `<input class="wizard__honing" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">`
+    // Tijdstip van laden (zet js/wizard.js), voor de minimale invultijd aan de serverkant.
+    + `<input type="hidden" name="t" value="" data-wizard-tijd>`;
 
-  return `<form class="wizard" data-wizard data-max-fotos="${Number(w.maxFotos) || 12}" novalidate>
+  // data-endpoint: de aanvraagdienst (service/facturen/aanvraag.mjs, via
+  // nginx). Zonder endpoint toont de wizard de samenvatting om zelf door te sturen.
+  return `<form class="wizard" data-wizard data-endpoint="${esc(w.endpoint || '/api/aanvraag/indienen')}" data-max-fotos="${Number(w.maxFotos) || 8}" novalidate>
   <div class="wizard__voortgang"><p class="wizard__stapnr" aria-live="polite" data-wizard-stapnr>Stap 1 van 6</p><div class="wizard__balk" aria-hidden="true"><span data-wizard-balk></span></div></div>
   ${stap(1, 'Wat wil je laten tegelen?', s1, 'Meerdere keuzes mogelijk.')}
   ${stap(2, 'Hoe groot is de ruimte?', s2, 'Een schatting is genoeg.')}

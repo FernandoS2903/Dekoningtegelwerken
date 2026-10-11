@@ -107,12 +107,15 @@ const nep = {
   whatsappTekst: 'Hallo De Koning Tegelwerken, ik heb een vraag over tegelwerk.',
   reviews: [],
 };
-b.opEvent('Fetch.requestPaused', (p) => b.s('Fetch.fulfillRequest', {
-  requestId: p.requestId,
-  responseCode: 200,
-  responseHeaders: [{ name: 'content-type', value: 'application/json' }],
-  body: Buffer.from(JSON.stringify(nep)).toString('base64'),
-}));
+b.opEvent('Fetch.requestPaused', (p) => {
+  if (!p.request.url.includes('/data/site.json')) return; // de aanvraagdienst wordt verderop onderschept
+  b.s('Fetch.fulfillRequest', {
+    requestId: p.requestId,
+    responseCode: 200,
+    responseHeaders: [{ name: 'content-type', value: 'application/json' }],
+    body: Buffer.from(JSON.stringify(nep)).toString('base64'),
+  });
+});
 await b.open(BASIS + '/');
 await wacht(1500);
 const tekst = await b.evalueer(`document.querySelector('[data-vertrouwen]').textContent`);
@@ -128,8 +131,21 @@ controleer('geen site.json-placeholders meer in productiemodus', await b.evaluee
 
 // -- offertewizard (mobiel, 390 px) ---------------------------------------------
 // site.json is hier nog onderschept met testgegevens (WhatsApp, telefoon), dus de
-// handmatige verzendroute moet die kanalen tonen. Er is geen data-endpoint: er mag
-// niets als "verstuurd" verschijnen.
+// handmatige verzendroute moet die kanalen tonen. De aanvraagdienst
+// (data-endpoint) wordt onderschept: eerst zonder endpoint (storing/geen dienst:
+// handmatige route, niets "verstuurd"), dan een 400 met een veldfout, dan een 200.
+const dienst = { antwoord: null, verzoeken: [] };
+await b.s('Fetch.enable', { patterns: [{ urlPattern: '*/data/site.json*' }, { urlPattern: '*/api/aanvraag/*' }] });
+b.opEvent('Fetch.requestPaused', (p) => {
+  if (!p.request.url.includes('/api/aanvraag/')) return;
+  dienst.verzoeken.push({ method: p.request.method, type: p.request.headers['Content-Type'] || p.request.headers['content-type'] || '' });
+  const a = dienst.antwoord || { status: 200, body: { ok: true } };
+  b.s('Fetch.fulfillRequest', {
+    requestId: p.requestId, responseCode: a.status,
+    responseHeaders: [{ name: 'content-type', value: 'application/json' }],
+    body: Buffer.from(JSON.stringify(a.body)).toString('base64'),
+  });
+});
 await b.viewport(390, 844, true);
 try { await b.evalueer(`sessionStorage.clear()`); } catch { /* andere origin */ }
 await b.open(BASIS + '/offerte/');
@@ -173,6 +189,9 @@ await b.evalueer(`document.querySelector('[data-verstuur]').click()`);
 await wacht(300);
 controleer('zonder privacyvinkje niet versturen', await b.evalueer(`document.querySelector('[data-wizard-klaar]').hidden`));
 await b.evalueer(`document.querySelector('[name=privacy]').click()`);
+controleer('formulier heeft het endpoint en een laadtijdstip', await b.evalueer(`document.querySelector('[data-wizard]').dataset.endpoint==='/api/aanvraag/indienen' && Number(document.querySelector('[data-wizard-tijd]').value) > Date.now()-60000`));
+// 1. zonder dienst (endpoint weg): handmatige route, niets "verstuurd"
+const endpoint = await b.evalueer(`(()=>{const f=document.querySelector('[data-wizard]');const e=f.dataset.endpoint;f.dataset.endpoint='';return e})()`);
 await b.evalueer(`document.querySelector('[data-verstuur]').click()`);
 await wacht(600);
 controleer('zonder backend: handmatige route, niets "verstuurd"', await b.evalueer(`!document.querySelector('[data-wizard-klaar]').hidden && document.querySelector('[data-klaar-verzonden]').hidden && !document.querySelector('[data-klaar-handmatig]').hidden`));
@@ -180,6 +199,23 @@ const svTekst = await b.evalueer(`document.querySelector('[data-wizard-klaar] .s
 controleer('samenvatting: titel, maten, tegels en bijlagen', /Nieuwe aanvraag – Badkamer, 1971 RA/.test(svTekst) && /vloer ±8 m², wanden ±31 m² · Inloopdouche/.test(svTekst) && /60 × 120 cm · al aangeschaft/.test(svTekst) && /1 foto/.test(svTekst), svTekst.slice(0, 160));
 controleer('WhatsApp-knop met vooraf ingevulde samenvatting', await b.evalueer(`(()=>{const a=document.querySelector('[data-stuur=whatsapp]');return !a.hidden && a.href.startsWith('https://wa.me/') && decodeURIComponent(a.href).includes('Nieuwe aanvraag')})()`));
 controleer('wizard zonder horizontale overflow', await b.evalueer(`document.documentElement.scrollWidth <= document.documentElement.clientWidth`));
+// 2. de dienst weigert met een veldfout: terug naar de stap, melding bij het veld, niets "verstuurd"
+await b.evalueer(`document.querySelector('[data-wijzig]').click()`);
+await b.evalueer(`document.querySelector('[data-wizard]').dataset.endpoint=${JSON.stringify(endpoint)}`);
+dienst.antwoord = { status: 400, body: { error: 'Vul een postcode in zoals 1971 RA.', veld: 'postcode' } };
+await b.evalueer(`document.querySelector('[data-verstuur]').click()`);
+await wacht(800);
+controleer('400 van de dienst: melding bij het veld op stap 6, geen bedankscherm', (await b.evalueer(zichtbareStap)) === 6
+  && (await b.evalueer(`document.querySelector('.wizard__stap[data-stap="6"] [data-fout]').textContent`)) === 'Vul een postcode in zoals 1971 RA.'
+  && await b.evalueer(`document.querySelector('[data-wizard-klaar]').hidden && document.activeElement===document.querySelector('[name=postcode]')`));
+controleer('verzoek ging als multipart POST', dienst.verzoeken.length === 1 && dienst.verzoeken[0].method === 'POST' && /multipart\/form-data/.test(dienst.verzoeken[0].type), JSON.stringify(dienst.verzoeken));
+// 3. de dienst neemt de aanvraag aan: bedankscherm "verzonden", opslag leeg
+dienst.antwoord = { status: 200, body: { ok: true, referentie: 'test' } };
+await b.evalueer(`document.querySelector('[data-verstuur]').click()`);
+await wacht(800);
+controleer('200 van de dienst: bedankscherm "ontvangen", handmatige route weg, sessie gewist', await b.evalueer(`!document.querySelector('[data-wizard-klaar]').hidden && !document.querySelector('[data-klaar-verzonden]').hidden && document.querySelector('[data-klaar-handmatig]').hidden && sessionStorage.getItem('dk-offerte')===null`));
+// De onderschepte 400 is een bedoeld antwoord, geen mislukt verzoek.
+b.fouten.splice(0, b.fouten.length, ...b.fouten.filter((f) => !f.includes('/api/aanvraag/')));
 
 if (b.fouten.length) { console.log('JS-fouten:\n  ' + [...new Set(b.fouten)].join('\n  ')); mislukt++; }
 b.stop();
