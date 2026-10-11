@@ -575,3 +575,7 @@ Zie `deploy/CMS-INSTALLATIE.md` §9: mergen, back-up van de database, portaal
 uitrollen, `AANVRAAG_OFFERTEKNOP_SLEUTEL` in de env zodra Offerteknop hem
 heeft, herstart, de live nginx-vhost vervangen door het voorbeeld
 (`/api/aanvraag/`), site uitrollen, proefaanvraag.
+
+### Mailrelay: ook factuurmails (11 oktober 2026)
+
+Offerteknop stuurt bij een factuurmail of herinnering `offerte_id` mee; de relay (`service/facturen/intern.mjs`) controleert dan het klantadres van die offerte, net als bij een offertemail. Branch `feature/relay-facturen`. Hoort bij de betaal-QR en betaallink op facturen in Offerteknop (`/root/ok-main/docs/FACTUUR-BETAALVERZOEK-RAPPORT.md`).
