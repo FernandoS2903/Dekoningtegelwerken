@@ -20,19 +20,19 @@ export function leveranciersPagina({ basis, opslag, nu, zoek = '', meldingen = [
 ${lijst.length ? `<ul class="lijst lijst--tabel lijst--leveranciers">
   <li class="tabelkop" aria-hidden="true">
     <span class="tabelkop__leverancier">Leverancier</span>
-    <span class="tabelkop__aantal tabelkop--recht">Facturen</span>
+    <span class="tabelkop__aantal tabelkop--recht">Inkoopfacturen</span>
     <span class="tabelkop__open tabelkop--recht">Open</span>
     <span class="tabelkop__som tabelkop--recht">Totaal</span>
     <span class="tabelkop__laatste">Laatste</span>
   </li>
   ${lijst.map((r) => `<li><a class="rij rij--leverancier" href="${e(link(r.leverancier))}">
     <span class="rij__naam"><span>${e(r.leverancier)}</span>${r.verlopen_aantal ? `<small class="let">${r.verlopen_aantal} verlopen</small>` : ''}</span>
-    <span class="rij__aantal"><small>facturen</small>${r.aantal}</span>
+    <span class="rij__aantal"><small>inkoopfacturen</small>${r.aantal}</span>
     <span class="rij__open${r.open_aantal ? '' : ' rij__open--leeg'}"><small>open</small>${r.open_aantal ? e(euro(r.open_som)) : '—'}</span>
     <span class="rij__bedrag"><small>totaal</small>${e(euro(r.som))}</span>
     <span class="rij__datum"><small>laatste</small>${e(datumNl(r.laatste))}</span>
   </a></li>`).join('\n  ')}
-</ul>` : `<p class="leeg">Geen leveranciers${term ? ` voor "${e(zoek)}"` : ' met facturen'}.</p>`}
+</ul>` : `<p class="leeg">Geen leveranciers${term ? ` voor "${e(zoek)}"` : ' met inkoopfacturen'}.</p>`}
 `;
 
   return pagina({ titel: 'Leveranciers', basis, inhoud, meldingen, kader, onderdeel: 'Leveranciers', menu: kader ? [] : undefined });

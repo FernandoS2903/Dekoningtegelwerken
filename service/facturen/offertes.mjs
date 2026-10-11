@@ -1,21 +1,14 @@
-// Het onderdeel Offertes van het portaal: de lijst uit Offerteknop en het
-// bijwerken daarvan. Zelfde opzet als mail.mjs: `handle(req, res, ctx)`;
-// inloggen en CSRF regelt het portaal. Daarnaast `conceptUitMail`, dat de
-// Mail-pagina gebruikt voor de knop "Maak offerte".
+// De koppeling met Offerteknop aan de kant van het portaal, voor zover die
+// in schermen terugkomt: de eenmalige inloglink (/offertes/open) en "Maak
+// offerte" bij een mail (conceptUitMail, voor de Mail-pagina).
+//
+// De pagina Offertes en het blok op het dashboard zijn op 11 oktober 2026
+// vervallen (besluit Bob): offertes leven alleen in Offerteknop. De spiegel
+// (offertes_spiegel) wordt nog wel door de webhook gevuld (intern.mjs), maar
+// nergens meer getoond; de periodieke ronde om de lijst op te halen is weg.
 
-import { nuIso } from './lib/hulp.mjs';
-import { OFFERTE_FILTERS } from './lib/offerte-opslag.mjs';
 import { IS_OFFERTEKNOP_PAD, OfferteknopFout, offerteknopPad } from './lib/offerteknop.mjs';
-import { doorsturen, kop, leesBody, meldingenUit, stuurHtml, stuurTekst } from './lib/web.mjs';
-import { offertesPagina } from './web/offertes.mjs';
-
-const MELDINGEN = {
-  bijgewerkt: ['goed', 'De lijst is bijgewerkt.'],
-  'bijwerken-fout': ['fout', 'Bijwerken is mislukt. De reden staat in het logboek onder Facturen › Instellingen.'],
-  'niet-ingesteld': ['fout', 'De koppeling met Offerteknop is niet ingesteld.'],
-};
-
-export const STAAT_LAATSTE_SYNC = 'offertes_laatste_sync';
+import { doorsturen, stuurTekst } from './lib/web.mjs';
 
 export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = null, aanvraagLezer = null, basisPad = '/offertes', publiekeUrl = '', log = (n, b) => opslag.log(n, b) }) {
   const basis = basisPad.replace(/\/+$/, '');
@@ -29,30 +22,6 @@ export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = nul
   function openUrl(pad) {
     const doel = IS_OFFERTEKNOP_PAD.test(pad) ? pad : '/offertes/';
     return metSso() ? `${basis}/open?naar=${encodeURIComponent(doel)}` : (publiek ? publiek + doel : '');
-  }
-  let bezig = false;
-
-  function terug(res, pad, code) {
-    kop(res, 303, 'text/plain; charset=utf-8', { location: basis + pad + (code ? (pad.includes('?') ? '&' : '?') + 'm=' + code : '') });
-    res.end('');
-  }
-
-  // Haalt de lijst op sinds de vorige keer (met een dag overlap) en zet hem
-  // in de spiegel. Geeft het aantal bijgewerkte offertes terug.
-  async function bijwerken({ volledig = false } = {}) {
-    if (!offerteknop.beschikbaar) throw new OfferteknopFout(503, 'Offerteknop is niet ingesteld.');
-    if (bezig) return 0;
-    bezig = true;
-    try {
-      const vorige = offerteOpslag.staat(STAAT_LAATSTE_SYNC);
-      const sinds = volledig || !vorige ? null : new Date(new Date(vorige).getTime() - 24 * 3600 * 1000).toISOString();
-      const uit = await offerteknop.lijst({ sinds, limiet: 500, archief: 'alle' });
-      for (const o of uit.offertes || []) offerteOpslag.bewaar(o);
-      offerteOpslag.zetStaat(STAAT_LAATSTE_SYNC, nuIso());
-      return (uit.offertes || []).length;
-    } finally {
-      bezig = false;
-    }
   }
 
   // Van een mail (regel in sorteer_log) een concept in Offerteknop. Geeft
@@ -93,27 +62,15 @@ export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = nul
 
   async function handle(req, res, ctx = {}) {
     const kader = ctx.kader || null;
-    const gebruiker = kader?.email || kader?.naam || '';
-    const lees = () => (ctx.body ? Promise.resolve(ctx.body) : leesBody(req));
     const url = new URL(req.url, 'http://localhost');
     let pad = url.pathname;
     if (basis && pad.startsWith(basis)) pad = pad.slice(basis.length) || '/';
     if (pad.length > 1 && pad.endsWith('/')) pad = pad.slice(0, -1);
-    const meldingen = meldingenUit(url.searchParams, MELDINGEN);
-
-    if (pad === '/' && req.method === 'GET') {
-      const gevraagd = url.searchParams.get('filter') || 'open';
-      const filter = OFFERTE_FILTERS.some(([s]) => s === gevraagd) ? gevraagd : 'open';
-      const zoek = (url.searchParams.get('zoek') || '').trim().slice(0, 100);
-      return stuurHtml(res, 200, offertesPagina({
-        basis, offerteOpslag, offerteknop, filter, zoek, meldingen, kader, laatsteSync: offerteOpslag.staat(STAAT_LAATSTE_SYNC), openUrl,
-      }));
-    }
 
     if (pad === '/open' && req.method === 'GET') {
       const naar = String(url.searchParams.get('naar') || '/offertes/');
       const doel = IS_OFFERTEKNOP_PAD.test(naar) ? naar : '/offertes/';
-      if (!metSso()) return publiek ? doorsturen(res, 302, publiek + doel) : terug(res, '/', 'niet-ingesteld');
+      if (!metSso()) return publiek ? doorsturen(res, 302, publiek + doel) : stuurTekst(res, 503, 'De koppeling met Offerteknop is niet ingesteld (OFFERTES_URL ontbreekt).');
       const email = kader?.email || '';
       if (!email) return stuurTekst(res, 403, 'Inloggen in Offerteknop vraagt een e-mailadres; log in met Microsoft.');
       const token = offerteknop.inlogToken({ email });
@@ -121,17 +78,10 @@ export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = nul
       return doorsturen(res, 302, `${publiek}/inloggen-via-koppeling?${new URLSearchParams({ t: token, naar: doel })}`, { 'cache-control': 'no-store' });
     }
 
-    if (pad === '/sync' && req.method === 'POST') {
-      await lees();
-      if (!offerteknop.beschikbaar) return terug(res, '/', 'niet-ingesteld');
-      try {
-        const n = await bijwerken({ volledig: true });
-        log('info', `Offertelijst bijgewerkt uit Offerteknop (${n} offertes)${gebruiker ? ' door ' + gebruiker : ''}.`);
-        return terug(res, '/', 'bijgewerkt');
-      } catch (fout) {
-        log('error', 'Offertelijst bijwerken mislukt: ' + fout.message);
-        return terug(res, '/', 'bijwerken-fout');
-      }
+    // De oude lijstpagina: door naar Offerteknop zelf.
+    if (pad === '/' && req.method === 'GET') {
+      const link = openUrl('/offertes/');
+      return link ? doorsturen(res, 302, link) : doorsturen(res, 302, '/');
     }
 
     return stuurTekst(res, 404, 'Niet gevonden.');
@@ -143,5 +93,5 @@ export function maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail = nul
     return c ? { ...c, open_url: openUrl(offerteknopPad(c.bewerk_url)) || c.bewerk_url } : null;
   };
 
-  return { handle, basis, bijwerken, conceptUitMail, conceptVan, openUrl, metSso, tellingen: (nu) => offerteOpslag.tellingen(nu) };
+  return { handle, basis, conceptUitMail, conceptVan, openUrl, metSso };
 }

@@ -127,7 +127,7 @@ main { padding: 1rem var(--rand) 2.5rem; max-width: 80rem; margin: 0 auto; }
 .mobielkop[open] .icoon--sluit { display: block; }
 .mobielkop[open] .icoon--menu { display: none; }
 .mobielmenu { border-top: 1px solid var(--lijn); padding: 0.5rem var(--rand) 1rem; display: grid; gap: 0.125rem; }
-.mobielmenu a, .sidebar__menu a {
+.mobielmenu a, .sidebar__menu a, .menu__extern {
   display: flex; align-items: center; gap: 0.75rem;
   padding: 0.625rem 0.75rem; min-height: var(--tik);
   color: var(--inkt); text-decoration: none; border-radius: var(--hoek);
@@ -135,6 +135,17 @@ main { padding: 1rem var(--rand) 2.5rem; max-width: 80rem; margin: 0 auto; }
 .mobielmenu a[aria-current="page"], .sidebar__menu a[aria-current="page"] {
   background: var(--brons-zacht); color: var(--brons); font-weight: 500;
 }
+/* Groepen in het menu (Inkoop, Verkoop, Algemeen): de kop heeft dezelfde
+   stijl als een tabelkolomkop (klein, kapitalen, gedempt). */
+.menugroep { display: grid; gap: 0.125rem; }
+.menugroep + .menugroep { margin-top: 0.75rem; }
+.menugroep__kop {
+  margin: 0; padding: 0.375rem 0.75rem 0.125rem;
+  font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--inkt-zacht); font-weight: 500;
+}
+.menu__extern--uit { color: var(--inkt-licht); }
+.menu__extern--uit small { margin-left: auto; font-size: 0.75rem; }
 .mobielmenu .profiel { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--lijn); }
 
 .profiel { display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
@@ -193,6 +204,10 @@ main { padding: 1rem var(--rand) 2.5rem; max-width: 80rem; margin: 0 auto; }
 }
 .paneel { padding: 1rem 1.125rem; min-width: 0; }
 .paneel h2 { margin-bottom: 0.25rem; }
+.dashboard__uitleg { margin: 0 0 0.75rem; color: var(--inkt-zacht); font-size: 0.875rem; }
+.paneel--verkoop .knoppen { margin-bottom: 0; }
+.paneel--verkoop .kerncijfers { margin-bottom: 0.5rem; }
+.paneel--verkoop .kerncijfers span { display: flex; gap: 0.5rem; align-items: baseline; padding: 0.25rem 0; min-height: var(--tik); }
 .paneel .tegel__bij { margin-bottom: 0.5rem; }
 .tegel__bij a, .lijst__telling a { display: inline-flex; align-items: center; min-height: var(--tik); }
 .panelen { display: grid; gap: 1rem; grid-template-columns: 1fr; margin: 1rem 0; }
@@ -480,7 +495,6 @@ form { margin: 0; }
   .sidebar__logo img { width: 3.75rem; height: auto; }
   .sidebar__logo span { font-family: var(--font-kop); font-size: 1.125rem; }
   .sidebar__menu { display: grid; gap: 0.125rem; }
-  .sidebar__extern { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--lijn); color: var(--inkt-zacht); }
   .sidebar__onder { margin-top: auto; padding-top: 0.75rem; border-top: 1px solid var(--lijn); display: grid; gap: 0.5rem; }
   .sidebar__onder .profiel { flex-wrap: wrap; }
   .sidebar__onder .profiel form { flex-basis: 100%; }

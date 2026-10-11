@@ -65,7 +65,7 @@ export function factuurPagina({ basis, opslag, inst, factuur, nu = vandaag(), me
   <p class="factuurkop__bedrag">${factuur.bedrag === null ? '—' : e(euro(factuur.bedrag, factuur.valuta))}</p>
 </div>`;
 
-  const inhoud = `${alleenInhoud ? `<header class="zijpaneel__kop"><h2>${e(naam)}</h2><a class="knop knop--rustig knop--klein" href="${basis}/factuur/${factuur.id}" data-paneel-open>Open als pagina</a><button class="knop knop--rustig knop--klein knop--icoon" type="button" data-paneel-sluit aria-label="Sluiten">${icoon('sluit')}</button></header>${meldingen.map(melding).join('')}` : `<p><a class="terug" href="${basis}/">← Alle facturen</a></p>`}
+  const inhoud = `${alleenInhoud ? `<header class="zijpaneel__kop"><h2>${e(naam)}</h2><a class="knop knop--rustig knop--klein" href="${basis}/factuur/${factuur.id}" data-paneel-open>Open als pagina</a><button class="knop knop--rustig knop--klein knop--icoon" type="button" data-paneel-sluit aria-label="Sluiten">${icoon('sluit')}</button></header>${meldingen.map(melding).join('')}` : `<p><a class="terug" href="${basis}/">← Alle inkoopfacturen</a></p>`}
 ${kop}
 
 ${factuur.uitlees_status === 'mislukt'
@@ -157,5 +157,5 @@ ${factuur.uitlees_status === 'geen_factuur' ? '<div class="melding"><p>Volgens h
 `;
 
   if (alleenInhoud) return kader ? metCsrf(inhoud, kader.csrf) : inhoud;
-  return pagina({ titel: naam, basis, actief: '/', inhoud, meldingen, kader, onderdeel: 'Facturen', menu: kader ? [] : undefined });
+  return pagina({ titel: naam, basis, actief: '/', inhoud, meldingen, kader, onderdeel: 'Inkoopfacturen', menu: kader ? [] : undefined });
 }

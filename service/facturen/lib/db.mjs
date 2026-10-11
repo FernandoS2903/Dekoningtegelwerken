@@ -12,7 +12,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { nuIso } from './hulp.mjs';
 
-export const SCHEMA_VERSIE = 3;
+export const SCHEMA_VERSIE = 4;
 
 // undefined -> null, en getallen/strings blijven zoals ze zijn.
 const w = (v) => (v === undefined || v === '' ? null : v);
@@ -234,17 +234,50 @@ const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS mail_relay_tijd ON mail_relay_log (tijd);
 
-  -- Website-aanvragen van de offertewizard (voorbereid; backend volgt).
+  -- Website-aanvragen van de offertewizard (lib/aanvraag-opslag.mjs). Elke
+  -- aanvraag heeft twee uitgangen met elk een eigen stand: de mail naar de
+  -- mailbox (vangnet) en het doorsturen naar Offerteknop (wachtrij met
+  -- herkansingen). Versie 4 voegde de kolommen vanaf referentie toe
+  -- (AANVRAAG_KOLOMMEN hieronder, ook de migratie voor bestaande databases).
   CREATE TABLE IF NOT EXISTS aanvragen (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    tijd       TEXT NOT NULL,
-    bron       TEXT NOT NULL,
-    velden     TEXT NOT NULL,
-    bestanden  TEXT,
-    status     TEXT NOT NULL DEFAULT 'nieuw',
-    offerte_id INTEGER
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    tijd              TEXT NOT NULL,
+    bron              TEXT NOT NULL,
+    velden            TEXT NOT NULL,
+    bestanden         TEXT,
+    status            TEXT NOT NULL DEFAULT 'nieuw',
+    offerte_id        INTEGER,
+    referentie        TEXT,
+    bestandsmap       TEXT,
+    mail_status       TEXT NOT NULL DEFAULT 'wacht',
+    mail_fout         TEXT,
+    mail_op           TEXT,
+    koppeling_status  TEXT NOT NULL DEFAULT 'wacht',
+    koppeling_fout    TEXT,
+    koppeling_op      TEXT,
+    offerte_nummer    TEXT,
+    pogingen          INTEGER NOT NULL DEFAULT 0,
+    volgende_poging   TEXT,
+    laatste_poging    TEXT
   );
 `;
+
+// Kolommen die versie 4 aan `aanvragen` toevoegde; voor een database van
+// versie 3 komen ze er met ALTER TABLE bij (rijen blijven staan).
+const AANVRAAG_KOLOMMEN = [
+  ['referentie', 'TEXT'],
+  ['bestandsmap', 'TEXT'],
+  ['mail_status', "TEXT NOT NULL DEFAULT 'wacht'"],
+  ['mail_fout', 'TEXT'],
+  ['mail_op', 'TEXT'],
+  ['koppeling_status', "TEXT NOT NULL DEFAULT 'wacht'"],
+  ['koppeling_fout', 'TEXT'],
+  ['koppeling_op', 'TEXT'],
+  ['offerte_nummer', 'TEXT'],
+  ['pogingen', 'INTEGER NOT NULL DEFAULT 0'],
+  ['volgende_poging', 'TEXT'],
+  ['laatste_poging', 'TEXT'],
+];
 
 // Velden die het bewerkformulier en het uitlezen mogen zetten.
 export const UITGELEZEN_VELDEN = [
@@ -271,6 +304,12 @@ export function openDatabase(pad) {
   const db = new DatabaseSync(pad);
   db.exec('PRAGMA journal_mode = WAL');
   db.exec('PRAGMA foreign_keys = ON');
+  // Een tweede proces (of een test) kan tegelijk schrijven: even wachten in
+  // plaats van direct "database is locked".
+  db.exec('PRAGMA busy_timeout = 5000');
+  // De tabel aanvragen van versie 3 bestaat mogelijk al zonder de nieuwe
+  // kolommen; CREATE TABLE IF NOT EXISTS laat hem dan staan en de migratie
+  // hieronder vult de kolommen aan. De unieke index komt daarom pas daarna.
   db.exec(SCHEMA);
 
   const versie = db.prepare('PRAGMA user_version').get().user_version;
@@ -278,10 +317,14 @@ export function openDatabase(pad) {
     // Versie 1 is het eerste schema. Versie 2 (mailsorteerder, portaal) en
     // versie 3 (koppeling Offerteknop) voegen alleen nieuwe tabellen toe;
     // die maakt SCHEMA hierboven al aan.
-    // Latere migraties komen hier als losse stappen bij
-    // (if (versie < 3) { db.exec('ALTER TABLE ...') }).
+    // Versie 4: de wachtrij-kolommen op aanvragen (website-aanvragen).
+    const aanwezig = new Set(db.prepare('PRAGMA table_info(aanvragen)').all().map((k) => k.name));
+    for (const [naam, definitie] of AANVRAAG_KOLOMMEN) {
+      if (!aanwezig.has(naam)) db.exec(`ALTER TABLE aanvragen ADD COLUMN ${naam} ${definitie}`);
+    }
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSIE}`);
   }
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS aanvragen_referentie ON aanvragen (referentie)');
   return db;
 }
 

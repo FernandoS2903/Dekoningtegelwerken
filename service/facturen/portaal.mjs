@@ -17,6 +17,10 @@
 //   GET  /auth/callback   terug van Microsoft: id_token controleren, sessie maken
 //   POST /auth/logout     sessie weg, daarna de logout van Microsoft
 //   GET  /auth/uitgelogd  bevestiging
+//
+// Zonder login, elk met een eigen controle: /graph/notify (clientState),
+// /intern/... (HMAC van Offerteknop) en /api/aanvraag/... (het formulier van
+// de website: herkomst, honeypot, invultijd en limieten; zie aanvraag.mjs).
 
 import http from 'node:http';
 import crypto from 'node:crypto';
@@ -52,6 +56,7 @@ export function maakPortaal({
   auth,
   offertes = null,
   intern = null,
+  aanvraag = null,
   offertesUrl = '',
   log = () => {},
 }) {
@@ -183,8 +188,7 @@ export function maakPortaal({
     return stuurHtml(res, 200, facturen.dashboard({
       kader,
       mail: sorteerOpslag.tellingen({ vandaagVanaf: middernachtAmsterdam(), weekVanaf: week }),
-      offertesUrl: offertes && offertes.metSso && offertes.metSso() ? offertes.openUrl('/offertes/') : offertesUrl,
-      offertes: offertes ? offertes.tellingen(vandaag()) : null,
+      aanvragen: aanvraag ? aanvraag.stand() : null,
     }));
   }
 
@@ -196,6 +200,12 @@ export function maakPortaal({
 
       if ((req.method === 'GET' || req.method === 'HEAD') && STATISCH[pad]) return stuurStatisch(res, pad, { versie: url.searchParams.get('v') });
       if (pad === '/graph/notify') return notify(req, res, url);
+      // Het aanvraagformulier van de website (aanvraag.mjs): publiek, zonder
+      // login; nginx van dekoningtegelwerken.nl stuurt /api/aanvraag/ hierheen.
+      if (pad.startsWith('/api/aanvraag/')) {
+        if (!aanvraag) return stuurTekst(res, 404, 'Niet gevonden.');
+        return aanvraag.handle(req, res, url);
+      }
       // Offerteknop -> portaal: eigen handtekening, geen login (intern.mjs).
       if (pad.startsWith('/intern/')) {
         if (!intern) return stuurTekst(res, 404, 'Niet gevonden.');

@@ -179,18 +179,25 @@ test('met sessie geven alle pagina\'s 200, met noindex, CSP en een CSRF-veld in 
   }
 });
 
-test('het dashboard toont de KPI-kaarten, mail, de sidebar en de link naar Offertes', async () => {
+test('het dashboard toont de inkoopcijfers, mail, de sidebar in groepen en de link naar Offerteknop', async () => {
   const cookie = await ingelogd(p);
   const html = await (await fetch(p.adres + '/', { headers: { cookie } })).text();
-  for (const tekst of ['Openstaand', 'Verlopen', 'Betaald deze maand', 'Nog door te sturen', 'Te controleren', 'Actie vereist', 'Factuurbedrag per maand', 'Grootste leveranciers']) {
+  for (const tekst of ['Te betalen', 'Verlopen', 'Betaald deze maand', 'Nog door te sturen', 'Te controleren', 'Actie vereist', 'Inkoop per maand', 'Grootste leveranciers', 'inkoopkant', 'kop-verkoop']) {
     assert.match(html, new RegExp(tekst), tekst);
   }
   assert.match(html, /gesorteerd vandaag/);
-  assert.match(html, /href="https:\/\/de-koning-tegelwerken\.offerteknop\.nl\/offertes\/" rel="noopener noreferrer"/);
+  // Zonder koppeling: de tenant zelf (eigen login), in menu en in het blok Verkoop.
+  assert.match(html, /class="menu__extern" href="https:\/\/de-koning-tegelwerken\.offerteknop\.nl\/offertes\/" rel="noopener noreferrer"/);
+  assert.match(html, /class="knop" href="https:\/\/de-koning-tegelwerken\.offerteknop\.nl\/offertes\/" rel="noopener noreferrer"/);
   assert.match(html, /<aside class="sidebar">/);
   assert.match(html, /<img src="\/logo\.svg" alt="De Koning Tegelwerken"/);
   assert.match(html, /profiel__naam">Bob Schol</);
-  for (const naam of ['Dashboard', 'Facturen', 'Leveranciers', 'Mail', 'Instellingen']) assert.match(html, new RegExp(`<span>${naam}</span>`), naam);
+  for (const naam of ['Dashboard', 'Inkoopfacturen', 'Leveranciers', 'Offerteknop', 'Mail', 'Instellingen']) assert.match(html, new RegExp(`<span>${naam}</span>`), naam);
+  for (const kop of ['Inkoop', 'Verkoop', 'Algemeen']) assert.match(html, new RegExp(`<p class="menugroep__kop">${kop}</p>`), kop);
+  assert.doesNotMatch(html, /<span>Facturen<\/span>|<span>Offertes<\/span>/);
+  const facturen = await (await fetch(p.adres + '/facturen/', { headers: { cookie } })).text();
+  assert.match(facturen, /<title>Inkoopfacturen — Inkoopfacturen/);
+  assert.match(facturen, /href="\/facturen\/" aria-current="page"/, 'de URL blijft /facturen/');
   assert.equal((await fetch(p.adres + '/logo.svg')).status, 200);
 });
 

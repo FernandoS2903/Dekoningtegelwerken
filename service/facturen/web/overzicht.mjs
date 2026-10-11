@@ -1,24 +1,38 @@
-// Het dashboard (KPI-kaarten, grafiek, grootste leveranciers, actie vereist)
-// en het facturenoverzicht (tabel met zoeken, filters en sortering).
+// Het dashboard (KPI-kaarten van de inkoop, grafiek, grootste leveranciers,
+// actie vereist, verkoop via Offerteknop, mail) en het overzicht van de
+// inkoopfacturen (tabel met zoeken, filters en sortering).
 
 import { datumNl, escapeHtml as e, euro } from '../lib/hulp.mjs';
 import { vatSamen } from '../lib/sync.mjs';
 import {
-  filterbalk, maandGrafiek, pagina, rij, syncStatus, tabelKop, tegel, topLeveranciers, vlag, factuurNaam,
+  filterbalk, icoon, maandGrafiek, offerteknopLink, pagina, rij, syncStatus, tabelKop, tegel, topLeveranciers, vlag, factuurNaam,
 } from './opmaak.mjs';
-import { offertesPaneel } from './offertes.mjs';
 
 function kpiKaarten(t, inst, basis) {
   const stand = inst.testmodus ? 'testmodus' : inst.autoDoorsturen ? 'automatisch' : 'met de knop';
-  return `<ul class="tegels tegels--kpi">
+  return `<ul class="tegels tegels--kpi" aria-label="Inkoop">
   ${[
-    tegel({ naam: 'Openstaand', bedrag: t.open.som, bij: `${t.open.aantal} factuur${t.open.aantal === 1 ? '' : 'en'}`, href: `${basis}/` }),
+    tegel({ naam: 'Te betalen', bedrag: t.open.som, bij: `${t.open.aantal} inkoopfactu${t.open.aantal === 1 ? 'ur' : 'ren'} open`, href: `${basis}/` }),
     tegel({ naam: 'Verlopen', bedrag: t.verlopen.som, bij: `${t.verlopen.aantal} over de vervaldatum`, let: t.verlopen.aantal > 0, href: `${basis}/?filter=verlopen` }),
     tegel({ naam: 'Betaald deze maand', bedrag: t.betaaldDezeMaand.som, bij: `${t.betaaldDezeMaand.aantal} betaald`, href: `${basis}/?filter=betaald` }),
     tegel({ naam: 'Nog door te sturen', bedrag: t.nogDoorsturen.som, bij: `${t.nogDoorsturen.aantal} wachtend · ${stand}`, href: `${basis}/?filter=doorsturen` }),
-    tegel({ naam: 'Te controleren', getal: t.controle.aantal, bij: t.controle.aantal === 1 ? 'factuur met een vraag' : 'facturen met een vraag', let: t.controle.aantal > 0, href: `${basis}/?filter=controle` }),
+    tegel({ naam: 'Te controleren', getal: t.controle.aantal, bij: t.controle.aantal === 1 ? 'inkoopfactuur met een vraag' : 'inkoopfacturen met een vraag', let: t.controle.aantal > 0, href: `${basis}/?filter=controle` }),
   ].join('\n  ')}
 </ul>`;
+}
+
+// Het blok Verkoop: offertes en aanvragen leven in Offerteknop. Alleen de
+// stand van de website-aanvragen die nog niet zijn doorgestuurd (wachtrij)
+// staat hier, zodat een haperende koppeling niet onzichtbaar blijft.
+export function verkoopPaneel(link, aanvragen = null) {
+  const wacht = aanvragen && aanvragen.wacht ? `<li><span class="let"><strong>${aanvragen.wacht}</strong> website-aanvra${aanvragen.wacht === 1 ? 'ag wacht' : 'gen wachten'} op doorsturen naar Offerteknop</span></li>` : '';
+  const gestopt = aanvragen && aanvragen.gestopt ? `<li><span class="let"><strong>${aanvragen.gestopt}</strong> website-aanvra${aanvragen.gestopt === 1 ? 'ag' : 'gen'} niet doorgestuurd; zie het logboek</span></li>` : '';
+  return `<section class="paneel paneel--verkoop" aria-labelledby="kop-verkoop">
+    <h2 id="kop-verkoop">Verkoop</h2>
+    <p class="tegel__bij">Offertes en aanvragen van de website beheer je in Offerteknop. Nieuwe aanvragen van het formulier komen daar als "Nieuwe aanvraag" binnen; een kopie gaat naar de mailbox.</p>
+    ${wacht || gestopt ? `<ul class="kerncijfers">${wacht}${gestopt}</ul>` : ''}
+    ${link ? `<p class="knoppen"><a class="knop" href="${e(link)}" rel="noopener noreferrer" target="_blank">${icoon('extern')}<span>Offerteknop openen</span></a></p>` : '<p class="tegel__bij">De link naar Offerteknop is niet ingesteld (OFFERTES_URL).</p>'}
+  </section>`;
 }
 
 function actieVereist(lijst, basis, nu) {
@@ -33,9 +47,10 @@ function actieVereist(lijst, basis, nu) {
 </ul>`;
 }
 
-// Het dashboard: op het portaal de startpagina (/), met de facturen onder
-// `basis` (/facturen). `mail` is optioneel: de tellingen van de sorteerder.
-export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncBezig = false, kader = null, mail = null, offertesUrl = '', offertes = null }) {
+// Het dashboard: op het portaal de startpagina (/), met de inkoopfacturen
+// onder `basis` (/facturen). `mail` is optioneel: de tellingen van de
+// sorteerder; `aanvragen` de stand van de wachtrij van website-aanvragen.
+export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncBezig = false, kader = null, mail = null, aanvragen = null }) {
   const t = opslag.tegels(nu);
   const samenvatting = vatSamen(inst.laatsteSyncResultaat);
   const acties = opslag.actieVereist(nu, 8);
@@ -49,13 +64,14 @@ export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncB
       ${mail.fouten ? `<li><a href="/mail/?status=fout" class="let"><strong>${mail.fouten}</strong> fout${mail.fouten === 1 ? '' : 'en'} bij het sorteren</a></li>` : ''}
     </ul>
   </section>` : '';
-  const offertesBlok = offertes ? offertesPaneel(offertes, '/offertes', offertesUrl) : '';
+  const verkoopBlok = verkoopPaneel(offerteknopLink(kader), aanvragen);
 
-  const inhoud = `${kpiKaarten(t, inst, basis)}
+  const inhoud = `<p class="dashboard__uitleg">De cijfers hieronder zijn de <strong>inkoopkant</strong>: facturen van leveranciers uit de mailbox. De verkoopkant (offertes en aanvragen) staat in Offerteknop.</p>
+${kpiKaarten(t, inst, basis)}
 
 <div class="panelen panelen--dashboard">
   <section class="paneel paneel--grafiek" aria-labelledby="kop-grafiek">
-    <h2 id="kop-grafiek">Factuurbedrag per maand</h2>
+    <h2 id="kop-grafiek">Inkoop per maand</h2>
     ${maandGrafiek(opslag.perMaand(nu))}
   </section>
   <section class="paneel" aria-labelledby="kop-top">
@@ -67,7 +83,7 @@ export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncB
     <h2 id="kop-acties">Actie vereist${acties.length ? ` <span class="telling">${acties.length}</span>` : ''}</h2>
     ${actieVereist(acties, basis, nu)}
   </section>
-  ${offertesBlok}
+  ${verkoopBlok}
   ${mailBlok}
 </div>
 `;
@@ -78,7 +94,7 @@ export function dashboardPagina({ basis, opslag, inst, nu, meldingen = [], syncB
   });
 }
 
-// Het facturenoverzicht: zoeken, statusfilters, sortering en de tabel.
+// Het overzicht van de inkoopfacturen: zoeken, statusfilters, sortering en de tabel.
 export function overzicht({ basis, opslag, inst, filter, zoek, sorteer = '', nu, meldingen = [], syncBezig = false, kader = null }) {
   const regels = opslag.lijst(filter, zoek, nu, sorteer);
   const samenvatting = vatSamen(inst.laatsteSyncResultaat);
@@ -87,10 +103,10 @@ export function overzicht({ basis, opslag, inst, filter, zoek, sorteer = '', nu,
   const inhoud = `${filterbalk(basis, filter, zoek, sorteer)}
 <div data-splits>
 <div class="lijstvak" data-lijst>
-  <p class="lijst__telling">${regels.length} factuur${regels.length === 1 ? '' : 'en'}${regels.length ? ` · ${e(euro(totaal))}` : ''}${zoek ? ` · zoekterm "${e(zoek)}"` : ''}</p>
+  <p class="lijst__telling">${regels.length} inkoopfactu${regels.length === 1 ? 'ur' : 'ren'}${regels.length ? ` · ${e(euro(totaal))}` : ''}${zoek ? ` · zoekterm "${e(zoek)}"` : ''}</p>
   ${regels.length
     ? `<ul class="lijst lijst--tabel">\n${tabelKop(basis, { filter, zoek, sorteer })}\n${regels.map((f) => rij(f, basis, nu)).join('\n')}\n</ul>`
-    : `<p class="leeg">Geen facturen in deze selectie${zoek ? ` voor "${e(zoek)}"` : ''}.</p>`}
+    : `<p class="leeg">Geen inkoopfacturen in deze selectie${zoek ? ` voor "${e(zoek)}"` : ''}.</p>`}
   ${regels.length >= 500 ? '<p class="tegel__bij">Alleen de eerste 500 regels worden getoond; verfijn met het zoekveld.</p>' : ''}
 </div>
 <aside class="zijpaneel" data-zijpaneel hidden aria-label="Factuur"></aside>
@@ -98,7 +114,7 @@ export function overzicht({ basis, opslag, inst, filter, zoek, sorteer = '', nu,
 `;
 
   return pagina({
-    titel: 'Facturen', basis, actief: '/', inhoud, meldingen, kader, onderdeel: 'Facturen',
+    titel: 'Inkoopfacturen', basis, actief: '/', inhoud, meldingen, kader, onderdeel: 'Inkoopfacturen',
     menu: kader ? [] : undefined, kopActies: syncStatus({ basis, inst, samenvatting, bezig: syncBezig }), kopKlasse: 'paginakop--lijst',
   });
 }

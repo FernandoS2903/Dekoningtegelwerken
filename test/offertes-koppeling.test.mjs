@@ -1,8 +1,9 @@
 // De koppeling met Offerteknop, met een nagebootst Offerteknop dat de HMAC
-// controleert: de pagina Offertes en het bijwerken, de tegels op het
-// dashboard, de webhook (/intern/offerteknop/webhook) met replay en de
-// lokaal-controle, de mailrelay (/intern/mail/verstuur) met ontvangercheck
-// en limiet, en "Maak offerte" bij een mail.
+// controleert: de link naar Offerteknop in menu en dashboard (de pagina
+// Offertes is op 11 oktober 2026 vervallen), de webhook
+// (/intern/offerteknop/webhook) met replay en de lokaal-controle, de
+// mailrelay (/intern/mail/verstuur) met ontvangercheck en limiet, "Maak
+// offerte" bij een mail en de eenmalige inloglink (/offertes/open).
 //   node --test test/offertes-koppeling.test.mjs
 
 import { test, before, after } from 'node:test';
@@ -111,7 +112,7 @@ const csrfUit = (html) => (html.match(/name="_csrf" value="([^"]+)"/) || [])[1];
 let p;
 const haal = (pad, opties = {}) => fetch(p.adres + pad, { redirect: 'manual', ...opties, headers: { authorization: BASIC, ...(opties.headers || {}) } });
 async function post(pad, velden = {}) {
-  const pagina = await (await haal('/offertes/')).text();
+  const pagina = await (await haal('/mail/')).text();
   const body = new URLSearchParams({ ...velden, _csrf: csrfUit(pagina) });
   return haal(pad, { method: 'POST', body, headers: { 'content-type': 'application/x-www-form-urlencoded', 'sec-fetch-site': 'same-origin' } });
 }
@@ -125,43 +126,29 @@ function internVerzoek(pad, body, { sleutel = SLEUTEL_UIT, extraKoppen = {}, nu 
 before(async () => { p = await bouw(); });
 after(async () => { await new Promise((r) => p.server.close(r)); await p.nep.stop(); ruimOp(); });
 
-test('zonder login is /offertes/ dicht; de pagina is leeg tot er is bijgewerkt', async () => {
+test('zonder login is /offertes/ dicht; ingelogd gaat de oude lijstpagina door naar Offerteknop; geen pagina Offertes meer in het menu', async () => {
   const dicht = await fetch(p.adres + '/offertes/');
   assert.equal(dicht.status, 401);
-  const leeg = await haal('/offertes/');
-  assert.equal(leeg.status, 200);
-  const html = await leeg.text();
-  assert.match(html, /0 offertes/);
-  assert.match(html, /nog niet opgehaald/);
-  assert.match(html, /href="\/offertes\/"[^>]*aria-current="page"/, 'Offertes in het hoofdmenu');
-});
-
-test('bijwerken haalt de lijst ondertekend op; filters en zoeken werken; rijen linken naar Offerteknop', async () => {
-  const r = await post('/offertes/sync');
-  assert.equal(r.status, 303);
-  assert.equal(r.headers.get('location'), '/offertes/?m=bijgewerkt');
+  const door = await haal('/offertes/');
+  assert.equal(door.status, 302);
+  assert.equal(door.headers.get('location'), '/offertes/open?naar=%2Foffertes%2F');
+  assert.equal((await haal('/offertes/sync', { method: 'POST' })).status, 403, 'geen sync-route meer (CSRF-controle gaat voor)');
+  const html = await (await haal('/mail/')).text();
+  assert.doesNotMatch(html, /href="\/offertes\/"/, 'geen menu-item Offertes');
   assert.equal(p.nep.stand.ongeldig, 0);
-  const html = await (await haal('/offertes/?filter=alle')).text();
-  assert.match(html, /2 offertes/);
-  assert.match(html, /OFF-2026-0001/);
-  assert.match(html, /CONCEPT-0002/);
-  assert.ok(html.includes(`href="/offertes/open?naar=${encodeURIComponent('/offertes/prijsboek-offerte.html?id=1')}"`), 'rij linkt via de eenmalige inloglink naar de editor');
-  const wacht = await (await haal('/offertes/?filter=wacht')).text();
-  assert.match(wacht, /1 offerte\b/);
-  assert.match(wacht, /OFF-2026-0001/);
-  assert.doesNotMatch(wacht, /CONCEPT-0002/);
-  const zoek = await (await haal('/offertes/?filter=alle&zoek=klant+2')).text();
-  assert.match(zoek, /1 offerte\b/);
-  assert.match(zoek, /Klant 2/);
-  assert.equal(p.offerteOpslag.offerte(1).status, 'verstuurd');
 });
 
-test('het dashboard toont de tegels voor offertes', async () => {
+test('het dashboard: inkoopcijfers, menu in groepen, blok Verkoop met de link naar Offerteknop', async () => {
   const html = await (await haal('/')).text();
-  assert.match(html, /<h2 id="kop-offertes">Offertes<\/h2>/);
-  assert.match(html, /<strong>1<\/strong> concept</);
-  assert.match(html, /<strong>1<\/strong> wacht op akkoord/);
-  assert.match(html, /<strong>0<\/strong> geaccepteerd deze maand/);
+  assert.doesNotMatch(html, /kop-offertes/);
+  assert.match(html, /<h2 id="kop-verkoop">Verkoop<\/h2>/);
+  assert.match(html, /inkoopkant/);
+  assert.match(html, /Te betalen/);
+  assert.match(html, /Inkoop per maand/);
+  for (const kop of ['Inkoop', 'Verkoop', 'Algemeen']) assert.match(html, new RegExp(`<p class="menugroep__kop">${kop}</p>`), kop);
+  assert.match(html, /class="menu__extern" href="\/offertes\/open\?naar=%2Foffertes%2F"[^>]*>[^]*?<span>Offerteknop<\/span>/);
+  assert.match(html, /<span>Inkoopfacturen<\/span>/);
+  assert.doesNotMatch(html, /<span>Facturen<\/span>/);
 });
 
 test('webhook: ondertekend door Offerteknop werkt de spiegel bij; replay, dubbele gebeurtenis, fout en via nginx worden geweigerd', async () => {
@@ -186,9 +173,9 @@ test('webhook: ondertekend door Offerteknop werkt de spiegel bij; replay, dubbel
   assert.equal((await stuur()).status, 409);
   /* geen login nodig, maar ook geen toegang tot de rest */
   assert.equal((await fetch(p.adres + '/intern/onbekend', { method: 'POST' })).status, 401);
-  const dashboard = await (await haal('/')).text();
-  assert.match(dashboard, /<strong>1<\/strong> geaccepteerd deze maand/);
-  assert.match(dashboard, /1\.210,00/);
+  /* de spiegel is bijgewerkt, maar wordt nergens meer getoond */
+  assert.equal(p.offerteOpslag.offerte(1).bedrag_incl_cent, 121000);
+  assert.doesNotMatch(await (await haal('/')).text(), /geaccepteerd deze maand/);
 });
 
 test('mailrelay: alleen naar het klantadres van de offerte, met bijlage, vanuit de mailbox; vrije relay en te veel worden geweigerd', async () => {
@@ -250,10 +237,9 @@ test('Maak offerte bij een mail in Offerteaanvragen: concept met klantgegevens e
   const daarna = await (await haal('/mail/')).text();
   assert.match(daarna, /Offerte openen/);
   assert.doesNotMatch(daarna, new RegExp(`action="/mail/log/${regel.id}/offerte"`));
-  /* het concept staat in de lijst */
-  const lijst = await (await haal('/offertes/?filter=concept')).text();
-  assert.match(lijst, /Piet Aanvrager/);
-  assert.match(lijst, /via mail/);
+  /* het concept is onthouden (referentie -> offerte) en staat in de spiegel */
+  assert.equal(p.offerteOpslag.conceptBijReferentie(regel.internet_id).offerte_id, 70);
+  assert.equal(p.offerteOpslag.offerte(70).klant_naam, 'Piet Aanvrager');
 });
 
 test('aanvraag lezen: JSON van het model wordt streng gelezen, terugval gebruikt de afzender', () => {

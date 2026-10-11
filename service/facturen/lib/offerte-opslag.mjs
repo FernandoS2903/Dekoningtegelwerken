@@ -1,35 +1,24 @@
 // Opslag voor de koppeling met Offerteknop (schema versie 3).
 //
-//   offertes_spiegel      kopie van de offertelijst uit de API (voor de pagina
-//                         Offertes en de tegels op het dashboard); bijgewerkt
-//                         door de webhook en de periodieke ronde
-//   offerte_concepten     welke mail of website-aanvraag welk concept werd
-//                         (referentie -> offerte), zodat een tweede klik niets
-//                         dubbel maakt
+//   offertes_spiegel      kopie van de offertes zoals de webhook ze meldt.
+//                         Sinds 11 oktober 2026 (pagina Offertes vervallen)
+//                         wordt hij nergens getoond; hij blijft gevuld voor
+//                         later (geaccepteerde offerte -> factuur)
+//   offerte_concepten     welke mail welk concept werd (referentie -> offerte),
+//                         zodat een tweede klik op "Maak offerte" niets dubbel
+//                         maakt
 //   webhook_gebeurtenissen ontvangen webhook-id's: een herhaalde aflevering
 //                         wordt herkend
 //   intern_replay         replaycache van de ondertekende verzoeken
 //   mail_relay_log        elke mail die Offerteknop via ons verstuurde, voor de
 //                         limiet en het logboek
-//   aanvragen             website-aanvragen van de offertewizard (voorbereid;
-//                         de wizard krijgt later een backend)
+//
+// De website-aanvragen (tabel aanvragen) hebben hun eigen opslag:
+// lib/aanvraag-opslag.mjs.
 
 import { nuIso } from './hulp.mjs';
 
 export const API_STATUSSEN = ['concept', 'verstuurd', 'bekeken', 'geaccepteerd', 'afgewezen', 'verlopen', 'ingetrokken'];
-export const STATUS_NAAM = {
-  concept: 'concept', verstuurd: 'verstuurd', bekeken: 'bekeken', geaccepteerd: 'geaccepteerd',
-  afgewezen: 'afgewezen', verlopen: 'verlopen', ingetrokken: 'ingetrokken',
-};
-// Filters op de pagina Offertes: sleutel -> statussen.
-export const OFFERTE_FILTERS = [
-  ['open', 'Openstaand', ['concept', 'verstuurd', 'bekeken']],
-  ['wacht', 'Wacht op akkoord', ['verstuurd', 'bekeken']],
-  ['concept', 'Concepten', ['concept']],
-  ['geaccepteerd', 'Geaccepteerd', ['geaccepteerd']],
-  ['afgewezen', 'Afgewezen', ['afgewezen', 'verlopen', 'ingetrokken']],
-  ['alle', 'Alle', API_STATUSSEN],
-];
 
 const w = (v) => (v === undefined || v === '' ? null : v);
 const vlag = (v) => (v ? 1 : 0);
@@ -78,34 +67,7 @@ export function maakOfferteOpslag(db) {
     bewaar,
     offerte: (id) => sSpiegelEen.get(Number(id)) ?? null,
 
-    // De lijst voor de pagina Offertes: gearchiveerd blijft buiten beeld.
-    lijst({ filter = 'open', zoek = '', max = 500 } = {}) {
-      const keuze = OFFERTE_FILTERS.find(([s]) => s === filter) || OFFERTE_FILTERS[0];
-      const waar = ['gearchiveerd = 0', `status IN (${keuze[2].map(() => '?').join(',')})`];
-      const waarden = [...keuze[2]];
-      const term = String(zoek || '').trim().toLowerCase();
-      if (term) {
-        waar.push("(lower(coalesce(klant_naam, '')) LIKE ? OR lower(coalesce(nummer_str, '')) LIKE ? OR lower(coalesce(klant_email, '')) LIKE ? OR lower(coalesce(projectadres, '')) LIKE ?)");
-        for (let i = 0; i < 4; i++) waarden.push(`%${term}%`);
-      }
-      return db.prepare(`SELECT * FROM offertes_spiegel WHERE ${waar.join(' AND ')}
-        ORDER BY coalesce(gewijzigd_op, aangemaakt_op) DESC, id DESC LIMIT ?`).all(...waarden, max);
-    },
-
-    // Tegels op het dashboard. `nu` is een ISO-datum (YYYY-MM-DD).
-    tellingen(nu) {
-      const maand = String(nu).slice(0, 7);
-      const tel = (statussen, extra = '', waarden = []) => db.prepare(`SELECT COUNT(*) n, COALESCE(SUM(bedrag_incl_cent), 0) som FROM offertes_spiegel
-        WHERE gearchiveerd = 0 AND status IN (${statussen.map(() => '?').join(',')}) ${extra}`).get(...statussen, ...waarden);
-      return {
-        concepten: tel(['concept']),
-        wachtOpAkkoord: tel(['verstuurd', 'bekeken']),
-        geaccepteerdDezeMaand: tel(['geaccepteerd'], 'AND substr(beslist_op, 1, 7) = ?', [maand]),
-        verlopen: tel(['verlopen']),
-      };
-    },
-
-    // -- concepten uit mail of website -----------------------------------
+    // -- concepten uit mail ----------------------------------------------
     conceptBijReferentie: (referentie) => sConceptBijReferentie.get(String(referentie)) ?? null,
     conceptBijLog: (logId) => sConceptBijLog.get(Number(logId)) ?? null,
     noteerConcept({ bron, referentie, sorteerLogId = null, aanvraagId = null, offerteId, bewerkUrl, door = null }) {
@@ -134,17 +96,6 @@ export function maakOfferteOpslag(db) {
     },
     relayLijst(max = 50) {
       return db.prepare('SELECT * FROM mail_relay_log ORDER BY id DESC LIMIT ?').all(max);
-    },
-
-    // -- website-aanvragen (voorbereid) ---------------------------------------
-    noteerAanvraag({ bron = 'website', velden, bestanden = [] }) {
-      const info = db.prepare('INSERT INTO aanvragen (tijd, bron, velden, bestanden, status) VALUES (?, ?, ?, ?, ?)')
-        .run(nuIso(), bron, JSON.stringify(velden || {}), JSON.stringify(bestanden || []), 'nieuw');
-      return Number(info.lastInsertRowid);
-    },
-    aanvraag: (id) => db.prepare('SELECT * FROM aanvragen WHERE id = ?').get(Number(id)) ?? null,
-    koppelAanvraag(id, offerteId) {
-      db.prepare("UPDATE aanvragen SET status = 'concept', offerte_id = ? WHERE id = ?").run(Number(offerteId), Number(id));
     },
 
     // -- stand ---------------------------------------------------------------

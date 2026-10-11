@@ -12,6 +12,8 @@
 //   /mail/        mailsorteerder: logboek, regels, instellingen (mail.mjs)
 //   /auth/...     inloggen, uitloggen, /auth/check voor nginx auth_request
 //   /graph/notify webhook van Microsoft Graph (zonder login, eigen controle)
+//   /api/aanvraag/indienen  het aanvraagformulier van dekoningtegelwerken.nl
+//                 (zonder login; aanvraag.mjs, wachtrij naar mailbox en Offerteknop)
 //
 // Starten:   node service/facturen/server.mjs
 // Instellen: /etc/dekoning/facturen.env (600), zie deploy/facturen.env.voorbeeld
@@ -54,6 +56,10 @@ import { maakIntern } from './intern.mjs';
 import { maakOfferteknop } from './lib/offerteknop.mjs';
 import { maakOfferteOpslag } from './lib/offerte-opslag.mjs';
 import { maakAanvraagLezer } from './lib/aanvraag.mjs';
+import { maakAanvraagApp, STANDAARD_ORIGINS } from './aanvraag.mjs';
+import { maakAanvraagOpslag } from './lib/aanvraag-opslag.mjs';
+import { maakAanvraagKoppeling, STANDAARD_URL as AANVRAAG_STANDAARD_URL } from './lib/aanvraag-koppeling.mjs';
+import { maakWachtrij } from './lib/aanvraag-doorsturen.mjs';
 import { dashboardPagina, overzicht } from './web/overzicht.mjs';
 import { leveranciersPagina } from './web/leveranciers.mjs';
 import { factuurPagina } from './web/factuur.mjs';
@@ -113,10 +119,11 @@ export function maakFacturenApp({
 
   const meldingenUit = (zoekparams) => meldingenVan(zoekparams, MELDINGEN);
 
-  // Het dashboard; het portaal zet het op /, met de mailtellingen erbij.
-  function dashboard({ meldingen = [], kader = null, mail = null, offertesUrl = '', offertes = null } = {}) {
+  // Het dashboard; het portaal zet het op /, met de mailtellingen en de
+  // stand van de website-aanvragen erbij.
+  function dashboard({ meldingen = [], kader = null, mail = null, aanvragen = null } = {}) {
     return dashboardPagina({
-      basis, opslag, inst: leesInstellingen(), nu: nu(), meldingen, syncBezig: sync.bezig(), kader, mail, offertesUrl, offertes,
+      basis, opslag, inst: leesInstellingen(), nu: nu(), meldingen, syncBezig: sync.bezig(), kader, mail, aanvragen,
     });
   }
 
@@ -377,7 +384,7 @@ export function maakFacturenApp({
 // dezelfde herkomst. Gebruikt door de tests van het dashboard.
 export function maakServer({ gebruiker = '', wachtwoord = '', ...opties }) {
   const app = maakFacturenApp(opties);
-  const basic = maakBasicAuth({ gebruiker, wachtwoord, realm: 'Facturen De Koning Tegelwerken' });
+  const basic = maakBasicAuth({ gebruiker, wachtwoord, realm: 'Inkoopfacturen De Koning Tegelwerken' });
 
   const server = http.createServer(async (req, res) => {
     if (!basic.klaar) {
@@ -489,6 +496,15 @@ export function uitEnv(env = process.env) {
       sleutelUit: env.OFFERTEKNOP_WEBHOOK_SLEUTEL || '',
       minuten: Math.max(5, Number(env.OFFERTEKNOP_SYNC_MIN) || 15),
     },
+    // Het aanvraagformulier van de website (aanvraag.mjs). De Bearer-sleutel
+    // voor /api/aanvragen/website is een andere dan de HMAC-sleutels hierboven.
+    aanvraag: {
+      offerteknopUrl: String(env.AANVRAAG_OFFERTEKNOP_URL || AANVRAAG_STANDAARD_URL).trim(),
+      sleutel: String(env.AANVRAAG_OFFERTEKNOP_SLEUTEL || '').trim(),
+      origins: splitsLijst(env.AANVRAAG_ORIGINS).length ? splitsLijst(env.AANVRAAG_ORIGINS) : STANDAARD_ORIGINS,
+      mailNaar: String(env.AANVRAAG_MAIL_NAAR || env.M365_MAILBOX || '').trim(),
+      map: env.AANVRAAG_MAP || path.join(dataMap, 'aanvragen'),
+    },
   };
 }
 
@@ -543,6 +559,12 @@ function start() {
   const aanvraagLezer = maakAanvraagLezer({ apiKey: cfg.claude.apiKey, model: cfg.sorteren.model });
   const offertes = maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail, aanvraagLezer, basisPad: '/offertes', publiekeUrl: cfg.portaal.offertesUrl, log: logger });
   const intern = maakIntern({ offerteOpslag, offerteknop, mail, log: logger });
+  // Website-aanvragen: opslaan, mail naar de mailbox, doorsturen naar Offerteknop.
+  mkdirSync(cfg.aanvraag.map, { recursive: true, mode: 0o700 });
+  const aanvraagOpslag = maakAanvraagOpslag(opslag.db);
+  const aanvraagKoppeling = maakAanvraagKoppeling({ url: cfg.aanvraag.offerteknopUrl, sleutel: cfg.aanvraag.sleutel });
+  const wachtrij = maakWachtrij({ aanvraagOpslag, koppeling: aanvraagKoppeling, mail, mailNaar: cfg.aanvraag.mailNaar, log: logger });
+  const aanvraag = maakAanvraagApp({ aanvraagOpslag, wachtrij, bestandenMap: cfg.aanvraag.map, origins: cfg.aanvraag.origins, log: logger });
   const mailApp = maakMailApp({
     opslag, sorteerOpslag, sorteerder, webhook, mail, classificeerder, offertes,
     basisPad: '/mail', sorteerMinuten: cfg.sorteren.minuten,
@@ -563,7 +585,7 @@ function start() {
   }
 
   const { server } = maakPortaal({
-    opslag, sorteerOpslag, facturen, mailApp, webhook, auth, offertes, intern,
+    opslag, sorteerOpslag, facturen, mailApp, webhook, auth, offertes, intern, aanvraag,
     offertesUrl: cfg.portaal.offertesUrl,
     log: logger,
   });
@@ -574,6 +596,7 @@ function start() {
     !claude.beschikbaar ? 'Claude' : null,
     !bunq.beschikbaar ? 'bunq' : null,
     !offerteknop.beschikbaar ? 'Offerteknop (' + offerteknop.ontbreekt.join(', ') + ')' : null,
+    !aanvraagKoppeling.beschikbaar ? 'Offerteknop-aanvragen (' + aanvraagKoppeling.ontbreekt.join(', ') + '; website-aanvragen blijven in de wachtrij)' : null,
   ].filter(Boolean);
   if (ontbreekt.length) {
     console.warn(nuIso() + ' niet ingesteld: ' + ontbreekt.join(', ') + ' (die stappen worden overgeslagen)');
@@ -609,14 +632,14 @@ function start() {
 
   if (auth.sessies) setInterval(() => auth.sessies.opruimen(), 60 * 60 * 1000).unref();
 
-  // Offertelijst: vangnet naast de webhook, elke OFFERTEKNOP_SYNC_MIN minuten.
-  if (offerteknop.beschikbaar) {
-    const offerteRonde = () => offertes.bijwerken().catch((fout) => {
-      console.error(nuIso() + ' offertelijst bijwerken mislukt: ' + fout.message);
-    });
-    setTimeout(offerteRonde, 45 * 1000).unref();
-    setInterval(offerteRonde, cfg.offerteknop.minuten * 60 * 1000).unref();
-  }
+  // Wachtrij van website-aanvragen: elke minuut, en direct na een nieuwe
+  // aanvraag (aanvraag.mjs). Een aanvraag die nog niet gemaild of
+  // doorgestuurd is, komt hier terug tot het gelukt is.
+  const wachtrijRonde = () => wachtrij.ronde().catch((fout) => {
+    console.error(nuIso() + ' wachtrij aanvragen mislukt: ' + fout.message);
+  });
+  setTimeout(wachtrijRonde, 20 * 1000).unref();
+  setInterval(wachtrijRonde, 60 * 1000).unref();
 
   for (const signaal of ['SIGTERM', 'SIGINT']) {
     process.on(signaal, () => {

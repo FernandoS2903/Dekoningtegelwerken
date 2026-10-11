@@ -94,6 +94,6 @@ export function instellingenPagina({ basis, opslag, inst, test = null, meldingen
 
   return pagina({
     titel: 'Instellingen', basis, actief: '/instellingen', inhoud, meldingen, kader, onderdeel: 'Instellingen',
-    subnav: kader ? [{ pad: `${basis}/instellingen`, naam: 'Facturen', actief: true }, { pad: '/mail/instellingen', naam: 'Mail' }] : null,
+    subnav: kader ? [{ pad: `${basis}/instellingen`, naam: 'Inkoopfacturen', actief: true }, { pad: '/mail/instellingen', naam: 'Mail' }] : null,
   });
 }

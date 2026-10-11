@@ -12,16 +12,31 @@ import { VERSIE } from './statisch.mjs';
 
 export { e as escapeHtml };
 
-// Het hoofdmenu in de sidebar. `onderdeel` is de naam waarmee een pagina
-// zegt waar hij bij hoort.
-export const HOOFDMENU = [
-  { pad: '/', naam: 'Dashboard', onderdeel: 'Dashboard', icoon: 'dashboard' },
-  { pad: '/facturen/', naam: 'Facturen', onderdeel: 'Facturen', icoon: 'facturen' },
-  { pad: '/facturen/leveranciers', naam: 'Leveranciers', onderdeel: 'Leveranciers', icoon: 'leveranciers' },
-  { pad: '/offertes/', naam: 'Offertes', onderdeel: 'Offertes', icoon: 'offertes' },
-  { pad: '/mail/', naam: 'Mail', onderdeel: 'Mail', icoon: 'mail' },
-  { pad: '/facturen/instellingen', naam: 'Instellingen', onderdeel: 'Instellingen', icoon: 'instellingen' },
+// Het hoofdmenu in de sidebar, in groepen: inkoop (dit portaal), verkoop
+// (Offerteknop, extern) en algemeen. `onderdeel` is de naam waarmee een
+// pagina zegt waar hij bij hoort; de groepskop is een label, geen link.
+// Offertes en aanvragen leven in Offerteknop (besluit Bob, 11 okt 2026); het
+// item `extern: true` krijgt zijn adres uit het kader (offertesOpen, de
+// eenmalige inloglink, anders offertesUrl).
+export const MENUGROEPEN = [
+  { kop: null, items: [{ pad: '/', naam: 'Dashboard', onderdeel: 'Dashboard', icoon: 'dashboard' }] },
+  {
+    kop: 'Inkoop',
+    items: [
+      { pad: '/facturen/', naam: 'Inkoopfacturen', onderdeel: 'Inkoopfacturen', icoon: 'facturen' },
+      { pad: '/facturen/leveranciers', naam: 'Leveranciers', onderdeel: 'Leveranciers', icoon: 'leveranciers' },
+    ],
+  },
+  { kop: 'Verkoop', items: [{ extern: true, naam: 'Offerteknop', icoon: 'extern' }] },
+  {
+    kop: 'Algemeen',
+    items: [
+      { pad: '/mail/', naam: 'Mail', onderdeel: 'Mail', icoon: 'mail' },
+      { pad: '/facturen/instellingen', naam: 'Instellingen', onderdeel: 'Instellingen', icoon: 'instellingen' },
+    ],
+  },
 ];
+export const HOOFDMENU = MENUGROEPEN.flatMap((g) => g.items.filter((m) => !m.extern));
 
 // Oude naam, nog gebruikt door het losse dashboard (maakServer in de tests).
 export const MENU = [
@@ -35,7 +50,6 @@ const ICONEN = {
   facturen: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 16h6"/>',
   leveranciers: '<path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M10 20v-6h4v6"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 7l9 6 9-6"/>',
-  offertes: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/><path d="M10 9.5h2"/>',
   instellingen: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   sluit: '<path d="M6 6l12 12M18 6L6 18"/>',
@@ -57,7 +71,7 @@ export function icoon(naam, klasse = 'icoon') {
 // Instellingen bij Mail); `kopActies` is wat rechts naast de paginatitel komt.
 export function pagina({
   titel, basis = '', actief = '/', inhoud, meldingen = [], kader = null,
-  menu = MENU, onderdeel = 'Facturen', subnav = null, kopActies = '', kopKlasse = '',
+  menu = MENU, onderdeel = 'Inkoopfacturen', subnav = null, kopActies = '', kopKlasse = '',
 }) {
   const statisch = kader ? '' : basis;
   const sub = subnav || (!kader && menu.length ? menu.map((m) => ({ ...m, pad: basis + (m.pad === '/' ? '/' : m.pad), actief: m.pad === actief })) : null);
@@ -100,15 +114,35 @@ function initialen(naam) {
   return (delen.length >= 2 ? delen[0][0] + delen[1][0] : (delen[0] || '?').slice(0, 2)).toUpperCase();
 }
 
-// De sidebar: logo, hoofdmenu, en onderaan het profiel. Op mobiel wordt het
-// een compacte balk met een menuknop; het menu zelf is een <details>, dus het
-// werkt ook zonder JavaScript.
+// De link naar Offerteknop: via de eenmalige inloglink als de koppeling er
+// is, anders het adres van de tenant (eigen login). Leeg als geen van beide.
+export function offerteknopLink(kader) {
+  return kader ? (kader.offertesOpen || kader.offertesUrl || '') : '';
+}
+
+// Het menu in groepen; `klasse` is de wrapper per groep (sidebar of mobiel).
+function menuGroepen(kader, onderdeel) {
+  const extern = offerteknopLink(kader);
+  return MENUGROEPEN.map((g) => {
+    const items = g.items.map((m) => {
+      if (m.extern) {
+        return extern
+          ? `<a class="menu__extern" href="${e(extern)}" rel="noopener noreferrer" target="_blank">${icoon(m.icoon)}<span>${e(m.naam)}</span><span class="verborgen"> (opent in een nieuw tabblad)</span></a>`
+          : `<span class="menu__extern menu__extern--uit">${icoon(m.icoon)}<span>${e(m.naam)}</span><small>niet ingesteld</small></span>`;
+      }
+      return `<a href="${m.pad}"${m.onderdeel === onderdeel ? ' aria-current="page"' : ''}>${icoon(m.icoon)}<span>${e(m.naam)}</span></a>`;
+    }).join('\n      ');
+    return `<div class="menugroep">${g.kop ? `<p class="menugroep__kop">${e(g.kop)}</p>` : ''}
+      ${items}
+    </div>`;
+  }).join('\n    ');
+}
+
+// De sidebar: logo, hoofdmenu in groepen, en onderaan het profiel. Op mobiel
+// wordt het een compacte balk met een menuknop; het menu zelf is een
+// <details>, dus het werkt ook zonder JavaScript.
 function sidebar(kader, onderdeel) {
-  const items = HOOFDMENU.map((m) => `<a href="${m.pad}"${m.onderdeel === onderdeel ? ' aria-current="page"' : ''}>${icoon(m.icoon)}<span>${e(m.naam)}</span></a>`).join('\n      ');
-  // Offerteknop zelf (eigen login) als externe link onder het menu.
-  const offertes = kader.offertesUrl || kader.offertesOpen
-    ? `<a class="sidebar__extern" href="${e(kader.offertesOpen || kader.offertesUrl)}" rel="noopener noreferrer" target="_blank">${icoon('extern')}<span>Offerteknop</span></a>`
-    : '';
+  const groepen = menuGroepen(kader, onderdeel);
   const profiel = `<div class="profiel">
       <span class="profiel__initialen" aria-hidden="true">${e(initialen(kader.naam || kader.email))}</span>
       <span class="profiel__tekst">
@@ -128,16 +162,14 @@ function sidebar(kader, onderdeel) {
     <span class="mobielkop__knop">${icoon('menu', 'icoon icoon--menu')}${icoon('sluit', 'icoon icoon--sluit')}</span>
   </summary>
   <nav class="mobielmenu" aria-label="Hoofdmenu">
-    ${items}
-    ${offertes}
+    ${groepen}
     ${profiel}
   </nav>
 </details>
 <aside class="sidebar">
   <a class="sidebar__logo" href="/"><img src="/logo.svg" alt="De Koning Tegelwerken" width="66" height="54"><span>Portaal</span></a>
   <nav class="sidebar__menu" aria-label="Hoofdmenu">
-      ${items}
-      ${offertes}
+    ${groepen}
   </nav>
   <div class="sidebar__onder">
     ${profiel}
