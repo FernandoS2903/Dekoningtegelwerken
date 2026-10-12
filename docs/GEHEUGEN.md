@@ -1,6 +1,6 @@
 # Geheugen — stand van zaken dekoningtegelwerken.nl
 
-Bijgewerkt: 11 oktober 2026 (website: 5 oktober). Live: 1b, wizard, 1c, de logo/slider-fix, de mobiele
+Bijgewerkt: 12 oktober 2026 (project-CMS op `feature/projecten-cms`, nog niet live; website: 5 oktober). Live: 1b, wizard, 1c, de logo/slider-fix, de mobiele
 hero, het lettertype, de mobiele polish en de leesbaarheid van de hero-kop
 (`main` = 8802784; de laatste sitewijziging daarin is 5edaacf).
 Werk dit bestand bij aan het eind van elke fase.
@@ -26,7 +26,7 @@ Werk dit bestand bij aan het eind van elke fase.
 | Leesbaarheid hero-kop (4 okt 2026) | `feature/hero-leesbaarheid`: verduistering op de plek van de kop (mobiel verticaal vanaf ± 18%, desktop vanaf links) en kop op gewicht 440. Contrast onder de letters van ± 3:1 (slechtste plek 1,3–2,1) naar 6,4–8:1 (slechtste plek ≥ 3,9). **Live sinds 4 okt 2026** (`main` = 5edaacf). |
 | Stap 2 — offertewizard `/offerte` | Klaar op `feature/fase-2-offertewizard` (bovenop 1b): zes stappen uit `data/wizard.json` (ruimte → oppervlak → tegels → foto's → plattegrond → contact), vervolgvragen per ruimte, lengte × breedte, uploads met miniaturen, sessionStorage, samenvatting in het formaat "Nieuwe aanvraag – Badkamer, 1971 RA / Badkamer: vloer ±8 m², wanden ±31 m² · Inloopdouche …". **Zonder backend verstuurt hij niets**: de bezoeker krijgt de samenvatting om via WhatsApp/e-mail door te sturen of te kopiëren. Op de preview; in `main` (de2ce63), **live sinds 4 okt 2026** (uitgerold door Bob). |
 | Stap 3 — backend | Gebouwd op 11 okt 2026 op `feature/portaal-inkoop-verkoop-aanvragen`, in de portaaldienst (zie onderaan: "Aanvraagformulier en portaal inkoop/verkoop"). |
-| Stap 4 — beheer, calculatie, offertes, project-CMS | Niet begonnen. |
+| Stap 4 — beheer, calculatie, offertes, project-CMS | Project-CMS gebouwd op 12 okt 2026 in het portaal (`feature/projecten-cms`, zie onderaan: "Project-CMS"). Beheer met wachtwoord en TOTP vervalt; calculatie en offertes leven in Offerteknop. |
 | Stap 5 — plattegrondanalyse, AI-conceptcalculatie | Niet begonnen. |
 
 ## Wat er in stap 1 is gebouwd
@@ -575,3 +575,66 @@ Zie `deploy/CMS-INSTALLATIE.md` §9: mergen, back-up van de database, portaal
 uitrollen, `AANVRAAG_OFFERTEKNOP_SLEUTEL` in de env zodra Offerteknop hem
 heeft, herstart, de live nginx-vhost vervangen door het voorbeeld
 (`/api/aanvraag/`), site uitrollen, proefaanvraag.
+
+# Project-CMS (12 oktober 2026, `feature/projecten-cms`)
+
+Opdracht van Bob: de projecten op dekoningtegelwerken.nl zelf beheren via
+cms.dekoningtegelwerken.nl (aanmaken, tekst, foto's, volgorde, publicatie),
+zonder codewijziging per project. Fase A (inventaris) op 12 okt akkoord ("Akkkoord")
+zonder antwoord op de open vragen; daarom de adviezen uit het plan gevolgd:
+draaien met `jpegtran`, voorbeeldprojecten als concept overzetten, originelen
+niet bewaren, meer categorieën per project, branch vanaf `main`, preview-vhost
+ongewijzigd. **Nog niet live**: mergen en uitrollen doet Bob volgens
+`deploy/PROJECTEN-INSTALLATIE.md`.
+
+## Wat er was (Fase A)
+
+- Projecten stonden alleen in `data/projecten.json`: zes voorbeeldprojecten met
+  AI-sfeerbeelden, door de generator in de HTML gebakken.
+- Er was geen website-beheer met wachtwoord en TOTP (alleen gepland in PLAN §1.8);
+  er vervalt dus niets.
+- Beeldtools: `cwebp` 1.5.0 aanwezig; geen ImageMagick, exiftool of vips.
+  Getest: `cwebp` haalt EXIF standaard weg, maar **past de EXIF-oriëntatie niet
+  toe**. Daarom `jpegtran` (pakket `libjpeg-turbo-progs`, door Bob te installeren).
+- nginx: globaal 64M, site `/api/aanvraag/` 24m, cms 256k; webp 30 dagen cache.
+- **Geen back-up van iets van De Koning** op hfd-web01 (zie installatie §10).
+
+## Opbouw
+
+| Onderdeel | Wat |
+|---|---|
+| `service/site/weergave.mjs` | De opmaak van de site als bibliotheek (uit de generator gehaald): beelden (id uit `data/beelden.json` of CMS-foto), projectkaart, projectgrid, projectpagina, gen-blokken. Generator en portaal gebruiken dezelfde code. |
+| `lib/projecten-opslag.mjs` | Schema 5: `projecten` (slug uniek zolang niet verwijderd, volgorde, status concept/gepubliceerd, `voorbeeld`), `project_fotos` (soort galerij/detail/voor/na, cover, `sfeerbeeld`), `project_slugs` (oude slugs voor de 301). Zacht verwijderen. |
+| `lib/beeldverwerking.mjs` | Type op magic bytes, afmetingen en oriëntatie uit de header, max 15 MB en 80 MP, rechtop met `jpegtran -copy none` (zonder jpegtran: weigeren), `cwebp -metadata none -q 80` in 600/1200/2000 (nooit groter dan het origineel), naam `<slug>-<12 hex>-<breedte>.webp`, één foto tegelijk, origineel niet bewaard. |
+| `projecten.mjs`, `web/projecten.mjs`, `web/projecten.js` | WEBSITE > Projecten: overzicht met filter en pijltjes, bewerken (status bovenaan, ook op mobiel), foto's (upload per foto met voortgang, alt-tekst, soort, cover, volgorde, verwijderen), voorbeeldlink, verwijderen met bevestiging. De upload leest zijn eigen multipart-body en controleert het CSRF-token zelf. |
+| `site-projecten.mjs` | Publiek: `/projecten/<slug>/`, `/_fragment/projecten/<args>` (SSI), `/sitemap-projecten.xml`. Alleen gepubliceerd; oude slug 301; voorbeeldlink `?voorbeeld=<id>.<verloop>.<HMAC>` (sleutel via HKDF uit `SESSION_SECRET`, 24 uur, noindex, no-store). Cache in het geheugen, geleegd bij elke wijziging. Op de host van het portaal bestaan deze paden niet. |
+| `service/cli/migreer-projecten.mjs` | `data/projecten.json` eenmalig over (`--droog`, `--publiceer`); idempotent op slug. |
+| Generator | `gen:projecten` tussen `<!--# block -->` en `<!--# include virtual=... stub=... -->`; `sitemap.xml` is een index. Zonder SSI (preview, lokaal, of het portaal ligt eruit) blijft het statische grid staan. |
+| Deploy | `deploy/dekoningtegelwerken.nl.conf` (uploads, proxy, fragmenten internal, `ssi on`, terugval op statisch), `deploy/nginx/cms...conf` (16m voor de upload), unit (`ReadWritePaths=-/var/lib/dekoning/uploads/projecten`), `facturen-deploy.sh` (ook `service/site/`, `_sjablonen/`, `data/*.json`, het migratiescript). |
+
+## Getest (12 okt 2026)
+
+- `node --test test/*.test.mjs`: 212 tests, 211 groen, 1 overgeslagen (draaien
+  met jpegtran: niet op de server). Met een losse `jpegtran` uit het .deb in een
+  kladmap slaagt ook die (staand na draaien, geen GPS).
+- `test/projecten.test.mjs`: verkeerd type, kapot, te groot (bytes en pixels);
+  EXIF/GPS weg; naam los van de invoer; CRUD, volgorde, slug uniek; 301 na
+  slugwijziging; concept 404, voorbeeldlink wel, verlopen of vervalst niet;
+  srcset/width/height/lazy/og:image; migratie twee keer; zonder sessie redirect,
+  zonder CSRF 403 (ook de upload); upload, cover, volgorde, alt, verwijderen.
+- Browser (headless, portaal met vaste testgebruiker): geen overflow op 360 en
+  390 px, slug volgt de titel, upload via JS met voortgang en melding per foto.
+- nginx: `nginx -t` op een kopie, en de site-vhost echt gedraaid als losse nginx
+  op een testpoort: SSI vult het grid uit het CMS, 404-pagina van de site,
+  fragment van buiten 404, uploads `image/webp` met een jaar cache, andere namen
+  404; zonder portaal het statische grid en de statische voorbeeldpagina.
+
+## Open voor Bob
+
+- Mergen en uitrollen volgens `deploy/PROJECTEN-INSTALLATIE.md` (apt
+  `libjpeg-turbo-progs`, back-up, uploadmap, unit, portaal, migratie, nginx, site).
+- Kiezen bij de migratie: voorbeeldprojecten als concept (site toont dan
+  "Hier komen binnenkort projecten") of `--publiceer` (site blijft zoals nu).
+- Back-up van `/var/lib/dekoning-facturen` en `/var/lib/dekoning/uploads/projecten`.
+- Foto's van een verwijderd project blijven op schijf (onvindbare namen); alleen
+  een losse foto verwijderen haalt de bestanden weg.

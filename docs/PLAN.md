@@ -246,6 +246,15 @@ env-bestand), en probeert opnieuw met oplopende wachttijd (1 min → 24 uur, max
 
 ### 1.7 Project-CMS zonder build-step
 
+> **Vervangen (12 okt 2026, opdracht "projecten beheren via het CMS-portaal").**
+> Het project-CMS zit in het portaal op cms.dekoningtegelwerken.nl (Entra SSO),
+> niet in een eigen beheer. Er komt geen generatiemap: het portaal rendert de
+> projectpagina's en de grids zelf (met `service/site/weergave.mjs`, dezelfde
+> code als de generator) en nginx voegt de grids via SSI in de statische
+> pagina's in. Foto's staan in `/var/lib/dekoning/uploads/projecten/`. Zie
+> `docs/GEHEUGEN.md` en `deploy/PROJECTEN-INSTALLATIE.md`. Hieronder het
+> oorspronkelijke plan.
+
 Zelfde principe als de praktijkvoorbeelden: het beheer **genereert statische bestanden**,
 nginx serveert ze; de site zelf blijft gewone HTML.
 
@@ -273,6 +282,10 @@ Lokaal en in stap 1, nog zonder beheer, komt dezelfde inhoud uit
 sjabloon vanaf het begin hetzelfde is als in productie.
 
 ### 1.8 Auth voor het beheer
+
+> **Vervangen (12 okt 2026).** Er is geen eigen beheer met wachtwoord en TOTP
+> gebouwd; het beheer van de website loopt via het portaal met Microsoft-login
+> (Entra SSO, allowlist, CSRF). Hieronder het oorspronkelijke plan.
 
 - Beheer op **`beheer.dekoningtegelwerken.nl`** (eigen vhost, `noindex`, eigen cookie-scope);
   alternatief `/beheer/` op het hoofddomein — zie open vraag 12.

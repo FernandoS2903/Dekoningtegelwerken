@@ -53,6 +53,9 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 SystemCallFilter=@system-service
 SystemCallErrorNumber=EPERM
 ReadWritePaths=/var/lib/dekoning-facturen
+# Projectfoto's van het project-CMS (deploy/PROJECTEN-INSTALLATIE.md). Het
+# minteken: ontbreekt de map, dan start de dienst toch (zonder uploads).
+ReadWritePaths=-/var/lib/dekoning/uploads/projecten
 
 # MemoryDenyWriteExecute staat bewust uit: de JIT van Node heeft geheugen
 # nodig dat zowel beschrijfbaar als uitvoerbaar is, anders start hij niet.

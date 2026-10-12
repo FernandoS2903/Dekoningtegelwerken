@@ -66,13 +66,23 @@ fi
 echo "Syntaxcontrole van de dienst..."
 while IFS= read -r -d '' bestand; do
   node --check "$bestand" >/dev/null
-done < <(find "$tmp/service/facturen" -name '*.mjs' -print0)
+done < <(find "$tmp/service/facturen" "$tmp/service/site" "$tmp/service/cli/migreer-projecten.mjs" -name '*.mjs' -print0)
 
 rsync_opties=(
   --recursive --times --delete --delete-excluded --checksum
   --chmod=D755,F644
   --include='/service/'
   --include='/service/facturen/***'
+  # Project-CMS: de opmaak van de site (service/site/), de sjablonen en data
+  # die die opmaak leest, en het migratiescript.
+  --include='/service/site/***'
+  --include='/service/cli/'
+  --include='/service/cli/migreer-projecten.mjs'
+  --include='/_sjablonen/***'
+  --include='/data/'
+  --include='/data/beelden.json'
+  --include='/data/diensten.json'
+  --include='/data/projecten.json'
   --include='/assets/'
   --include='/assets/fonts/***'
   --include='/assets/brand/'
