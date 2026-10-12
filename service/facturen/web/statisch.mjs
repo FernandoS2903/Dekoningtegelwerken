@@ -14,6 +14,7 @@ const REPO = path.resolve(HIER, '..', '..', '..');
 export const STATISCH = {
   '/dashboard.css': [path.join(HIER, 'dashboard.css'), 'text/css; charset=utf-8'],
   '/dashboard.js': [path.join(HIER, 'dashboard.js'), 'text/javascript; charset=utf-8'],
+  '/projecten.js': [path.join(HIER, 'projecten.js'), 'text/javascript; charset=utf-8'],
   // De lettertypen van de site hergebruiken we; ze staan in de repo-kopie
   // naast de dienst en worden alleen gelezen.
   '/fonts/fraunces-latin-opsz-wght.woff2': [path.join(REPO, 'assets/fonts/fraunces-latin-opsz-wght.woff2'), 'font/woff2'],
@@ -27,7 +28,7 @@ export const STATISCH = {
 // stylesheet uit zijn cache blijft gebruiken.
 export const VERSIE = (() => {
   const h = crypto.createHash('sha256');
-  for (const pad of ['/dashboard.css', '/dashboard.js']) {
+  for (const pad of ['/dashboard.css', '/dashboard.js', '/projecten.js']) {
     try { h.update(readFileSync(STATISCH[pad][0])); } catch { /* ontbreekt: dan telt hij niet mee */ }
   }
   return h.digest('hex').slice(0, 10);

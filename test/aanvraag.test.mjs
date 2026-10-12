@@ -404,7 +404,7 @@ test('schema: een database van versie 3 krijgt de wachtrij-kolommen erbij zonder
       INSERT INTO aanvragen (tijd, bron, velden) VALUES ('2026-10-10T10:00:00Z', 'website', '{}'); PRAGMA user_version = 3;`);
     oud.close();
     const nieuw = openDatabase(pad);
-    assert.equal(nieuw.prepare('PRAGMA user_version').get().user_version, 4);
+    assert.equal(nieuw.prepare('PRAGMA user_version').get().user_version, 5);
     const rij = nieuw.prepare('SELECT * FROM aanvragen').get();
     assert.equal(rij.bron, 'website');
     assert.equal(rij.mail_status, 'wacht');

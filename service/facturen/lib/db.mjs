@@ -12,7 +12,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { nuIso } from './hulp.mjs';
 
-export const SCHEMA_VERSIE = 4;
+export const SCHEMA_VERSIE = 5;
 
 // undefined -> null, en getallen/strings blijven zoals ze zijn.
 const w = (v) => (v === undefined || v === '' ? null : v);
@@ -260,6 +260,59 @@ const SCHEMA = `
     volgende_poging   TEXT,
     laatste_poging    TEXT
   );
+
+  -- Project-CMS (versie 5): de projecten op dekoningtegelwerken.nl, beheerd
+  -- onder WEBSITE > Projecten. Zie lib/projecten-opslag.mjs.
+  CREATE TABLE IF NOT EXISTS projecten (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug               TEXT NOT NULL,
+    titel              TEXT NOT NULL,
+    plaats             TEXT NOT NULL DEFAULT '',
+    ruimte             TEXT NOT NULL DEFAULT '',
+    categorieen        TEXT NOT NULL DEFAULT '',
+    korte_omschrijving TEXT NOT NULL DEFAULT '',
+    beschrijving       TEXT NOT NULL DEFAULT '',
+    meta_description   TEXT NOT NULL DEFAULT '',
+    soort_tegel        TEXT NOT NULL DEFAULT '',
+    formaat            TEXT NOT NULL DEFAULT '',
+    werkzaamheden      TEXT NOT NULL DEFAULT '',
+    bijzonderheden     TEXT NOT NULL DEFAULT '',
+    uitgelicht         INTEGER NOT NULL DEFAULT 0,
+    voorbeeld          INTEGER NOT NULL DEFAULT 0,
+    status             TEXT NOT NULL DEFAULT 'concept',
+    volgorde           INTEGER NOT NULL DEFAULT 0,
+    datum              TEXT,
+    aangemaakt_op      TEXT NOT NULL,
+    gewijzigd_op       TEXT NOT NULL,
+    verwijderd_op      TEXT
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS projecten_slug ON projecten (slug) WHERE verwijderd_op IS NULL;
+  CREATE INDEX IF NOT EXISTS projecten_volgorde ON projecten (volgorde, id);
+
+  -- Eerdere slugs, voor een 301 naar de huidige.
+  CREATE TABLE IF NOT EXISTS project_slugs (
+    slug       TEXT PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projecten (id) ON DELETE CASCADE
+  );
+
+  -- Foto's: bestandsnaam is de basis (<slug>-<willekeurig>); op schijf staan
+  -- <bestandsnaam>-<breedte>.webp voor elke breedte in varianten.
+  CREATE TABLE IF NOT EXISTS project_fotos (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id  INTEGER NOT NULL REFERENCES projecten (id) ON DELETE CASCADE,
+    bestandsnaam TEXT NOT NULL UNIQUE,
+    varianten   TEXT NOT NULL,
+    breedte     INTEGER NOT NULL,
+    hoogte      INTEGER NOT NULL,
+    alt_tekst   TEXT NOT NULL DEFAULT '',
+    soort       TEXT NOT NULL DEFAULT 'galerij',
+    bijschrift  TEXT NOT NULL DEFAULT '',
+    sfeerbeeld  INTEGER NOT NULL DEFAULT 0,
+    volgorde    INTEGER NOT NULL DEFAULT 0,
+    is_cover    INTEGER NOT NULL DEFAULT 0,
+    aangemaakt_op TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS project_fotos_project ON project_fotos (project_id, volgorde, id);
 `;
 
 // Kolommen die versie 4 aan `aanvragen` toevoegde; voor een database van
@@ -318,6 +371,7 @@ export function openDatabase(pad) {
     // versie 3 (koppeling Offerteknop) voegen alleen nieuwe tabellen toe;
     // die maakt SCHEMA hierboven al aan.
     // Versie 4: de wachtrij-kolommen op aanvragen (website-aanvragen).
+    // Versie 5 (project-CMS) voegt alleen nieuwe tabellen toe.
     const aanwezig = new Set(db.prepare('PRAGMA table_info(aanvragen)').all().map((k) => k.name));
     for (const [naam, definitie] of AANVRAAG_KOLOMMEN) {
       if (!aanwezig.has(naam)) db.exec(`ALTER TABLE aanvragen ADD COLUMN ${naam} ${definitie}`);

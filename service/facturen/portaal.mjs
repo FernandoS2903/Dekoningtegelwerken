@@ -21,6 +21,10 @@
 // Zonder login, elk met een eigen controle: /graph/notify (clientState),
 // /intern/... (HMAC van Offerteknop) en /api/aanvraag/... (het formulier van
 // de website: herkomst, honeypot, invultijd en limieten; zie aanvraag.mjs).
+// Ook zonder login, alleen lezen: de projecten van de website
+// (/projecten/<slug>/, /_fragment/projecten/..., /sitemap-projecten.xml;
+// site-projecten.mjs). Het beheer daarvan staat achter de login onder
+// /website/projecten/ (projecten.mjs).
 
 import http from 'node:http';
 import crypto from 'node:crypto';
@@ -57,6 +61,8 @@ export function maakPortaal({
   offertes = null,
   intern = null,
   aanvraag = null,
+  site = null,
+  projecten = null,
   offertesUrl = '',
   log = () => {},
 }) {
@@ -212,6 +218,8 @@ export function maakPortaal({
         return intern.handle(req, res, url);
       }
       if (pad.startsWith('/auth/')) return authRoute(req, res, url);
+      // De projecten op de website (site-projecten.mjs): publiek, alleen lezen.
+      if (site && site.isSitePad(pad)) return site.handle(req, res, url);
 
       const persoon = wie(req, res);
       if (!persoon) return weiger(req, res, url);
@@ -219,6 +227,10 @@ export function maakPortaal({
       let body = null;
       if (req.method === 'POST') {
         if (!zelfdeHerkomst(req)) return stuurTekst(res, 403, 'Dit formulier moet van het portaal zelf komen.');
+      }
+      // Een foto-upload is multipart en groter dan 64 KB: projecten.mjs leest
+      // die body zelf en controleert daar het CSRF-token.
+      if (req.method === 'POST' && !(projecten && projecten.isUpload(pad, req.method))) {
         body = await leesBody(req);
         if (!zelfdeTekst(body.get('_csrf'), persoon.csrf)) {
           meld(req, 'POST zonder geldig CSRF-token geweigerd');
@@ -238,6 +250,7 @@ export function maakPortaal({
       if (pad.startsWith('/facturen/')) return facturen.handle(req, res, ctx);
       if (pad.startsWith('/mail/')) return mailApp.handle(req, res, ctx);
       if (pad.startsWith('/offertes/') && offertes) return offertes.handle(req, res, ctx);
+      if ((pad === '/website' || pad.startsWith('/website/')) && projecten) return projecten.handle(req, res, ctx);
 
       return stuurTekst(res, 404, 'Niet gevonden.');
     } catch (fout) {

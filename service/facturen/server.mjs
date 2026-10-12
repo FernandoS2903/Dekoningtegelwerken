@@ -14,6 +14,10 @@
 //   /graph/notify webhook van Microsoft Graph (zonder login, eigen controle)
 //   /api/aanvraag/indienen  het aanvraagformulier van dekoningtegelwerken.nl
 //                 (zonder login; aanvraag.mjs, wachtrij naar mailbox en Offerteknop)
+//   /website/projecten/  project-CMS: de projecten van de website (projecten.mjs)
+//   /projecten/<slug>/, /_fragment/projecten/..., /sitemap-projecten.xml
+//                 de projecten op dekoningtegelwerken.nl (zonder login,
+//                 alleen lezen; site-projecten.mjs, via nginx van de site)
 //
 // Starten:   node service/facturen/server.mjs
 // Instellen: /etc/dekoning/facturen.env (600), zie deploy/facturen.env.voorbeeld
@@ -29,7 +33,7 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
 import path from 'node:path';
-import { createReadStream, existsSync, mkdirSync, realpathSync, statSync } from 'node:fs';
+import { accessSync, constants as fsConstants, createReadStream, existsSync, mkdirSync, realpathSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { maakOpslag, openDatabase } from './lib/db.mjs';
@@ -60,6 +64,10 @@ import { maakAanvraagApp, STANDAARD_ORIGINS } from './aanvraag.mjs';
 import { maakAanvraagOpslag } from './lib/aanvraag-opslag.mjs';
 import { maakAanvraagKoppeling, STANDAARD_URL as AANVRAAG_STANDAARD_URL } from './lib/aanvraag-koppeling.mjs';
 import { maakWachtrij } from './lib/aanvraag-doorsturen.mjs';
+import { maakProjectenOpslag } from './lib/projecten-opslag.mjs';
+import { maakProjectenApp } from './projecten.mjs';
+import { maakSiteProjecten, voorbeeldSleutel } from './site-projecten.mjs';
+import { maakWeergave } from '../site/weergave.mjs';
 import { dashboardPagina, overzicht } from './web/overzicht.mjs';
 import { leveranciersPagina } from './web/leveranciers.mjs';
 import { factuurPagina } from './web/factuur.mjs';
@@ -505,6 +513,15 @@ export function uitEnv(env = process.env) {
       mailNaar: String(env.AANVRAAG_MAIL_NAAR || env.M365_MAILBOX || '').trim(),
       map: env.AANVRAAG_MAP || path.join(dataMap, 'aanvragen'),
     },
+    // Project-CMS: de foto's staan buiten de datamap, zodat nginx van de site
+    // ze direct kan serveren (/uploads/projecten/). Geen geheimen.
+    projecten: {
+      uploadMap: env.PROJECTEN_UPLOADS || '/var/lib/dekoning/uploads/projecten',
+      cwebp: env.CWEBP || 'cwebp',
+      jpegtran: env.JPEGTRAN || 'jpegtran',
+      // De map met _sjablonen/ en data/ voor de opmaak van de site.
+      siteRoot: env.SITE_ROOT || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..'),
+    },
   };
 }
 
@@ -565,6 +582,26 @@ function start() {
   const aanvraagKoppeling = maakAanvraagKoppeling({ url: cfg.aanvraag.offerteknopUrl, sleutel: cfg.aanvraag.sleutel });
   const wachtrij = maakWachtrij({ aanvraagOpslag, koppeling: aanvraagKoppeling, mail, mailNaar: cfg.aanvraag.mailNaar, log: logger });
   const aanvraag = maakAanvraagApp({ aanvraagOpslag, wachtrij, bestandenMap: cfg.aanvraag.map, origins: cfg.aanvraag.origins, log: logger });
+  // Project-CMS en de projecten op de website.
+  const projectenOpslag = maakProjectenOpslag(opslag.db);
+  const site = maakSiteProjecten({
+    opslag: projectenOpslag,
+    weergave: maakWeergave({ root: cfg.projecten.siteRoot }),
+    sleutel: voorbeeldSleutel(cfg.portaal.sessieGeheim),
+    portaalHost: cfg.portaal.baseUrl ? new URL(cfg.portaal.baseUrl).host.toLowerCase() : '',
+    log: logger,
+  });
+  const projecten = maakProjectenApp({
+    opslag: projectenOpslag, site, uploadMap: cfg.projecten.uploadMap,
+    cwebp: cfg.projecten.cwebp, jpegtran: cfg.projecten.jpegtran, log: logger,
+  });
+  let uploadsSchrijfbaar = true;
+  try {
+    mkdirSync(cfg.projecten.uploadMap, { recursive: true });
+    accessSync(cfg.projecten.uploadMap, fsConstants.W_OK);
+  } catch {
+    uploadsSchrijfbaar = false;
+  }
   const mailApp = maakMailApp({
     opslag, sorteerOpslag, sorteerder, webhook, mail, classificeerder, offertes,
     basisPad: '/mail', sorteerMinuten: cfg.sorteren.minuten,
@@ -585,7 +622,7 @@ function start() {
   }
 
   const { server } = maakPortaal({
-    opslag, sorteerOpslag, facturen, mailApp, webhook, auth, offertes, intern, aanvraag,
+    opslag, sorteerOpslag, facturen, mailApp, webhook, auth, offertes, intern, aanvraag, site, projecten,
     offertesUrl: cfg.portaal.offertesUrl,
     log: logger,
   });
@@ -597,6 +634,7 @@ function start() {
     !bunq.beschikbaar ? 'bunq' : null,
     !offerteknop.beschikbaar ? 'Offerteknop (' + offerteknop.ontbreekt.join(', ') + ')' : null,
     !aanvraagKoppeling.beschikbaar ? 'Offerteknop-aanvragen (' + aanvraagKoppeling.ontbreekt.join(', ') + '; website-aanvragen blijven in de wachtrij)' : null,
+    !uploadsSchrijfbaar ? 'projectfoto\'s (' + cfg.projecten.uploadMap + ' niet schrijfbaar; uploaden lukt niet)' : null,
   ].filter(Boolean);
   if (ontbreekt.length) {
     console.warn(nuIso() + ' niet ingesteld: ' + ontbreekt.join(', ') + ' (die stappen worden overgeslagen)');
