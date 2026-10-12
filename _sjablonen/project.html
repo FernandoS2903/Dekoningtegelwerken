@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Gegenereerd door service/cli/genereer.mjs uit _sjablonen/project.html en data/projecten.json. Niet met de hand bewerken. -->
+<!-- Gegenereerd door service/cli/genereer.mjs uit _sjablonen/project.html en data/projecten.json. Niet met de hand bewerken. Het portaal maakt er de projectpagina's uit het CMS mee (service/facturen/site-projecten.mjs). -->
 <html lang="nl">
 <head>
 <!-- gen:head -->
@@ -24,7 +24,7 @@
   <header class="wrap paginakop">
     {{{kruimels}}}
     <h1 class="kop-2">{{naam}}</h1>
-    <p class="project-plaats">{{{plaats}}}</p>
+    <p class="project-plaats">{{{plaats}}}</p>{{{lead}}}
   </header>
 
   <div class="wrap project-hero">
@@ -49,13 +49,7 @@
       <dl class="specs" aria-label="Projectgegevens">{{{specs}}}</dl>
     </div>
   </section>
-{{{voorNa}}}
-  <section class="sectie sectie--compact" aria-labelledby="details-kop">
-    <div class="wrap">
-      <div class="subkop"><span class="eyebrow">In detail</span><h2 class="kop-3" id="details-kop">Hoeken, voegen en aansluitingen.</h2></div>
-      <div class="galerij galerij--details">{{{details}}}</div>
-    </div>
-  </section>
+{{{voorNa}}}{{{detailSectie}}}
 
   <section class="sectie donker" aria-labelledby="cta-kop">
     <div class="wrap cta-band">
