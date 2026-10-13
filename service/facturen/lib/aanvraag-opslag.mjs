@@ -49,8 +49,9 @@ export function maakAanvraagOpslag(db) {
   }
 
   return {
-    nieuw({ bron = 'website', referentie, velden, bestanden = [], bestandsmap = null }) {
-      const info = sNieuw.run(nuIso(), bron, JSON.stringify(velden || {}), JSON.stringify(bestanden), String(referentie), w(bestandsmap));
+    // `tijd`: van dezelfde klok als de daglimiet (aanvraag.mjs), anders nu.
+    nieuw({ bron = 'website', referentie, velden, bestanden = [], bestandsmap = null, tijd = nuIso() }) {
+      const info = sNieuw.run(tijd, bron, JSON.stringify(velden || {}), JSON.stringify(bestanden), String(referentie), w(bestandsmap));
       return Number(info.lastInsertRowid);
     },
     aanvraag: (id) => lees(sEen.get(Number(id))),

@@ -187,7 +187,10 @@ export function maakAanvraagApp({
     }
     let id;
     try {
-      id = aanvraagOpslag.nieuw({ bron: 'website', referentie, velden: uit.velden, bestanden: opgeslagen.lijst, bestandsmap: opgeslagen.map });
+      id = aanvraagOpslag.nieuw({
+        bron: 'website', referentie, velden: uit.velden, bestanden: opgeslagen.lijst, bestandsmap: opgeslagen.map,
+        tijd: new Date(nu()).toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      });
     } catch (fout) {
       if (opgeslagen.map) { try { rmSync(opgeslagen.map, { recursive: true, force: true }); } catch { /* al weg */ } }
       log('error', `Aanvraag: opslaan in de database mislukt: ${fout.message}`);
