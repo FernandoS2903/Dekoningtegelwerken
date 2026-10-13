@@ -123,3 +123,45 @@ export function nepFetch(antwoorden) {
   fn.verzoeken = verzoeken;
   return fn;
 }
+
+// Een nagebootste bunq op het niveau van lib/bunq.mjs (geen HTTP), voor
+// betalen via bunq. `rekeningen` zijn alle rekeningen; `maakDraft` kan een
+// functie zijn die gooit (bijv. een DraftFout) om fouten na te spelen.
+// `stand` (bunq-id -> draft zoals naarDraft hem geeft) en `lijst`
+// (rekening -> drafts) bepalen wat draft() en drafts() teruggeven.
+export function nepBunq({
+  beschikbaar = true,
+  rekeningen = [
+    { id: '42', iban: 'NL00BUNQ0000000042', naam: 'Zakelijk', soort: 'bank' },
+    { id: '43', iban: 'NL00BUNQ0000000043', naam: 'Spaarrekening', soort: 'spaar' },
+  ],
+  maakDraft = null,
+} = {}) {
+  const aangemaakt = [];
+  const stand = new Map();
+  const lijst = new Map();
+  let volgend = 9100;
+  return {
+    beschikbaar,
+    aangemaakt,
+    stand,
+    lijst,
+    async rekeningen() { return rekeningen; },
+    async bankrekeningen() { return rekeningen.filter((r) => r.soort === 'bank' || r.soort === 'gezamenlijk'); },
+    async maakDraft(verzoek) {
+      aangemaakt.push(verzoek);
+      if (maakDraft) return maakDraft(verzoek);
+      const id = String(volgend++);
+      stand.set(id, { id, status: 'PENDING', bijgewerkt: null, regels: verzoek.regels, betalingen: [] });
+      return { id };
+    },
+    async draft(rekeningId, id) {
+      const s = stand.get(String(id));
+      if (!s) throw new Error('nepBunq: onbekende draft ' + id);
+      return s;
+    },
+    async drafts(rekeningId) { return lijst.get(String(rekeningId)) || []; },
+    async betalingen() { return []; },
+    async test() { return { ok: beschikbaar, melding: 'nep' }; },
+  };
+}
