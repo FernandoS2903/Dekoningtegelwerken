@@ -1,6 +1,6 @@
 # Geheugen — stand van zaken dekoningtegelwerken.nl
 
-Bijgewerkt: 12 oktober 2026 (project-CMS op `feature/projecten-cms`, nog niet live; website: 5 oktober). Live: 1b, wizard, 1c, de logo/slider-fix, de mobiele
+Bijgewerkt: 13 oktober 2026 (betalen via bunq op `feature/bunq-betalen`, nog niet live; project-CMS live 13 okt; website: 5 oktober). Live: 1b, wizard, 1c, de logo/slider-fix, de mobiele
 hero, het lettertype, de mobiele polish en de leesbaarheid van de hero-kop
 (`main` = 8802784; de laatste sitewijziging daarin is 5edaacf).
 Werk dit bestand bij aan het eind van elke fase.
@@ -654,3 +654,76 @@ Offerteknop stuurt bij een factuurmail of herinnering `offerte_id` mee; de relay
 ### Project-CMS live (13 oktober 2026)
 
 Op verzoek van Bob zelf uitgevoerd, per ronde met akkoord: `feature/projecten-cms` (met break-glass en relay) fast-forward naar main (a574020) en gepusht; jpegtran geïnstalleerd; database-back-up in `/root/backups`; uploadmap `/var/lib/dekoning/uploads/projecten` (dekoning-facturen:www-data, 2750); unit met `ReadWritePaths`; portaal uitgerold en herstart (schema 6); zes voorbeeldprojecten als concept overgezet (40 WebP's); beide vhosts vervangen (back-ups in `/root/vhost-werk`), site uitgerold met `--forceer`; controle-URL's allemaal zoals verwacht (sitemap-index 200, fragment van buiten 404, SSI verwerkt, uploads image/webp met een jaar cache, upload zonder sessie 401); `dekoning-backup.timer` actief (eerste back-up 3,0 MB in `/var/backups/dekoning`). De site toont nu "Hier komen binnenkort projecten" tot het eerste echte project is gepubliceerd.
+
+# Inkoopfacturen betalen via bunq (13 oktober 2026, `feature/bunq-betalen`)
+
+Vraag van Bob: "Ik wil de facturen ook direct kunnen betalen via Bunq."
+Opdracht, fase A en zijn antwoorden ("Akkoord op alle openstaande vragen",
+18:56) letterlijk in `docs/opdrachten/bunq-betalen.md`. Branch vanaf `main`
+(c1a145a) als worktree `/root/dkt-bunq`, gepusht, **niet gemerged, niet
+uitgerold**. Productie is in fase B niet aangeraakt (database, env, dienst);
+er is geen enkele schrijvende bunq-aanroep gedaan en geen draft gemaakt.
+
+## Stand in productie bij fase A (alleen gelezen)
+
+- bunq draait sinds 11 okt 13:00 (sleutel en `BUNQ_ENV` gevuld,
+  `BUNQ_ACCOUNT_IBANS` leeg). De sleutel hoort bij een `UserPerson` met vier
+  actieve rekeningen: Bank 18389570 (…3836), Spaar 18389571 (…5767), Bank
+  18401978 (…9771), Spaar 18401979 (…4694). **Welke de zakelijke is, weet
+  Bob nog niet**; de sync leest nu alle vier.
+- "1 betalingen" in de sync is één **inkomende** betaling (9 okt): het
+  koppelen aan uitgaande betalingen is in productie nog nooit gebeurd.
+- 12 open facturen, uitgelezen, alle met een geldig NL-IBAN (mod-97), 11 met
+  kenmerk; tenaamstelling en betaalwijze werden nog niet uitgelezen.
+- bunq-docs (swagger, 13 okt): `POST …/draft-payment` met `entries[]`
+  (meerdere regels mag) en `number_of_required_accepts` (alleen 1);
+  ondertekenen verplicht voor alles wat een betaling maakt of accepteert
+  (onze `headers()` ondertekent elke body al). De statuslijst en intrekken
+  via PUT staan niet in de docs; de code toont onbekende statussen letterlijk.
+
+## Wat er gebouwd is
+
+| Onderdeel | Wat |
+|---|---|
+| `lib/bunq.mjs` | `maakDraft` (één poging; `DraftFout.zeker` = 4xx, anders onzeker), `draft`, `drafts`, `bankrekeningen`, `naarDraft` (ook betaal-id's uit Payment/PaymentBatch). Nooit `POST payment` of `PUT`. |
+| `lib/betalen.mjs` | toegang (alleen SSO, betalen aan, rekening gekozen), `beoordeelFactuur` (open, uitgelezen, bedrag > 0 en ≤ max, EUR, IBAN mod-97, geen incasso/al betaald, geen lopende draft, niet de eigen rekening), IBAN-status vertrouwd/nieuw/afwijkend, vingerafdruk van het bevestigingsscherm, `aanmaken`, `bijwerken` (sync), `koppelGoedgekeurde`. |
+| `lib/betalen-opslag.mjs`, `lib/db.mjs` | schema **7**: `bunq_drafts` (sleutel uniek: dubbel klikken geeft één draft), `bunq_draft_regels` (unieke index `factuur_id WHERE actief = 1`), `leverancier_ibans` (voorlopig → vertrouwd na ACCEPTED); kolommen `facturen.iban_naam`, `facturen.betaalwijze`, `logboek.door`. |
+| `lib/claude.mjs` | prompt vraagt ook `account_holder` en `payment_method` (overboeking/incasso/al_betaald). |
+| `lib/sync.mjs` | stap `drafts` na `bunq`; goedgekeurde drafts met betaal-id koppelen vóór het gewone koppelen. |
+| `web/betalen.mjs` e.a. | blok "Betalen" in het factuurpaneel (knop, lopende draft of de reden waarom niet), `/facturen/betalen` (selectie), `/facturen/betalen/bevestig` (alles op een rij; nieuw IBAN = vinkje, afwijkend = vinkje + laatste vier tekens; dialoog vóór versturen), link "Meerdere betalen via bunq", label in de lijst, instellingen (bankrekening zonder voorkeuze, schakelaar, maximum). "Gegevens corrigeren": tenaamstelling, betaalwijze, IBAN alleen met geldig mod-97; een IBAN-wijziging komt als waarschuwing in de geschiedenis. |
+| `service/cli/betaalgegevens-nalezen.mjs` | eenmalig, fase C: tenaamstelling en betaalwijze nalezen voor open facturen zonder `iban_naam` (droog tenzij `--uitvoeren`). |
+| Bijvangst | `aanvraag.mjs`: een aanvraag krijgt de tijd van dezelfde klok als de daglimiet. De test "limieten" faalde 's avonds (ook op `main`) doordat de nepklok over UTC-middernacht liep. |
+
+## Getest (13 okt 2026)
+
+- `node --test test/*.test.mjs`: **257/257**, twee keer achter elkaar
+  (nieuw: `test/facturen-betalen.test.mjs`, 26 tests).
+- `node test/betalen-browser.mjs`: **50/50** op 360/390/1440 (geen overflow,
+  klikvlakken ≥ 44 px, knop in het zijpaneel, selectie, dialoog vóór
+  klaarzetten, annuleren zet niets klaar, geen JS-fouten).
+  `facturen-browser.mjs` 45/45, `portaal-browser.mjs` 56/56.
+- **Niet getest:** een echte draft bij bunq (bewust; fase C), hoe de
+  bunq-app een afwijkende naam (Verification of Payee) toont, en het precieze
+  antwoord van bunq bij ACCEPTED (`object`); wijkt dat af, dan vangt het
+  gewone koppelen (bedrag + IBAN + kenmerk = 1,0) het op.
+
+## Fase C — stappenplan voor Bob (per stap akkoord)
+
+1. Database-back-up (`deploy/CMS-INSTALLATIE.md` §11 stap 1).
+2. `feature/bunq-betalen` mergen naar `main`, `git branch -f main origin/main`
+   op de server, `deploy/facturen-deploy.sh`, dienst herstarten; journal
+   zonder fouten, schema 7.
+3. Beslissen welke bankrekening zakelijk is (…3836 of …9771) en eventueel
+   `BUNQ_ACCOUNT_IBANS` op die rekening zetten (env, herstart).
+4. Eenmalig nalezen met `betaalgegevens-nalezen.mjs`: eerst droog, dan
+   `--uitvoeren` (± 12 Claude-aanroepen). Geschiedenis nakijken op "IBAN".
+5. Instellingen › Inkoopfacturen: rekening kiezen, maximum (€ 5.000),
+   "Betalen via bunq" aan.
+6. **Proefdraft van € 0,01** (bijv. een testfactuur naar een eigen rekening)
+   klaarzetten, in de bunq-app goedkeuren, synchroniseren: status
+   "goedgekeurd", daarna factuur op betaald.
+7. Tweede proef: klaarzetten en in de app **weigeren**; de factuur moet weer
+   vrij komen.
+8. Opruimen: `rm -rf /tmp/bunqdoc` (bunq-docs en swagger uit fase A; dat
+   mocht van de hook niet vanuit Claude), en na het mergen de worktree
+   (`git worktree remove /root/dkt-bunq`).
