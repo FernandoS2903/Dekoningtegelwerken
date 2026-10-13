@@ -719,6 +719,31 @@ er is geen enkele schrijvende bunq-aanroep gedaan en geen draft gemaakt.
 - Stap 3 (uitrollen) en 4 (nalezen, droog) daardoor niet gedaan; productie
   draait nog schema 6, ongewijzigd. Geen env gewijzigd, geen bunq-aanroep.
 
+## Fase C, ronde 2 (13 okt 2026, ± 19:40) — gestopt vóór het uitrollen
+
+Bob mergede: `main` = origin/main = da69aa0. Bob (19:34): "9771 is de primaire
+zakelijke rekening" (= monetary account 18401978); …3836 kan ook zakelijk zijn,
+dus `BUNQ_ACCOUNT_IBANS` blijft voorlopig leeg.
+
+- Back-up van 19:28 is nog actueel: zelfde laatste logboekregel (353),
+  facturen (13), sorteerlog (28), sessies (3) en laatste sync (17:26Z).
+- `deploy/facturen-deploy.sh --droog main`: alleen de verwachte bestanden
+  (o.a. `lib/betalen*.mjs`, `web/betalen.mjs`, `lib/bunq.mjs`, `lib/db.mjs`,
+  de CLI). **Niet echt uitgerold**: herstarten kan ik niet (de hook weigert
+  elk `systemctl`, CLAUDE.md: herstarten is voor Bob), en code neerzetten
+  zonder herstart laat de draaiende dienst nieuwe css/js uitleveren onder
+  de oude versie-hash. Uitrol + herstart horen samen, door Bob:
+  `deploy/facturen-deploy.sh main && systemctl restart dekoning-facturen`.
+  Eventueel vlak daarvoor een verse back-up (`VACUUM INTO`, zie ronde 1).
+- Nalezen nog niet gedraaid: de CLI opent de database via `openDatabase` en
+  voert dus de schemamigratie uit; vóór de uitrol mag dat niet. Alleen-lezen
+  geteld: **12 open facturen** zouden worden nagelezen (#1–7, #9–13: Norder
+  Cement- en Betonvloeren 2×, DSG Diensten 5×, MJ Constructie, Bouwcenter
+  Filippo, Velthuijs Tegelwerken 2×, 123inkt.nl).
+- Rekeningkeuze (alleen-lezen GET, zelfde filter als `bankrekeningen()`):
+  Instellingen biedt **18401978 (Bankrekening …9771)** en 18389570
+  (Bankrekening …3836); de spaarrekeningen 18401979 en 18389571 niet.
+
 ## Fase C — stappenplan voor Bob (per stap akkoord)
 
 1. Database-back-up (`deploy/CMS-INSTALLATIE.md` §11 stap 1).
