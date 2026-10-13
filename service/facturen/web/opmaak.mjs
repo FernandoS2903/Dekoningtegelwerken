@@ -261,6 +261,9 @@ export function rij(factuur, basis, nu) {
   if (factuur.suggestie_betaling_id && factuur.status === 'open') sub.push('betaling gevonden');
   if (factuur.status === 'betaald' && !factuur.doorgestuurd_op) sub.push('nog doorsturen');
   if (factuur.uitlees_status === 'pending') sub.push('nog niet uitgelezen');
+  if (factuur.draft_status && factuur.status === 'open') {
+    sub.push(factuur.draft_status === 'ACCEPTED' ? 'goedgekeurd in bunq' : 'klaargezet in bunq');
+  }
   const s = stand(factuur, nu);
   return `<li><a class="rij" href="${basis}/factuur/${factuur.id}" data-factuur="${factuur.id}">
   <span class="rij__naam"><span>${e(factuurNaam(factuur))}</span>${sub.length ? `<small>${e(sub.join(' · '))}</small>` : ''}</span>
@@ -435,7 +438,7 @@ export function geschiedenis(regels) {
   return `<ul class="geschiedenis">
   ${regels.map((r) => `<li>
     <span class="niveau-${e(r.niveau)}">${e(r.bericht)}</span>
-    <time datetime="${e(r.tijd)}">${e(datumTijdNl(r.tijd))}</time>
+    <time datetime="${e(r.tijd)}">${e(datumTijdNl(r.tijd))}${r.door ? ` · ${e(r.door)}` : ''}</time>
   </li>`).join('\n  ')}
 </ul>`;
 }

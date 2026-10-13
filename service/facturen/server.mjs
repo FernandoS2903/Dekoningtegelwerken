@@ -51,7 +51,10 @@ import { maakBreakglass } from './lib/breakglass.mjs';
 import { maakSecretControle } from './lib/secretverloop.mjs';
 import { magAutomatisch, stuurDoor } from './lib/doorsturen.mjs';
 import * as instellingen from './lib/instellingen.mjs';
-import { naarBedrag, naarDatum, naarIban, nuIso, vandaag } from './lib/hulp.mjs';
+import { ibanGeldig, naarBedrag, naarDatum, naarIban, nuIso, vandaag } from './lib/hulp.mjs';
+import { maakBetaalOpslag } from './lib/betalen-opslag.mjs';
+import { beoordeelFactuur, maakBetaler, toegangReden } from './lib/betalen.mjs';
+import { BETAALWIJZEN } from './lib/db.mjs';
 import {
   MAX_BODY_BYTES, kop, leesBody, meldingenUit as meldingenVan, stuurHtml, stuurTekst, zelfdeHerkomst,
 } from './lib/web.mjs';
@@ -74,6 +77,7 @@ import { dashboardPagina, overzicht } from './web/overzicht.mjs';
 import { leveranciersPagina } from './web/leveranciers.mjs';
 import { factuurPagina } from './web/factuur.mjs';
 import { instellingenPagina } from './web/instellingen.mjs';
+import { bevestigPagina, selectiePagina } from './web/betalen.mjs';
 import { FILTERS, SORTEER_KEUZES } from './web/opmaak.mjs';
 import { STATISCH, stuurStatisch } from './web/statisch.mjs';
 
@@ -100,6 +104,10 @@ const MELDINGEN = {
   'sync-gestart': ['info', 'De ronde is gestart. Vernieuw de pagina over een halve minuut.'],
   'sync-bezig': ['info', 'Er loopt al een ronde; even wachten.'],
   opgeslagen: ['goed', 'Instellingen opgeslagen.'],
+  'iban-ongeldig': ['fout', 'Dat IBAN klopt niet (het controlegetal faalt). Er is niets opgeslagen; controleer het met de factuur.'],
+  'draft-klaar': ['goed', 'Klaargezet in bunq — keur de betaling goed in de bunq-app. Er is nog geen geld weg.'],
+  'draft-onzeker': ['fout', 'bunq gaf geen zeker antwoord. De volgende synchronisatie kijkt of de conceptbetaling is aangekomen; zet hem niet opnieuw klaar en kijk in de bunq-app.'],
+  'draft-fout': ['fout', 'Klaarzetten in bunq is mislukt; er is niets klaargezet. De reden staat in de geschiedenis van de factuur.'],
 };
 
 // -- het factuurdashboard -------------------------------------------------
@@ -119,7 +127,29 @@ export function maakFacturenApp({
 }) {
   const basis = basisPad.replace(/\/+$/, '');
   const leesInstellingen = () => instellingen.lees(opslag);
-  const sync = maakSync({ opslag, graph, claude, bunq, pdfMap, instellingenLezer: leesInstellingen });
+  // Betalen via bunq: conceptbetalingen (lib/betalen.mjs).
+  const betaalOpslag = maakBetaalOpslag(opslag.db);
+  const betaler = maakBetaler({ opslag, betaalOpslag, bunq });
+  const sync = maakSync({ opslag, graph, claude, bunq, pdfMap, instellingenLezer: leesInstellingen, betaler });
+
+  // Wat het factuurpaneel over betalen moet weten.
+  function betaalInfo(factuur, inst, kader) {
+    return {
+      beoordeling: beoordeelFactuur(factuur, { inst, betaalOpslag }),
+      toegang: toegangReden({ inst, kader, bunq }),
+      laatste: betaalOpslag.laatsteRegel(factuur.id),
+    };
+  }
+
+  // De bankrekeningen voor de keuze in Instellingen; null zonder bunq.
+  async function haalRekeningen() {
+    if (!bunq || !bunq.beschikbaar) return null;
+    try {
+      return { lijst: await bunq.bankrekeningen(), fout: null };
+    } catch (fout) {
+      return { lijst: [], fout: fout.message };
+    }
+  }
 
   function terug(res, pad, code = null) {
     const url = basis + pad + (code ? (pad.includes('?') ? '&' : '?') + 'm=' + code : '');
@@ -166,33 +196,34 @@ export function maakFacturenApp({
   }
 
   // -- acties op één factuur -------------------------------------------
-  async function doeActie(res, factuur, actie, body) {
+  async function doeActie(res, factuur, actie, body, kader = null) {
     const inst = leesInstellingen();
     const pad = `/factuur/${factuur.id}`;
+    const door = kader?.email || null;
 
     if (actie === 'betaald') {
       const datum = naarDatum(body.get('betaald_op')) || nu();
       opslag.zetBetaald(factuur.id, { betaald_op: datum, betaald_via: 'handmatig' });
-      opslag.log('info', `Met de hand op betaald gezet (${datum}).`, factuur.id);
+      opslag.log('info', `Met de hand op betaald gezet (${datum}).`, factuur.id, door);
       await naBetaald(factuur.id, inst);
       return terug(res, pad, 'betaald');
     }
 
     if (actie === 'open') {
       opslag.zetOpen(factuur.id);
-      opslag.log('info', 'Terug naar open gezet; een gekoppelde betaling is losgemaakt.', factuur.id);
+      opslag.log('info', 'Terug naar open gezet; een gekoppelde betaling is losgemaakt.', factuur.id, door);
       return terug(res, pad, 'open');
     }
 
     if (actie === 'negeren') {
       opslag.zetStatus(factuur.id, 'genegeerd');
-      opslag.log('info', 'Op genegeerd gezet.', factuur.id);
+      opslag.log('info', 'Op genegeerd gezet.', factuur.id, door);
       return terug(res, pad, 'negeren');
     }
 
     if (actie === 'opnieuw') {
       opslag.zetOpnieuwUitlezen(factuur.id);
-      opslag.log('info', 'Wordt opnieuw uitgelezen.', factuur.id);
+      opslag.log('info', 'Wordt opnieuw uitgelezen.', factuur.id, door);
       return terug(res, pad, 'opnieuw');
     }
 
@@ -206,12 +237,20 @@ export function maakFacturenApp({
         bunq_betaling_id: betalingId,
         match_score: factuur.suggestie_score,
       });
-      opslag.log('info', 'Voorgestelde bunq-betaling bevestigd en op betaald gezet.', factuur.id);
+      opslag.log('info', 'Voorgestelde bunq-betaling bevestigd en op betaald gezet.', factuur.id, door);
       await naBetaald(factuur.id, inst);
       return terug(res, pad, 'gekoppeld');
     }
 
     if (actie === 'bewerken') {
+      // Een ingevuld IBAN moet het controlegetal halen (mod 97); anders
+      // niets opslaan, zodat er nooit een tikfout klaarstaat om te betalen.
+      const ibanInvoer = tekst(body.get('iban'), 60);
+      if (ibanInvoer && !ibanGeldig(ibanInvoer)) {
+        opslag.log('warn', 'Gegevens niet opgeslagen: het ingevulde IBAN klopt niet (controlegetal).', factuur.id, door);
+        return terug(res, pad, 'iban-ongeldig');
+      }
+      const betaalwijze = String(body.get('betaalwijze') || '');
       const velden = {
         leverancier: tekst(body.get('leverancier'), 200),
         factuurnummer: tekst(body.get('factuurnummer'), 80),
@@ -219,13 +258,19 @@ export function maakFacturenApp({
         vervaldatum: naarDatum(body.get('vervaldatum')),
         bedrag: naarBedrag(body.get('bedrag')),
         valuta: tekst(body.get('valuta'), 10)?.toUpperCase() ?? null,
-        iban: naarIban(body.get('iban')),
+        iban: naarIban(ibanInvoer),
+        // Velden die het formulier niet meestuurt (oudere pagina) blijven staan.
+        iban_naam: body.has('iban_naam') ? tekst(body.get('iban_naam'), 120) : factuur.iban_naam,
         betalingskenmerk: tekst(body.get('betalingskenmerk'), 80),
+        betaalwijze: body.has('betaalwijze') ? (BETAALWIJZEN.includes(betaalwijze) ? betaalwijze : null) : factuur.betaalwijze,
         omschrijving: tekst(body.get('omschrijving'), 200),
       };
+      const ibanGewijzigd = (naarIban(factuur.iban) || null) !== (velden.iban || null);
       opslag.zetUitgelezen(factuur.id, 'handmatig', velden);
       opslag.zetNotitie(factuur.id, tekst(body.get('notitie'), 2000));
-      opslag.log('info', 'Gegevens met de hand aangepast.', factuur.id);
+      opslag.log(ibanGewijzigd ? 'warn' : 'info', ibanGewijzigd
+        ? `Gegevens met de hand aangepast; IBAN gewijzigd van ${factuur.iban || '(leeg)'} naar ${velden.iban || '(leeg)'}.`
+        : 'Gegevens met de hand aangepast.', factuur.id, door);
       return terug(res, pad, 'bewerkt');
     }
 
@@ -294,6 +339,7 @@ export function maakFacturenApp({
         const sorteer = SORTEER_KEUZES.some(([s]) => s === gewenst) ? gewenst : '';
         return stuurHtml(res, 200, overzicht({
           basis, opslag, inst, filter, zoek, sorteer, nu: nu(), meldingen, syncBezig: sync.bezig(), kader,
+          betalen: !toegangReden({ inst, kader, bunq }),
         }));
       }
 
@@ -320,12 +366,12 @@ export function maakFacturenApp({
 
       // Instellingen
       if (pad === '/instellingen' && req.method === 'GET') {
-        return stuurHtml(res, 200, instellingenPagina({ basis, opslag, inst, meldingen, kader }));
+        return stuurHtml(res, 200, instellingenPagina({ basis, opslag, inst, meldingen, kader, rekeningen: await haalRekeningen() }));
       }
 
       if (pad === '/instellingen' && req.method === 'POST') {
         const body = await lees();
-        const { fouten } = instellingen.bewaar(opslag, {
+        const nieuw = {
           boekhouder_email: body.get('boekhouder_email') ?? '',
           doorstuur_tekst: body.get('doorstuur_tekst') ?? '',
           auto_doorsturen: body.has('auto_doorsturen') ? '1' : '0',
@@ -333,17 +379,65 @@ export function maakFacturenApp({
           outlook_categorie: body.has('outlook_categorie') ? '1' : '0',
           match_drempel: body.get('match_drempel') ?? '',
           terugkijken_dagen: body.get('terugkijken_dagen') ?? '',
-        }, { nu: nuIso() });
+          betalen_aan: body.has('betalen_aan') ? '1' : '0',
+        };
+        if (body.has('betalen_max')) nieuw.betalen_max = body.get('betalen_max');
+        const rekeningen = await haalRekeningen();
+        const vooraf = [];
+        // De van-rekening: alleen een bankrekening die bunq nu teruggeeft
+        // (of de rekening die al gekozen was). Een uitgeschakeld veld (geen
+        // bunq) stuurt niets mee; dan blijft de keuze staan.
+        if (body.has('betalen_rekening_id')) {
+          const id = String(body.get('betalen_rekening_id') || '').trim();
+          const uitBunq = (rekeningen?.lijst || []).find((r) => r.id === id);
+          if (!id) Object.assign(nieuw, { betalen_rekening_id: '' });
+          else if (uitBunq) Object.assign(nieuw, { betalen_rekening_id: id, betalen_rekening_iban: uitBunq.iban || '', betalen_rekening_naam: uitBunq.naam || '' });
+          else if (inst.betalenRekening?.id !== id) vooraf.push('Die rekening staat niet (meer) tussen de bankrekeningen in bunq; kies opnieuw.');
+        }
+        const { fouten } = vooraf.length ? { fouten: vooraf } : instellingen.bewaar(opslag, nieuw, { nu: nuIso(), door: kader?.email || null });
 
         if (fouten.length) {
           // Niet omleiden: de pagina opnieuw met de melding erbij, zodat
           // ingevulde waarden niet verdwijnen.
           return stuurHtml(res, 400, instellingenPagina({
-            basis, opslag, inst: leesInstellingen(), kader,
+            basis, opslag, inst: leesInstellingen(), kader, rekeningen,
             meldingen: fouten.map((tekst) => ({ soort: 'fout', tekst })),
           }));
         }
         return terug(res, '/instellingen', 'opgeslagen');
+      }
+
+      // Betalen via bunq: kiezen, controleren, klaarzetten.
+      if (pad === '/betalen' && req.method === 'GET') {
+        const open = opslag.lijst('open', '', nu());
+        const beoordelingen = open.map((f) => ({ factuur: f, ...beoordeelFactuur(f, { inst, betaalOpslag }) }));
+        return stuurHtml(res, 200, selectiePagina({
+          basis, beoordelingen, toegang: toegangReden({ inst, kader, bunq }), inst, nu: nu(), meldingen, kader,
+        }));
+      }
+
+      if (pad === '/betalen/bevestig' && req.method === 'GET') {
+        const ids = url.searchParams.getAll('id');
+        const voorbereiding = betaler.voorbereiden(ids, { inst, kader });
+        return stuurHtml(res, 200, bevestigPagina({ basis, voorbereiding, sleutel: crypto.randomUUID(), meldingen, kader }));
+      }
+
+      if (pad === '/betalen/bevestig' && req.method === 'POST') {
+        const body = await lees();
+        const ids = body.getAll('id');
+        const uit = await betaler.aanmaken({
+          ids, sleutel: body.get('sleutel'), afdruk: body.get('afdruk'), body, inst, kader,
+        });
+        const enkel = ids.length === 1 ? `/factuur/${Number(ids[0])}` : '/';
+        if (uit.uitkomst === 'klaar' || uit.uitkomst === 'al') return terug(res, enkel, 'draft-klaar');
+        if (uit.uitkomst === 'onzeker') return terug(res, enkel, 'draft-onzeker');
+        if (uit.uitkomst === 'mislukt') return terug(res, enkel, 'draft-fout');
+        // Niet klaargezet: het bevestigingsscherm opnieuw, met de reden.
+        const voorbereiding = betaler.voorbereiden(ids, { inst: leesInstellingen(), kader });
+        return stuurHtml(res, uit.uitkomst === 'geweigerd' ? 403 : 409, bevestigPagina({
+          basis, voorbereiding, sleutel: crypto.randomUUID(), kader,
+          meldingen: (uit.meldingen || []).map((tekst) => ({ soort: 'fout', tekst })),
+        }));
       }
 
       if (pad === '/instellingen/test' && req.method === 'POST') {
@@ -369,10 +463,12 @@ export function maakFacturenApp({
         if (req.method === 'GET' && !actie) {
           // ?deel=paneel: alleen de inhoud, voor het zijpaneel naast de lijst.
           const alleenInhoud = url.searchParams.get('deel') === 'paneel';
-          return stuurHtml(res, 200, factuurPagina({ basis, opslag, inst, factuur, nu: nu(), meldingen, kader, alleenInhoud }));
+          return stuurHtml(res, 200, factuurPagina({
+            basis, opslag, inst, factuur, nu: nu(), meldingen, kader, alleenInhoud, betalen: betaalInfo(factuur, inst, kader),
+          }));
         }
         if (req.method === 'GET' && actie === 'pdf') return stuurPdf(res, factuur);
-        if (req.method === 'POST' && actie) return doeActie(res, factuur, actie, await lees());
+        if (req.method === 'POST' && actie) return doeActie(res, factuur, actie, await lees(), kader);
       }
 
       return stuurTekst(res, 404, 'Niet gevonden.');
@@ -386,7 +482,7 @@ export function maakFacturenApp({
     }
   }
 
-  return { handle, sync, opslag, basis, dashboard };
+  return { handle, sync, opslag, basis, dashboard, betaler, betaalOpslag };
 }
 
 // -- los factuurdashboard met Basic Auth -------------------------------------

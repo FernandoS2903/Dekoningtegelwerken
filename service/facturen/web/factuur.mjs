@@ -8,6 +8,9 @@
 import { datumNl, escapeHtml as e, euro, vandaag } from '../lib/hulp.mjs';
 import { magAutomatisch } from '../lib/doorsturen.mjs';
 import { geschiedenis, metCsrf, melding, pagina, vlag, icoon } from './opmaak.mjs';
+import { betaalBlok } from './betalen.mjs';
+
+const BETAALWIJZE_KEUZES = [['', 'onbekend'], ['overboeking', 'zelf overmaken'], ['incasso', 'incasso (wordt afgeschreven)'], ['al_betaald', 'al betaald']];
 
 const veld = (naam, label, waarde, { type = 'text', hint = '' } = {}) => `<p>
   <label for="v-${naam}">${e(label)}</label>
@@ -35,7 +38,9 @@ function betalingBlok(betaling, { score, basis, factuurId, voorstel }) {
 </section>`;
 }
 
-export function factuurPagina({ basis, opslag, inst, factuur, nu = vandaag(), meldingen = [], kader = null, alleenInhoud = false }) {
+// `betalen` (optioneel): {beoordeling, toegang, laatste} uit lib/betalen.mjs
+// voor het blok "Betalen"; zonder dat blok als betalen niet is ingebouwd.
+export function factuurPagina({ basis, opslag, inst, factuur, nu = vandaag(), meldingen = [], kader = null, alleenInhoud = false, betalen = null }) {
   const naam = factuur.leverancier || factuur.afzender_naam || factuur.afzender_email || '(onbekende afzender)';
   const gekoppeld = opslag.betaling(factuur.bunq_betaling_id);
   const voorstel = factuur.status === 'open' ? opslag.betaling(factuur.suggestie_betaling_id) : null;
@@ -113,6 +118,8 @@ ${factuur.uitlees_status === 'geen_factuur' ? '<div class="melding"><p>Volgens h
       </div>
     </section>
 
+    ${betalen ? betaalBlok({ basis, factuur, ...betalen }) : ''}
+
     ${betalingBlok(gekoppeld, { score: factuur.match_score, basis, factuurId: factuur.id, voorstel: false })}
     ${betalingBlok(voorstel, { score: factuur.suggestie_score, basis, factuurId: factuur.id, voorstel: true })}
 
@@ -137,7 +144,14 @@ ${factuur.uitlees_status === 'geen_factuur' ? '<div class="melding"><p>Volgens h
           ${veld('bedrag', 'Bedrag incl. btw', factuur.bedrag === null ? '' : Number(factuur.bedrag).toFixed(2).replace('.', ','), { hint: '1.234,56' })}
           ${veld('valuta', 'Valuta', factuur.valuta, { hint: 'EUR' })}
           ${veld('iban', 'IBAN leverancier', factuur.iban)}
+          ${veld('iban_naam', 'Tenaamstelling IBAN', factuur.iban_naam)}
           ${veld('betalingskenmerk', 'Betalingskenmerk', factuur.betalingskenmerk)}
+          <p>
+            <label for="v-betaalwijze">Betaalwijze</label>
+            <select id="v-betaalwijze" name="betaalwijze">
+              ${BETAALWIJZE_KEUZES.map(([w, t]) => `<option value="${w}"${(factuur.betaalwijze || '') === w ? ' selected' : ''}>${e(t)}</option>`).join('')}
+            </select>
+          </p>
         </div>
         ${veld('omschrijving', 'Omschrijving', factuur.omschrijving)}
         <p>

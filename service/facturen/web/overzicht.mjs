@@ -95,7 +95,8 @@ ${kpiKaarten(t, inst, basis)}
 }
 
 // Het overzicht van de inkoopfacturen: zoeken, statusfilters, sortering en de tabel.
-export function overzicht({ basis, opslag, inst, filter, zoek, sorteer = '', nu, meldingen = [], syncBezig = false, kader = null }) {
+// `betalen`: toon de link naar "Betalen via bunq" (selectie van open facturen).
+export function overzicht({ basis, opslag, inst, filter, zoek, sorteer = '', nu, meldingen = [], syncBezig = false, kader = null, betalen = false }) {
   const regels = opslag.lijst(filter, zoek, nu, sorteer);
   const samenvatting = vatSamen(inst.laatsteSyncResultaat);
   const totaal = regels.reduce((som, f) => som + (Number(f.bedrag) || 0), 0);
@@ -103,7 +104,10 @@ export function overzicht({ basis, opslag, inst, filter, zoek, sorteer = '', nu,
   const inhoud = `${filterbalk(basis, filter, zoek, sorteer)}
 <div data-splits>
 <div class="lijstvak" data-lijst>
-  <p class="lijst__telling">${regels.length} inkoopfactu${regels.length === 1 ? 'ur' : 'ren'}${regels.length ? ` · ${e(euro(totaal))}` : ''}${zoek ? ` · zoekterm "${e(zoek)}"` : ''}</p>
+  <div class="lijst__balk">
+    <p class="lijst__telling">${regels.length} inkoopfactu${regels.length === 1 ? 'ur' : 'ren'}${regels.length ? ` · ${e(euro(totaal))}` : ''}${zoek ? ` · zoekterm "${e(zoek)}"` : ''}</p>
+    ${betalen ? `<a class="knop knop--rustig knop--klein" href="${basis}/betalen">Meerdere betalen via bunq</a>` : ''}
+  </div>
   ${regels.length
     ? `<ul class="lijst lijst--tabel">\n${tabelKop(basis, { filter, zoek, sorteer })}\n${regels.map((f) => rij(f, basis, nu)).join('\n')}\n</ul>`
     : `<p class="leeg">Geen inkoopfacturen in deze selectie${zoek ? ` voor "${e(zoek)}"` : ''}.</p>`}

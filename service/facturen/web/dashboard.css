@@ -614,3 +614,57 @@ form { margin: 0; }
 @media (min-width: 75em) {
   .projectbewerk { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
 }
+
+/* -- betalen via bunq (web/betalen.mjs) ------------------------------------
+   Het blok in het factuurpaneel, de selectie van open facturen en het
+   bevestigingsscherm. IBAN's in tabulaire cijfers, zodat ze te vergelijken
+   zijn; waarschuwingen in dezelfde rode toon als een foutmelding. */
+.iban { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.paneel--betalen { margin-bottom: 1rem; }
+.draftstand { margin: 0.25rem 0 0.5rem; padding: 0.5rem 0.75rem; border-radius: var(--hoek); background: var(--brons-zacht); color: var(--brons); }
+.draftstand--goed { background: var(--goed-zacht); color: var(--goed); }
+.redenen { margin: 0.25rem 0 0.5rem; padding-left: 1.125rem; font-size: 0.875rem; color: var(--inkt-zacht); }
+.redenen li { margin: 0.125rem 0; }
+
+.lijst__balk { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 0.75rem; margin-bottom: 0.5rem; }
+.lijst__balk .lijst__telling { margin: 0; }
+
+.kies { list-style: none; margin: 0 0 0.5rem; padding: 0; }
+.kiesrij {
+  display: grid; grid-template-columns: var(--tik) minmax(0, 1fr); align-items: center;
+  background: var(--kaart); border: 1px solid var(--lijn); border-radius: var(--hoek-groot);
+  margin-bottom: 0.5rem; box-shadow: var(--schaduw);
+}
+.kiesrij input { width: 1.25rem; height: 1.25rem; justify-self: center; accent-color: var(--brons); margin: 0; }
+.kiesrij__tekst {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem 0.75rem; align-items: center;
+  padding: 0.75rem 0.875rem 0.75rem 0; margin: 0; color: var(--inkt); font-size: 0.9375rem; min-height: var(--tik); cursor: pointer;
+}
+.kiesrij--uit .kiesrij__tekst { cursor: default; }
+.kiesrij--uit { background: var(--kaart-zacht); }
+.kiesrij__naam { display: grid; min-width: 0; font-weight: 500; }
+.kiesrij__naam small { font-weight: 400; color: var(--inkt-zacht); }
+.kiesrij__bedrag { font-variant-numeric: tabular-nums; text-align: right; }
+.kiesrij__reden { grid-column: 1 / -1; font-size: 0.8125rem; color: var(--inkt-zacht); }
+.kiesrij .vlag { justify-self: start; }
+
+.betaalregels { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.betaalregel { background: var(--kaart); border: 1px solid var(--lijn); border-radius: var(--hoek-groot); padding: 1rem 1.125rem; min-width: 0; }
+.betaalregel h2 { margin: 0 0 0.5rem; font-size: 1.125rem; }
+.betaalregel--uit { background: var(--kaart-zacht); }
+.betaalregel__bedrag { font-weight: 600; font-variant-numeric: tabular-nums; }
+.betaalregel .gegevens small { color: var(--inkt-zacht); }
+.betaalregel .gegevens a { display: inline-flex; align-items: center; min-height: var(--tik); }
+.betaalregel .gegevens > li { align-items: center; }
+.betaaltotaal { margin-top: 0.75rem; }
+.ibanstand { margin-top: 0.75rem; padding: 0.625rem 0.75rem; border-radius: var(--hoek); font-size: 0.875rem; border-left: 3px solid var(--lijn-sterk); }
+.ibanstand p { margin: 0 0 0.375rem; }
+.ibanstand--goed { background: var(--goed-zacht); border-left-color: var(--goed); }
+.ibanstand--nieuw { background: var(--brons-zacht); border-left-color: var(--brons); }
+.ibanstand--afwijkend { background: var(--fout-zacht); border-left-color: var(--fout); }
+.ibanstand .schakel { margin: 0.25rem 0; }
+input.kort { width: 6rem; text-transform: uppercase; }
+
+@media (min-width: 48em) {
+  .betaalregel .gegevens > li { grid-template-columns: 10rem 1fr; }
+}
