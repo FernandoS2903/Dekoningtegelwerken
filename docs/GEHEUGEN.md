@@ -707,6 +707,18 @@ er is geen enkele schrijvende bunq-aanroep gedaan en geen draft gemaakt.
   antwoord van bunq bij ACCEPTED (`object`); wijkt dat af, dan vangt het
   gewone koppelen (bedrag + IBAN + kenmerk = 1,0) het op.
 
+## Fase C, ronde 1 (13 okt 2026, 19:28) — gestopt bij stap 2
+
+- Stap 1 klaar: back-up `/root/backups/facturen-voor-bunq-betalen-20261013-1928.db`
+  (600; `VACUUM INTO` vanuit een alleen-lezen verbinding; integrity_check ok,
+  schema 6, 13 facturen, 6 projecten).
+- Stap 2 **niet uitgevoerd**: de hook weigert `git merge` ("Dit doet Bob
+  zelf"). Afgesproken: dan stoppen, niet forceren. `main` = origin/main =
+  c1a145a; `feature/bunq-betalen` is er een fast-forward van. Bob doet:
+  `cd /root/dekoning-tegelwerken && git merge --ff-only feature/bunq-betalen && git push origin main`.
+- Stap 3 (uitrollen) en 4 (nalezen, droog) daardoor niet gedaan; productie
+  draait nog schema 6, ongewijzigd. Geen env gewijzigd, geen bunq-aanroep.
+
 ## Fase C — stappenplan voor Bob (per stap akkoord)
 
 1. Database-back-up (`deploy/CMS-INSTALLATIE.md` §11 stap 1).
