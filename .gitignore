@@ -13,3 +13,9 @@ node_modules/
 # Logs en losse werkbestanden
 *.log
 /schermafdrukken/
+
+# Omgevingsbestanden met geheimen: horen in /etc/dekoning/, nooit in de repo
+.env
+.env.*
+*.env
+!deploy/*.env.voorbeeld

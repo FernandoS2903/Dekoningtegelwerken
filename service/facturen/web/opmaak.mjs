@@ -90,6 +90,7 @@ export function pagina({
 ${kader ? sidebar(kader, onderdeel) : losseKop(onderdeel, statisch)}
 <div class="inhoud">
 <main id="inhoud">
+${kader?.modus === 'breakglass' ? '<div class="banner banner--let" role="status"><strong>Ingelogd via break-glass</strong> (noodtoegang via de tailnet). Herstel het inloggen met Microsoft en log daarna hier uit.</div>' : ''}
 <header class="paginakop${kopKlasse ? ' ' + kopKlasse : ''}">
   <div class="paginakop__titel"><h1>${e(titel)}</h1></div>
   ${kopActies ? `<div class="paginakop__acties">${kopActies}</div>` : ''}
@@ -147,9 +148,9 @@ function sidebar(kader, onderdeel) {
       <span class="profiel__initialen" aria-hidden="true">${e(initialen(kader.naam || kader.email))}</span>
       <span class="profiel__tekst">
         <span class="profiel__naam">${e(kader.naam || kader.email || '')}</span>
-        <span class="profiel__sub">${kader.modus === 'sso' ? e(kader.email || '') : 'lokaal · Basic Auth'}</span>
+        <span class="profiel__sub">${kader.modus === 'sso' ? e(kader.email || '') : kader.modus === 'breakglass' ? 'break-glass · noodtoegang' : 'lokaal · Basic Auth'}</span>
       </span>
-      ${kader.modus === 'sso'
+      ${kader.modus === 'sso' || kader.modus === 'breakglass'
     ? '<form method="post" action="/auth/logout"><button class="knop knop--rustig knop--klein" type="submit">Uitloggen</button></form>'
     : ''}
     </div>`;

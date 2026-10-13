@@ -575,3 +575,7 @@ Zie `deploy/CMS-INSTALLATIE.md` §9: mergen, back-up van de database, portaal
 uitrollen, `AANVRAAG_OFFERTEKNOP_SLEUTEL` in de env zodra Offerteknop hem
 heeft, herstart, de live nginx-vhost vervangen door het voorbeeld
 (`/api/aanvraag/`), site uitrollen, proefaanvraag.
+
+### Noodtoegang (break-glass) via de tailnet (13 oktober 2026)
+
+Bob kon niet meer inloggen met Microsoft (fout aan de kant van Microsoft, vóór de callback; server-side niets te vinden). Branch `feature/breakglass`: route `/breakglass` (`service/facturen/lib/breakglass.mjs`), alleen via de tailnet-vhost `deploy/nginx/cms-tailnet.conf` op het Tailscale-adres met `X-Real-IP` in 100.64.0.0/10, gebruikersnaam + wachtwoord (scrypt, geen argon2: Node 22 en geen npm) + TOTP (eigen RFC 6238), vijf pogingen per kwartier per IP, log in `breakglass_log`, sessie met `auth_method = breakglass` (schema versie 5), banner, mail bij succes. Helper `scripts/breakglass-setup.mjs` (QR in de terminal via `lib/qr.mjs`, kopie uit Offerteknop). Bewaking vervaldatum client secret: `ENTRA_PORTAL_CLIENT_SECRET_VERLOOPT` (`lib/secretverloop.mjs`). Stappen in `deploy/CMS-INSTALLATIE.md`.

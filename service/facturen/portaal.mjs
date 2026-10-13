@@ -69,14 +69,17 @@ export function maakPortaal({
 
   // Wie is dit? {email, naam, csrf, modus, token} of null.
   function wie(req, res) {
-    if (sso) {
+    // Een sessie (SSO of break-glass) geldt in elke modus zodra er sessies zijn.
+    if (auth.sessies) {
       const token = leesCookies(req.headers.cookie)[SESSIE_COOKIE];
       const gevonden = auth.sessies.zoek(token);
-      if (!gevonden) return null;
-      if (gevonden.cookie && res) res.setHeader('set-cookie', gevonden.cookie);
-      const { sessie } = gevonden;
-      return { email: sessie.email, naam: sessie.naam, csrf: sessie.csrf, modus: 'sso', token };
+      if (gevonden) {
+        if (gevonden.cookie && res) res.setHeader('set-cookie', gevonden.cookie);
+        const { sessie } = gevonden;
+        return { email: sessie.email, naam: sessie.naam, csrf: sessie.csrf, modus: sessie.auth_method === 'breakglass' ? 'breakglass' : 'sso', token };
+      }
     }
+    if (sso) return null;
     const naam = auth.basic.klaar ? auth.basic.ingelogd(req) : null;
     if (!naam) return null;
     const csrf = crypto.createHmac('sha256', auth.geheim).update('csrf-basic:' + naam).digest('base64url');
@@ -139,15 +142,17 @@ export function maakPortaal({
     }
 
     if (pad === '/auth/logout' && req.method === 'POST') {
-      if (!sso) return doorsturen(res, 303, '/');
+      if (!auth.sessies) return doorsturen(res, 303, '/');
       if (!zelfdeHerkomst(req)) return stuurTekst(res, 403, 'Dit formulier moet van het portaal zelf komen.');
       const persoon = wie(req, null);
       const body = await leesBody(req);
-      if (!persoon) return doorsturen(res, 303, '/auth/uitgelogd', { 'set-cookie': auth.sessies.wisCookie() });
+      if (!persoon || !persoon.token) return doorsturen(res, 303, '/auth/uitgelogd', { 'set-cookie': auth.sessies.wisCookie() });
       if (!zelfdeTekst(body.get('_csrf'), persoon.csrf)) return stuurTekst(res, 403, 'Het formulier is verlopen; laad de pagina opnieuw.');
       auth.sessies.verwijder(persoon.token);
-      log('info', `Uitgelogd uit het portaal: ${persoon.email}`);
-      return doorsturen(res, 303, auth.oidc.logoutUrl(), { 'set-cookie': auth.sessies.wisCookie() });
+      log('info', `Uitgelogd uit het portaal: ${persoon.email}${persoon.modus === 'breakglass' ? ' (break-glass)' : ''}`);
+      // Een break-glass-sessie heeft niets met Microsoft te maken: geen Entra-logout.
+      const waarheen = persoon.modus === 'sso' && sso ? auth.oidc.logoutUrl() : '/auth/uitgelogd';
+      return doorsturen(res, 303, waarheen, { 'set-cookie': auth.sessies.wisCookie() });
     }
 
     if (pad === '/auth/uitgelogd' && req.method === 'GET') {
@@ -212,6 +217,9 @@ export function maakPortaal({
         return intern.handle(req, res, url);
       }
       if (pad.startsWith('/auth/')) return authRoute(req, res, url);
+      // Noodtoegang via de tailnet (lib/breakglass.mjs): bestaat alleen als hij
+      // is ingesteld en alleen voor verzoeken uit 100.64.0.0/10 via nginx.
+      if (pad === '/breakglass' && auth.breakglass) return auth.breakglass.handle(req, res, url);
 
       const persoon = wie(req, res);
       if (!persoon) return weiger(req, res, url);

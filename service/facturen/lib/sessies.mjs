@@ -36,8 +36,8 @@ export function maakSessies({ db, geheim, nu = () => Date.now() }) {
   const sleutel = (token) => crypto.createHmac('sha256', geheim).update(String(token)).digest('hex');
   const q = (sql) => db.prepare(sql);
 
-  const sNieuw = q(`INSERT INTO sessies (id, email, naam, csrf, aangemaakt_op, verloopt_op, bijgewerkt_op)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`);
+  const sNieuw = q(`INSERT INTO sessies (id, email, naam, csrf, aangemaakt_op, verloopt_op, bijgewerkt_op, auth_method)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
   const sZoek = q('SELECT * FROM sessies WHERE id = ?');
   const sSchuif = q('UPDATE sessies SET verloopt_op = ?, bijgewerkt_op = ? WHERE id = ?');
   const sWeg = q('DELETE FROM sessies WHERE id = ?');
@@ -49,11 +49,12 @@ export function maakSessies({ db, geheim, nu = () => Date.now() }) {
   const sOpruimenPogingen = q('DELETE FROM oidc_pogingen WHERE verloopt_op < ?');
 
   return {
-    maak({ email, naam = '' }) {
+    // authMethod: 'sso' (Microsoft) of 'breakglass' (noodtoegang); verder is de sessie gelijk.
+    maak({ email, naam = '', authMethod = 'sso' }) {
       const token = crypto.randomBytes(32).toString('base64url');
       const csrf = crypto.randomBytes(32).toString('base64url');
       const t = nu();
-      sNieuw.run(sleutel(token), email, naam, csrf, new Date(t).toISOString(), t + DUUR_MS, t);
+      sNieuw.run(sleutel(token), email, naam, csrf, new Date(t).toISOString(), t + DUUR_MS, t, authMethod === 'breakglass' ? 'breakglass' : 'sso');
       return { token, csrf };
     },
 

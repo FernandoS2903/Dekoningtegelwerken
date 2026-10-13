@@ -12,7 +12,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { nuIso } from './hulp.mjs';
 
-export const SCHEMA_VERSIE = 4;
+export const SCHEMA_VERSIE = 5;
 
 // undefined -> null, en getallen/strings blijven zoals ze zijn.
 const w = (v) => (v === undefined || v === '' ? null : v);
@@ -144,8 +144,24 @@ const SCHEMA = `
     csrf          TEXT NOT NULL,
     aangemaakt_op TEXT NOT NULL,
     verloopt_op   INTEGER NOT NULL,
-    bijgewerkt_op INTEGER NOT NULL
+    bijgewerkt_op INTEGER NOT NULL,
+    -- 'sso' (Microsoft) of 'breakglass' (noodtoegang via de tailnet).
+    auth_method   TEXT NOT NULL DEFAULT 'sso'
   );
+
+  -- Versie 5: elke poging op de noodtoegang (lib/breakglass.mjs); ook de
+  -- bron voor de limiet per IP en voor de replaycontrole van TOTP-stappen.
+  CREATE TABLE IF NOT EXISTS breakglass_log (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    tijd      TEXT NOT NULL,
+    tijd_ms   INTEGER NOT NULL,
+    ip        TEXT NOT NULL,
+    gebruiker TEXT,
+    geslaagd  INTEGER NOT NULL,
+    reden     TEXT,
+    totp_stap INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS breakglass_log_ip ON breakglass_log (ip, tijd_ms);
 
   -- Lopende inlogpogingen (state, nonce en PKCE-verifier), tien minuten geldig.
   CREATE TABLE IF NOT EXISTS oidc_pogingen (
@@ -322,6 +338,9 @@ export function openDatabase(pad) {
     for (const [naam, definitie] of AANVRAAG_KOLOMMEN) {
       if (!aanwezig.has(naam)) db.exec(`ALTER TABLE aanvragen ADD COLUMN ${naam} ${definitie}`);
     }
+    // Versie 5: auth_method op sessies (break-glass) en de tabel breakglass_log (via SCHEMA).
+    const sessieKolommen = new Set(db.prepare('PRAGMA table_info(sessies)').all().map((k) => k.name));
+    if (!sessieKolommen.has('auth_method')) db.exec("ALTER TABLE sessies ADD COLUMN auth_method TEXT NOT NULL DEFAULT 'sso'");
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSIE}`);
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS aanvragen_referentie ON aanvragen (referentie)');
