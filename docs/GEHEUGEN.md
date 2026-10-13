@@ -780,9 +780,34 @@ Bob (19:41): "3836 is prive, uitgerold en herstart" (dienst gestart 19:40:41).
   18389570 = …3836, inkomend, 9 okt), niet aan een factuur gekoppeld; geen
   andere rijen van …3836. Niets verwijderd (opdracht Bob).
 
+## Fase C, ronde 4 (13 okt 2026, 20:04–20:20)
+
+Bob (20:04): "Ja pas die 2 kleine punten aan". Bob herstartte om 20:02:33; de
+dienst draait sindsdien met `BUNQ_ACCOUNT_IBANS` = …9771.
+
+- Code (cf12311): `schoonTenaamstelling` in `lib/hulp.mjs` haalt "t.n.v.",
+  "tnv", "ten name van" (met of zonder punten of dubbele punt) aan het begin
+  weg en maakt spaties enkel; leeg wordt null. Wordt gebruikt na het uitlezen
+  (`claude.mjs`), bij handmatig bewerken (`server.mjs`), in `naamVoor` en in
+  `draftLichaam` (de naam die naar bunq gaat), en voor `leverancier_ibans.iban_naam`.
+  Een naam die met het losse woord "TNV" begint, verliest dat woord ook;
+  "Tnvt BV" blijft staan. 258 node-tests en de browsertest (50) groen.
+  Nog niet uitgerold.
+- Data: eerst de sync van 20:17:33 afgewacht (0 betalingen opgehaald, geen
+  nieuwe …3836-rijen: de filter werkt). Back-up
+  `/root/backups/facturen-voor-tenaamstelling-20261013-2017.db` (600,
+  integrity_check ok), daarna één transactie (`BEGIN IMMEDIATE`,
+  busy_timeout 5 s) met het script `/root/backups/ronde4-schoonmaak.mjs`:
+  #2, #9, #10 "tnv DSG Diensten BV" → "DSG Diensten BV", #4 "t.n.v. MJ
+  Constructie" → "MJ Constructie"; #3 en #5 waren al schoon.
+  `leverancier_ibans` was leeg. De privébetaling 2927504743 (rekening
+  18389570, inkomend, 9 okt, niet gekoppeld, geen verwijzingen vanuit
+  `facturen` of `bunq_draft_regels`) is verwijderd; de logboekregels zijn blijven staan.
+  Nu staan er 0 rijen van …3836 in de database.
+
 ## Fase C — stappenplan voor Bob (per stap akkoord)
 
-Stand 13 okt 20:00: stap 1, 2 en 4 klaar; stap 3 klaar op de herstart na.
+Stand 13 okt 20:20: stap 1–4 klaar (herstart 20:02 door Bob); tenaamstelling-fix (cf12311) nog uitrollen.
 
 1. Database-back-up (`deploy/CMS-INSTALLATIE.md` §11 stap 1).
 2. `feature/bunq-betalen` mergen naar `main`, `git branch -f main origin/main`
