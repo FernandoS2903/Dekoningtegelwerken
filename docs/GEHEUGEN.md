@@ -744,7 +744,45 @@ dus `BUNQ_ACCOUNT_IBANS` blijft voorlopig leeg.
   Instellingen biedt **18401978 (Bankrekening …9771)** en 18389570
   (Bankrekening …3836); de spaarrekeningen 18401979 en 18389571 niet.
 
+## Fase C, ronde 3 (13 okt 2026, 19:41–20:00)
+
+Bob (19:41): "3836 is prive, uitgerold en herstart" (dienst gestart 19:40:41).
+
+- Controles na de uitrol: journal sinds de herstart zonder fouten, schema 7
+  (tabellen `bunq_drafts`, `bunq_draft_regels`, `leverancier_ibans` er),
+  betalen uit (geen `betalen_*`-instellingen, dus standaard uit),
+  `/facturen/` → 302 naar `/auth/login`, `/auth/login` → 302 naar Microsoft,
+  `/facturen/betalen` → 302 naar inloggen. Eerste sync na de herstart:
+  19:55:41–19:55:43 (timer) geslaagd, met de nieuwe stap `drafts` (0 lopend);
+  bunq 1 betaling opgehaald (nog de privébetaling op …3836: de IBAN-filter
+  werkt pas na de volgende herstart), 12 facturen bekeken, niets gekoppeld.
+- Nalezen: droog 12 facturen, daarna `--uitvoeren`: 12 nagelezen, 0 mislukt,
+  geen afwijkend IBAN. `sudo -E` bleek genegeerd te worden (sudoers), dus
+  zonder Claude-sleutel; gedraaid met `--preserve-env=ANTHROPIC_API_KEY,CLAUDE_MODEL`
+  (§11 aangepast). Uitkomst (tenaamstelling · betaalwijze):
+  #1 Norder — · overboeking; #2 DSG "tnv DSG Diensten BV" · **incasso**;
+  #3 DSG "DSG Diensten BV" · **incasso**; #4 MJ Constructie "t.n.v. MJ
+  Constructie" · overboeking; #5 DSG · **incasso**; #6 Norder — · overboeking;
+  #7 Bouwcenter Filippo — · overboeking; #9 en #10 DSG · **incasso**;
+  #11 Velthuijs — · overboeking; #12 123inkt.nl — · al betaald;
+  #13 Velthuijs — · overboeking. Tenaamstelling gevonden bij 6 van de 12
+  (alle DSG en MJ Constructie); de rest valt terug op de leveranciersnaam.
+  Let op: Claude neemt "tnv"/"t.n.v." mee in de naam; die gaat zo als
+  tegenpartijnaam naar bunq. Opschonen is een kleine vervolgstap.
+- `BUNQ_ACCOUNT_IBANS` = de volledige IBAN van 18401978 (…9771), opgehaald met
+  één GET op de bestaande sessie (MonetaryAccountBank, ACTIVE, mod-97 ok).
+  Back-up `/etc/dekoning/facturen.env.bak-20261013-1944` (600, root); alleen
+  die ene regel gewijzigd. Werkt pas na een herstart (door Bob). De filter
+  zit in `rekeningen()`: daarna leest de sync alleen nog …9771 en biedt
+  Instellingen alleen …9771 aan (de lijst-GET van bunq geeft wel alle
+  rekeningen terug, maar de rest wordt in het geheugen weggegooid).
+- Privégegevens in de database: **1** rij in `bunq_betalingen` (rekening
+  18389570 = …3836, inkomend, 9 okt), niet aan een factuur gekoppeld; geen
+  andere rijen van …3836. Niets verwijderd (opdracht Bob).
+
 ## Fase C — stappenplan voor Bob (per stap akkoord)
+
+Stand 13 okt 20:00: stap 1, 2 en 4 klaar; stap 3 klaar op de herstart na.
 
 1. Database-back-up (`deploy/CMS-INSTALLATIE.md` §11 stap 1).
 2. `feature/bunq-betalen` mergen naar `main`, `git branch -f main origin/main`

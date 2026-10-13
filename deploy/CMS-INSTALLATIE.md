@@ -415,9 +415,11 @@ Uitrol (Bob, per stap):
    ```bash
    cd /opt/dekoning-facturen
    set -a; . /etc/dekoning/facturen.env; set +a
-   sudo -E -u dekoning-facturen DATA_DIR=/var/lib/dekoning-facturen node service/cli/betaalgegevens-nalezen.mjs            # droog: telt
-   sudo -E -u dekoning-facturen DATA_DIR=/var/lib/dekoning-facturen node service/cli/betaalgegevens-nalezen.mjs --uitvoeren
+   sudo -u dekoning-facturen --preserve-env=ANTHROPIC_API_KEY,CLAUDE_MODEL DATA_DIR=/var/lib/dekoning-facturen node service/cli/betaalgegevens-nalezen.mjs            # droog: telt
+   sudo -u dekoning-facturen --preserve-env=ANTHROPIC_API_KEY,CLAUDE_MODEL DATA_DIR=/var/lib/dekoning-facturen node service/cli/betaalgegevens-nalezen.mjs --uitvoeren
    ```
+   (`sudo -E` werkt hier niet: de sudoers-instelling negeert het, en dan
+   ontbreekt de Claude-sleutel.)
    Alleen `iban_naam` en `betaalwijze` worden bijgewerkt; vindt het nalezen
    een ander IBAN, dan staat dat als waarschuwing in de geschiedenis.
 5. Instellingen › Inkoopfacturen › "Betalen via bunq": de zakelijke
