@@ -1,9 +1,19 @@
-// bunq, uitsluitend lezen.
+// bunq: lezen, en conceptbetalingen klaarzetten.
 //
-// Let op: een bunq API-key geeft zelf volledige toegang tot de rekening. Dat
-// deze dienst alleen leest, is een eigenschap van deze code en niet van de
+// Let op: een bunq API-key geeft zelf volledige toegang tot de rekening. Wat
+// deze dienst ermee doet, is een eigenschap van deze code en niet van de
 // sleutel. Daarom staat de sleutel in /etc/dekoning/facturen.env (600) en
-// gebruikt dit bestand alleen GET-verzoeken op monetary-account en payment.
+// doet dit bestand precies dit:
+//  - GET op monetary-account, payment en draft-payment;
+//  - POST op draft-payment: een conceptbetaling (DraftPayment) die de
+//    eigenaar in de bunq-app moet goedkeuren, met number_of_required_accepts 1.
+// Nooit een POST op payment (direct betalen) en nooit een PUT op een draft:
+// intrekken gebeurt in de app. test/facturen-betalen.test.mjs bewaakt dat.
+//
+// Een draft wordt nooit automatisch opnieuw verstuurd: bij een time-out of
+// 5xx weten we niet of hij bij bunq is aangekomen (DraftFout met zeker =
+// false). lib/betalen.mjs zoekt hem dan op in de lijst in plaats van een
+// tweede te maken.
 //
 // Eenmalige opbouw: RSA-2048 sleutelpaar -> /installation -> /device-server
 // (registreert het publieke IP van deze server) -> /session-server.
@@ -140,14 +150,14 @@ export function maakBunq({
     return h;
   }
 
-  async function verzoek(pad, { methode = 'GET', body = null, sessie = null, volledig = false } = {}) {
+  async function verzoek(pad, { methode = 'GET', body = null, sessie = null, volledig = false, pogingen = 3 } = {}) {
     const lichaam = body === null ? null : JSON.stringify(body);
     const url = volledig ? origin + pad : basis + pad;
     const antwoord = await vraag(fetchFn, url, {
       method: methode,
       headers: headers({ sessie, lichaam }),
       ...(lichaam === null ? {} : { body: lichaam }),
-    }, { timeoutMs: 60000 });
+    }, { timeoutMs: 60000, pogingen });
 
     if (!antwoord || !antwoord.ok) {
       const tekst = antwoord ? await antwoord.text().catch(() => '') : 'geen antwoord';
@@ -253,21 +263,42 @@ export function maakBunq({
     }
   }
 
+  // Een conceptbetaling versturen: één poging (geen herhaling bij een
+  // time-out of 5xx, zie bovenaan). Alleen bij 401 nog één keer met een
+  // nieuwe sessie; bunq heeft het verzoek dan aantoonbaar niet uitgevoerd.
+  async function schrijfDraft(pad, body) {
+    let sessie = await zorgVoorSessie();
+    try {
+      return await verzoek(pad, { methode: 'POST', body, sessie, pogingen: 1 });
+    } catch (fout) {
+      if (!(fout instanceof HttpFout) || fout.status !== 401) throw fout;
+      log('info', 'bunq-sessie verlopen; opnieuw inloggen.');
+      delete state.sessieToken;
+      bewaarState();
+      sessie = await nieuweSessie();
+      return verzoek(pad, { methode: 'POST', body, sessie, pogingen: 1 });
+    }
+  }
+
   async function rekeningen() {
     // Eerst de sessie, dan het pad: de user-id komt uit de sessie.
     await zorgVoorSessie();
     const data = await lees(`/user/${encodeURIComponent(state.userId)}/monetary-account?count=100`);
-    const soorten = ['MonetaryAccountBank', 'MonetaryAccountJoint', 'MonetaryAccountSavings', 'MonetaryAccountLight'];
     const uit = [];
-    for (const rekening of alleUitResponse(data, soorten)) {
-      if (String(rekening.status).toUpperCase() !== 'ACTIVE') continue;
-      const alias = (rekening.alias || []).find((a) => String(a.type).toUpperCase() === 'IBAN');
-      const iban = naarIban(alias && alias.value);
-      if (ibanFilter.length && (!iban || !ibanFilter.includes(iban))) continue;
-      uit.push({ id: String(rekening.id), iban, naam: rekening.description || (alias && alias.name) || iban });
+    for (const [sleutel, soort] of Object.entries(REKENINGSOORTEN)) {
+      for (const rekening of alleUitResponse(data, [sleutel])) {
+        if (String(rekening.status).toUpperCase() !== 'ACTIVE') continue;
+        const alias = (rekening.alias || []).find((a) => String(a.type).toUpperCase() === 'IBAN');
+        const iban = naarIban(alias && alias.value);
+        if (ibanFilter.length && (!iban || !ibanFilter.includes(iban))) continue;
+        uit.push({ id: String(rekening.id), iban, naam: rekening.description || (alias && alias.name) || iban, soort });
+      }
     }
     return uit;
   }
+
+  const draftPad = (rekeningId, extra = '') => `/user/${encodeURIComponent(state.userId)}/monetary-account/`
+    + `${encodeURIComponent(String(rekeningId))}/draft-payment${extra}`;
 
   return {
     beschikbaar,
@@ -276,6 +307,51 @@ export function maakBunq({
     async rekeningen() {
       if (!beschikbaar) throw new Error('bunq is niet ingesteld');
       return rekeningen();
+    },
+
+    // Alleen rekeningen waar je vanaf betaalt (geen spaarrekeningen).
+    async bankrekeningen() {
+      if (!beschikbaar) throw new Error('bunq is niet ingesteld');
+      return (await rekeningen()).filter((r) => r.soort === 'bank' || r.soort === 'gezamenlijk');
+    },
+
+    // Zet een conceptbetaling klaar met één regel per factuur. Geeft {id}.
+    // Gooit DraftFout: zeker = true als bunq antwoordde dat het niet lukte
+    // (4xx), false als we het niet weten (netwerk, time-out, 5xx).
+    async maakDraft({ rekeningId, regels }) {
+      if (!beschikbaar) throw new DraftFout('bunq is niet ingesteld', true);
+      const body = draftLichaam(regels);
+      let data;
+      try {
+        await zorgVoorSessie();
+        data = await schrijfDraft(draftPad(rekeningId), body);
+      } catch (fout) {
+        const status = fout instanceof HttpFout ? fout.status : 0;
+        const zeker = status >= 400 && status < 500;
+        throw new DraftFout(zeker ? fout.message : `geen zeker antwoord van bunq (${fout.message})`, zeker);
+      }
+      const id = uitResponse(data, 'Id');
+      if (!id || id.id === undefined) throw new DraftFout('bunq gaf geen id terug voor de conceptbetaling', false);
+      return { id: String(id.id) };
+    },
+
+    // De stand van één draft: {status, bijgewerkt, betalingen}.
+    async draft(rekeningId, draftId) {
+      if (!beschikbaar) throw new Error('bunq is niet ingesteld');
+      await zorgVoorSessie();
+      const data = await lees(draftPad(rekeningId, '/' + encodeURIComponent(String(draftId))));
+      const draft = uitResponse(data, 'DraftPayment');
+      if (!draft) throw new Error('bunq gaf geen DraftPayment terug');
+      return naarDraft(draft);
+    },
+
+    // De recente drafts van een rekening, om een draft met een onzeker
+    // antwoord terug te vinden.
+    async drafts(rekeningId) {
+      if (!beschikbaar) throw new Error('bunq is niet ingesteld');
+      await zorgVoorSessie();
+      const data = await lees(draftPad(rekeningId, '?count=50'));
+      return alleUitResponse(data, ['DraftPayment']).map(naarDraft);
     },
 
     // Alle betalingen vanaf `vanafDatum` (YYYY-MM-DD) over alle rekeningen,
@@ -316,6 +392,72 @@ export function maakBunq({
         return { ok: false, melding: fout.message };
       }
     },
+  };
+}
+
+// Soorten rekeningen in het antwoord van monetary-account, met onze naam.
+export const REKENINGSOORTEN = {
+  MonetaryAccountBank: 'bank',
+  MonetaryAccountJoint: 'gezamenlijk',
+  MonetaryAccountSavings: 'spaar',
+  MonetaryAccountLight: 'light',
+};
+
+export class DraftFout extends Error {
+  constructor(melding, zeker) {
+    super(melding);
+    this.name = 'DraftFout';
+    this.zeker = Boolean(zeker);
+  }
+}
+
+// De body van POST draft-payment (swagger: DraftPayment met entries[]). Elke
+// regel: {bedrag, iban, naam, omschrijving}. Bedrag als tekst met twee
+// decimalen; de omschrijving mag naar een externe IBAN hooguit 140 tekens.
+export function draftLichaam(regels) {
+  return {
+    entries: regels.map((r) => ({
+      amount: { value: Number(r.bedrag).toFixed(2), currency: 'EUR' },
+      counterparty_alias: { type: 'IBAN', value: r.iban, name: r.naam },
+      description: String(r.omschrijving).slice(0, 140),
+    })),
+    number_of_required_accepts: 1,
+  };
+}
+
+// Een DraftPayment uit een GET omzetten. `object` bestaat pas na goedkeuring
+// en is een Payment of een PaymentBatch; de betaal-id's daaruit helpen bij
+// het koppelen van de echte betaling.
+export function naarDraft(draft) {
+  const regels = (draft.entries || []).map((e) => {
+    const tegen = e.counterparty_alias || {};
+    return {
+      iban: naarIban(tegen.iban || tegen.value),
+      bedrag: Number(e.amount && e.amount.value),
+      omschrijving: e.description || '',
+    };
+  });
+  const betalingen = [];
+  const object = draft.object || {};
+  const losse = object.Payment ? [object.Payment] : [];
+  const batch = object.PaymentBatch?.payments?.Payment || object.PaymentBatch?.payments || [];
+  for (const p of [...losse, ...(Array.isArray(batch) ? batch : [])]) {
+    const b = p && (p.Payment || p);
+    if (!b || b.id === undefined) continue;
+    const tegen = b.counterparty_alias || {};
+    betalingen.push({
+      id: String(b.id),
+      iban: naarIban(tegen.iban || tegen.label_monetary_account?.iban),
+      bedrag: Math.abs(Number(b.amount && b.amount.value)),
+    });
+  }
+  return {
+    id: String(draft.id),
+    status: String(draft.status || '').toUpperCase() || 'ONBEKEND',
+    bijgewerkt: draft.updated || null,
+    aangemaakt: draft.created || null,
+    regels,
+    betalingen,
   };
 }
 

@@ -45,12 +45,22 @@ const OPDRACHT = `Geef de gegevens van deze factuur als JSON met precies deze sl
   "amount": totaalbedrag inclusief btw als getal; een creditnota is negatief,
   "currency": valutacode zoals EUR,
   "iban": IBAN waar het bedrag naartoe moet,
+  "account_holder": tenaamstelling van dat IBAN zoals op de factuur staat (bijv. "t.n.v. ..."), anders null,
   "payment_reference": betalingskenmerk of referentie,
+  "payment_method": "transfer", "direct_debit" of "already_paid",
   "description": korte omschrijving van waar het over gaat, maximaal 80 tekens
 }
 
 is_invoice is false als dit geen factuur is, bijvoorbeeld een offerte, een
-orderbevestiging, een aanmaning zonder bedrag, een nieuwsbrief of een reclamemail.`;
+orderbevestiging, een aanmaning zonder bedrag, een nieuwsbrief of een reclamemail.
+
+payment_method is "direct_debit" als de factuur zegt dat het bedrag wordt
+geïncasseerd of automatisch afgeschreven, "already_paid" als de factuur zegt dat
+er al betaald is (bijvoorbeeld met pin, iDEAL of creditcard), "transfer" als er
+overgemaakt moet worden. Staat het er niet duidelijk, geef dan null.`;
+
+// Betaalwijze van het model -> onze waarden. Iets anders telt als onbekend.
+const BETAALWIJZEN = { transfer: 'overboeking', direct_debit: 'incasso', already_paid: 'al_betaald' };
 
 // -- parsen --------------------------------------------------------------
 // Haalt het eerste complete JSON-object uit een tekst. Een model kan er
@@ -130,7 +140,9 @@ export function parseerAntwoord(tekst) {
       bedrag: naarBedrag(ruw.amount),
       valuta: naarValuta(ruw.currency),
       iban: naarIban(ruw.iban),
+      iban_naam: tekstOfNull(ruw.account_holder, 120),
       betalingskenmerk: tekstOfNull(ruw.payment_reference, 80),
+      betaalwijze: BETAALWIJZEN[String(ruw.payment_method ?? '').trim().toLowerCase()] ?? null,
       omschrijving: tekstOfNull(ruw.description, 80),
     },
   };

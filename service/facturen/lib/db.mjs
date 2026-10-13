@@ -12,7 +12,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { nuIso } from './hulp.mjs';
 
-export const SCHEMA_VERSIE = 6;
+export const SCHEMA_VERSIE = 7;
 
 // undefined -> null, en getallen/strings blijven zoals ze zijn.
 const w = (v) => (v === undefined || v === '' ? null : v);
@@ -329,7 +329,74 @@ const SCHEMA = `
     aangemaakt_op TEXT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS project_fotos_project ON project_fotos (project_id, volgorde, id);
+
+  -- Versie 7: inkoopfacturen betalen via bunq (lib/betalen.mjs,
+  -- lib/betalen-opslag.mjs). Het portaal maakt alleen conceptbetalingen
+  -- (DraftPayment) die de eigenaar in de bunq-app goedkeurt.
+
+  -- Eén regel per poging om een conceptbetaling klaar te zetten. sleutel komt
+  -- uit het bevestigingsformulier: twee keer versturen geeft één draft.
+  -- status: bezig (nog niet bij bunq), onzeker (antwoord kwijt), PENDING,
+  -- ACCEPTED, REJECTED, CANCELLED, mislukt, of wat bunq verder teruggeeft.
+  CREATE TABLE IF NOT EXISTS bunq_drafts (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    sleutel         TEXT NOT NULL UNIQUE,
+    bunq_id         TEXT,
+    rekening_id     TEXT NOT NULL,
+    rekening_iban   TEXT,
+    status          TEXT NOT NULL,
+    totaal          REAL NOT NULL,
+    aantal          INTEGER NOT NULL,
+    door            TEXT NOT NULL,
+    aangemaakt_op   TEXT NOT NULL,
+    bijgewerkt_op   TEXT NOT NULL,
+    bunq_bijgewerkt TEXT,
+    fout            TEXT
+  );
+  CREATE INDEX IF NOT EXISTS bunq_drafts_status ON bunq_drafts (status);
+
+  -- De regels van een draft (één per factuur). actief = 1 zolang de draft
+  -- loopt of is goedgekeurd; de unieke index maakt een tweede actieve draft
+  -- voor dezelfde factuur onmogelijk, ook bij twee verzoeken tegelijk.
+  CREATE TABLE IF NOT EXISTS bunq_draft_regels (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    draft_id     INTEGER NOT NULL REFERENCES bunq_drafts (id),
+    factuur_id   INTEGER NOT NULL,
+    leverancier  TEXT NOT NULL,
+    bedrag       REAL NOT NULL,
+    iban         TEXT NOT NULL,
+    naam         TEXT NOT NULL,
+    omschrijving TEXT NOT NULL,
+    betaling_id  TEXT,
+    actief       INTEGER NOT NULL DEFAULT 1
+  );
+  CREATE INDEX IF NOT EXISTS bunq_draft_regels_draft ON bunq_draft_regels (draft_id);
+  CREATE UNIQUE INDEX IF NOT EXISTS bunq_draft_regels_actief ON bunq_draft_regels (factuur_id) WHERE actief = 1;
+
+  -- Bekende IBAN's per leverancier (sleutel = genormaliseerde naam). Een
+  -- IBAN wordt 'voorlopig' zodra iemand hem bij het klaarzetten bevestigt, en
+  -- pas 'vertrouwd' als bunq meldt dat die draft is goedgekeurd.
+  CREATE TABLE IF NOT EXISTS leverancier_ibans (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    leverancier    TEXT NOT NULL,
+    naam           TEXT,
+    iban           TEXT NOT NULL,
+    iban_naam      TEXT,
+    status         TEXT NOT NULL,
+    bevestigd_door TEXT NOT NULL,
+    bevestigd_op   TEXT NOT NULL,
+    vertrouwd_op   TEXT,
+    UNIQUE (leverancier, iban)
+  );
+  CREATE INDEX IF NOT EXISTS leverancier_ibans_iban ON leverancier_ibans (iban);
 `;
+
+// Kolommen die versie 7 toevoegde aan bestaande tabellen.
+const VERSIE_7_KOLOMMEN = [
+  ['facturen', 'iban_naam', 'TEXT'],
+  ['facturen', 'betaalwijze', 'TEXT'],
+  ['logboek', 'door', 'TEXT'],
+];
 
 // Kolommen die versie 4 aan `aanvragen` toevoegde; voor een database van
 // versie 3 komen ze er met ALTER TABLE bij (rijen blijven staan).
@@ -351,8 +418,10 @@ const AANVRAAG_KOLOMMEN = [
 // Velden die het bewerkformulier en het uitlezen mogen zetten.
 export const UITGELEZEN_VELDEN = [
   'leverancier', 'factuurnummer', 'factuurdatum', 'vervaldatum',
-  'bedrag', 'valuta', 'iban', 'betalingskenmerk', 'omschrijving',
+  'bedrag', 'valuta', 'iban', 'iban_naam', 'betalingskenmerk', 'betaalwijze', 'omschrijving',
 ];
+
+export const BETAALWIJZEN = ['overboeking', 'incasso', 'al_betaald'];
 
 // Sorteringen van de factuurlijst: sleutel in de URL -> ORDER BY.
 export const SORTERINGEN = {
@@ -395,6 +464,12 @@ export function openDatabase(pad) {
     // Versie 6 (project-CMS) voegt alleen nieuwe tabellen toe; die maakt SCHEMA al aan.
     const sessieKolommen = new Set(db.prepare('PRAGMA table_info(sessies)').all().map((k) => k.name));
     if (!sessieKolommen.has('auth_method')) db.exec("ALTER TABLE sessies ADD COLUMN auth_method TEXT NOT NULL DEFAULT 'sso'");
+    // Versie 7: tenaamstelling en betaalwijze op facturen, wie iets deed in het
+    // logboek; de tabellen voor betalen via bunq maakt SCHEMA al aan.
+    for (const [tabel, naam, definitie] of VERSIE_7_KOLOMMEN) {
+      const kolommen = new Set(db.prepare(`PRAGMA table_info(${tabel})`).all().map((k) => k.name));
+      if (!kolommen.has(naam)) db.exec(`ALTER TABLE ${tabel} ADD COLUMN ${naam} ${definitie}`);
+    }
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSIE}`);
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS aanvragen_referentie ON aanvragen (referentie)');
@@ -418,8 +493,9 @@ export function maakOpslag(db) {
   const sUitlezenOk = q(`
     UPDATE facturen SET uitlees_status = ?, uitlees_fout = NULL,
       leverancier = ?, factuurnummer = ?, factuurdatum = ?, vervaldatum = ?,
-      bedrag = ?, valuta = ?, iban = ?, betalingskenmerk = ?, omschrijving = ?
+      bedrag = ?, valuta = ?, iban = ?, iban_naam = ?, betalingskenmerk = ?, betaalwijze = ?, omschrijving = ?
     WHERE id = ?`);
+  const sBetaalgegevens = q('UPDATE facturen SET iban_naam = ?, betaalwijze = ? WHERE id = ?');
   const sUitlezenFout = q("UPDATE facturen SET uitlees_status = 'mislukt', uitlees_fout = ? WHERE id = ?");
   const sUitlezenOpnieuw = q("UPDATE facturen SET uitlees_status = 'pending', uitlees_fout = NULL WHERE id = ?");
   const sStatus = q('UPDATE facturen SET status = ? WHERE id = ?');
@@ -461,7 +537,7 @@ export function maakOpslag(db) {
     INSERT INTO instellingen (sleutel, waarde) VALUES (?, ?)
     ON CONFLICT (sleutel) DO UPDATE SET waarde = excluded.waarde`);
 
-  const sLog = q('INSERT INTO logboek (tijd, factuur_id, niveau, bericht) VALUES (?, ?, ?, ?)');
+  const sLog = q('INSERT INTO logboek (tijd, factuur_id, niveau, bericht, door) VALUES (?, ?, ?, ?, ?)');
   const sLogVanFactuur = q('SELECT * FROM logboek WHERE factuur_id = ? ORDER BY id DESC LIMIT ?');
   const sLogAlles = q('SELECT * FROM logboek ORDER BY id DESC LIMIT ?');
 
@@ -494,9 +570,15 @@ export function maakOpslag(db) {
         status,
         w(velden.leverancier), w(velden.factuurnummer), w(velden.factuurdatum), w(velden.vervaldatum),
         velden.bedrag === null || velden.bedrag === undefined ? null : Number(velden.bedrag),
-        w(velden.valuta), w(velden.iban), w(velden.betalingskenmerk), w(velden.omschrijving),
+        w(velden.valuta), w(velden.iban), w(velden.iban_naam), w(velden.betalingskenmerk),
+        BETAALWIJZEN.includes(velden.betaalwijze) ? velden.betaalwijze : null, w(velden.omschrijving),
         Number(id),
       );
+    },
+    // Alleen tenaamstelling en betaalwijze (het eenmalig nalezen in fase C);
+    // de rest van de factuur, ook wat met de hand is gecorrigeerd, blijft staan.
+    zetBetaalgegevens(id, { iban_naam = null, betaalwijze = null }) {
+      sBetaalgegevens.run(w(iban_naam), BETAALWIJZEN.includes(betaalwijze) ? betaalwijze : null, Number(id));
     },
     zetUitleesFout(id, fout) { sUitlezenFout.run(String(fout).slice(0, 500), Number(id)); },
     zetOpnieuwUitlezen(id) { sUitlezenOpnieuw.run(Number(id)); },
@@ -521,6 +603,15 @@ export function maakOpslag(db) {
     wisSuggesties() { sWisSuggesties.run(); },
     zetDoorgestuurd(id, naar, op = nuIso()) { sDoorgestuurd.run(op, naar, Number(id)); },
     zetNotitie(id, notitie) { sNotitie.run(w(notitie), Number(id)); },
+
+    // Open, uitgelezen facturen zonder tenaamstelling: voor het eenmalig
+    // nalezen (service/cli/betaalgegevens-nalezen.mjs).
+    openZonderTenaamstelling() {
+      return db.prepare(`
+        SELECT * FROM facturen
+        WHERE status = 'open' AND uitlees_status IN ('ok', 'handmatig') AND iban_naam IS NULL
+        ORDER BY id`).all();
+    },
 
     // Open facturen met een bedrag: de kandidaten om te koppelen.
     openFacturenMetBedrag() {
@@ -562,7 +653,12 @@ export function maakOpslag(db) {
           CASE WHEN status = 'open' THEN vervaldatum END ASC,
           coalesce(betaald_op, ontvangen, aangemaakt_op) DESC,
           id DESC`;
-      return db.prepare(`SELECT * FROM facturen WHERE ${waar} ORDER BY ${volgorde} LIMIT 500`).all(...waarden);
+      // draft_status: de stand van een lopende conceptbetaling in bunq, voor
+      // het labeltje in de lijst.
+      return db.prepare(`SELECT *,
+          (SELECT d.status FROM bunq_draft_regels r JOIN bunq_drafts d ON d.id = r.draft_id
+           WHERE r.factuur_id = facturen.id AND r.actief = 1 ORDER BY r.id DESC LIMIT 1) AS draft_status
+        FROM facturen WHERE ${waar} ORDER BY ${volgorde} LIMIT 500`).all(...waarden);
     },
 
     // Alles wat aandacht vraagt, voor het dashboard: mislukt uitlezen, een
@@ -680,8 +776,9 @@ export function maakOpslag(db) {
     },
 
     // -- logboek ---------------------------------------------------------
-    log(niveau, bericht, factuurId = null) {
-      sLog.run(nuIso(), factuurId === null ? null : Number(factuurId), niveau, String(bericht).slice(0, 1000));
+    // `door`: wie het deed (e-mailadres van de sessie), als het een mens was.
+    log(niveau, bericht, factuurId = null, door = null) {
+      sLog.run(nuIso(), factuurId === null ? null : Number(factuurId), niveau, String(bericht).slice(0, 1000), w(door));
     },
     logboekVanFactuur(id, max = 50) { return sLogVanFactuur.all(Number(id), Number(max)); },
     logboek(max = 100) { return sLogAlles.all(Number(max)); },

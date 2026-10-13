@@ -120,6 +120,26 @@ export function naarIban(waarde) {
   return /^[A-Z]{2}\d{2}[A-Z0-9]{8,30}$/.test(s) ? s : null;
 }
 
+// De controle uit ISO 13616: de eerste vier tekens achteraan, letters als
+// getallen (A = 10 … Z = 35), en dan moet de rest bij deling door 97 gelijk
+// zijn aan 1. Vangt typefouten en verwisselde cijfers af; zegt niets over
+// van wie de rekening is.
+export function ibanGeldig(waarde) {
+  const iban = naarIban(waarde);
+  if (!iban) return false;
+  if (iban.startsWith('NL') && iban.length !== 18) return false;
+  const cijfers = (iban.slice(4) + iban.slice(0, 4)).replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+  let rest = 0;
+  for (const c of cijfers) rest = (rest * 10 + Number(c)) % 97;
+  return rest === 1;
+}
+
+// "NL91ABNA0417164300" -> "NL91 ABNA 0417 1643 00", om in het scherm te lezen.
+export function ibanLeesbaar(waarde) {
+  const iban = naarIban(waarde);
+  return iban ? iban.replace(/(.{4})(?=.)/g, '$1 ') : String(waarde ?? '');
+}
+
 // -- datums --------------------------------------------------------------
 const MAANDEN = {
   jan: 1, januari: 1, feb: 2, februari: 2, mrt: 3, maart: 3, apr: 4, april: 4,

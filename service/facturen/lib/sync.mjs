@@ -1,4 +1,5 @@
-// De sync-ronde: mail -> uitlezen -> bunq -> koppelen -> achterstand doorsturen.
+// De sync-ronde: mail -> uitlezen -> bunq -> conceptbetalingen -> koppelen ->
+// achterstand doorsturen.
 //
 // Elke stap is los afgevangen: valt Microsoft 365 weg, dan loopt het koppelen
 // van bunq-betalingen gewoon door, en omgekeerd. Het resultaat per stap gaat
@@ -16,7 +17,8 @@ import * as koppelen from './koppelen.mjs';
 import { verwerkAchterstand } from './doorsturen.mjs';
 import { datumPlusDagen, nuIso, vandaag, veiligeBestandsnaam } from './hulp.mjs';
 
-export function maakSync({ opslag, graph, claude, bunq, pdfMap, instellingenLezer }) {
+// `betaler` (lib/betalen.mjs) is optioneel: zonder werkt de ronde als vroeger.
+export function maakSync({ opslag, graph, claude, bunq, pdfMap, instellingenLezer, betaler = null }) {
   let bezig = false;
 
   // -- stap 1: nieuwe mails ophalen -------------------------------------
@@ -142,7 +144,14 @@ export function maakSync({ opslag, graph, claude, bunq, pdfMap, instellingenLeze
       await stap('mail', () => haalMails(inst));
       await stap('uitlezen', () => leesUit());
       await stap('bunq', () => haalBetalingen(inst));
-      await stap('koppelen', async () => koppelen.verwerk(opslag, inst.matchDrempel));
+      // De stand van conceptbetalingen; daarna eerst de betalingen die bij een
+      // goedgekeurde draft horen, dan het gewone koppelen.
+      if (betaler) await stap('drafts', () => betaler.bijwerken());
+      await stap('koppelen', async () => {
+        const viaDraft = betaler ? betaler.koppelGoedgekeurde() : 0;
+        const uit = koppelen.verwerk(opslag, inst.matchDrempel);
+        return { ...uit, betaald: uit.betaald + viaDraft };
+      });
 
       // Het koppelen kan facturen op betaald hebben gezet; de instellingen
       // opnieuw lezen, want de toggle kan tussendoor zijn veranderd.
@@ -182,6 +191,9 @@ export function vatSamen(resultaatJson) {
   if (s.mail) delen.push(s.mail.fout ? 'mail: ' + s.mail.fout : (s.mail.overgeslagen ? 'mail: ' + s.mail.overgeslagen : `${s.mail.nieuw} nieuw`));
   if (s.uitlezen) delen.push(s.uitlezen.fout ? 'uitlezen: ' + s.uitlezen.fout : (s.uitlezen.overgeslagen ? 'uitlezen: ' + s.uitlezen.overgeslagen : `${s.uitlezen.gelukt} uitgelezen${s.uitlezen.mislukt ? `, ${s.uitlezen.mislukt} mislukt` : ''}`));
   if (s.bunq) delen.push(s.bunq.fout ? 'bunq: ' + s.bunq.fout : (s.bunq.overgeslagen ? 'bunq: ' + s.bunq.overgeslagen : `${s.bunq.opgehaald} betalingen`));
+  if (s.drafts && (s.drafts.fout || s.drafts.lopend)) {
+    delen.push(s.drafts.fout ? 'conceptbetalingen: ' + s.drafts.fout : `${s.drafts.lopend} conceptbetaling(en) gevolgd`);
+  }
   if (s.koppelen) delen.push(s.koppelen.fout ? 'koppelen: ' + s.koppelen.fout : `${s.koppelen.betaald} gekoppeld, ${s.koppelen.suggesties} suggestie(s)`);
   if (s.doorsturen) {
     delen.push(s.doorsturen.fout ? 'doorsturen: ' + s.doorsturen.fout

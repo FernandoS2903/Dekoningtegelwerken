@@ -121,7 +121,7 @@ test('installatie, apparaat en sessie worden één keer opgebouwd en bewaard', a
   const bunq = maakBunq({ apiKey: 'niet-echte-sleutel', statePad, fetch: fetchFn });
 
   const rekeningen = await bunq.rekeningen();
-  assert.deepEqual(rekeningen, [{ id: '42', iban: 'NL00BUNQ0000000001', naam: 'Zakelijk' }],
+  assert.deepEqual(rekeningen, [{ id: '42', iban: 'NL00BUNQ0000000001', naam: 'Zakelijk', soort: 'bank' }],
     'alleen de actieve rekening');
 
   const paden = fetchFn.verzoeken.map((v) => v.url.replace(PRODUCTIE_URL, ''));

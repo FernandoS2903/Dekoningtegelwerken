@@ -79,9 +79,22 @@ test('een modelantwoord wordt omgezet in onze velden', () => {
     bedrag: 1210,
     valuta: 'EUR',
     iban: 'NL91ABNA0417164300',
+    iban_naam: null,
     betalingskenmerk: null,
+    betaalwijze: null,
     omschrijving: 'XXL tegels',
   });
+});
+
+test('tenaamstelling en betaalwijze komen uit het antwoord; een onbekende betaalwijze blijft leeg', () => {
+  const basis = '"is_invoice": true, "supplier": "Groothandel", "iban": "NL91ABNA0417164300"';
+  const incasso = parseerAntwoord(`{${basis}, "account_holder": "Groothandel Noord B.V.", "payment_method": "direct_debit"}`);
+  assert.equal(incasso.velden.iban_naam, 'Groothandel Noord B.V.');
+  assert.equal(incasso.velden.betaalwijze, 'incasso');
+  assert.equal(parseerAntwoord(`{${basis}, "payment_method": "transfer"}`).velden.betaalwijze, 'overboeking');
+  assert.equal(parseerAntwoord(`{${basis}, "payment_method": "already_paid"}`).velden.betaalwijze, 'al_betaald');
+  assert.equal(parseerAntwoord(`{${basis}, "payment_method": "cash"}`).velden.betaalwijze, null);
+  assert.equal(parseerAntwoord(`{${basis}, "account_holder": "null"}`).velden.iban_naam, null);
 });
 
 test('onbekende velden blijven null en is_invoice false wordt overgenomen', () => {

@@ -16,6 +16,14 @@ export const STANDAARD = {
   laatste_sync: '',
   laatste_sync_resultaat: '',
 
+  // Betalen via bunq (conceptbetalingen). Standaard uit en zonder rekening:
+  // welke rekening de zakelijke is, kiest Bob zelf.
+  betalen_aan: '0',
+  betalen_rekening_id: '',
+  betalen_rekening_iban: '',
+  betalen_rekening_naam: '',
+  betalen_max: '5000',
+
   // Mailsorteerder
   sorteren: '1',
   sorteer_drempel: '0.75',
@@ -44,6 +52,8 @@ export const DREMPEL_MIN = 0.4;
 export const DREMPEL_MAX = 1.0;
 export const TERUGKIJKEN_MIN = 1;
 export const TERUGKIJKEN_MAX = 3650;
+export const BETALEN_MAX_MIN = 1;
+export const BETALEN_MAX_MAX = 100000;
 
 const IS_EMAIL = /^[^\s@,]+@[^\s@,]+\.[^\s@,]{2,}$/;
 
@@ -66,6 +76,11 @@ export function lees(opslag) {
     sorteerDrempel: begrens(Number(ruw.sorteer_drempel), SORTEER_DREMPEL_MIN, SORTEER_DREMPEL_MAX, 0.75),
     sorteerMappen: Object.fromEntries(SORTEER_MAPPEN.map((m) => [m.naam, ruw['sorteer_map_' + m.sleutel] === '1'])),
     websiteAfzenders: splitsAfzenders(ruw.website_afzenders),
+    betalenAan: ruw.betalen_aan === '1' && Boolean(ruw.betalen_rekening_id),
+    betalenRekening: ruw.betalen_rekening_id
+      ? { id: ruw.betalen_rekening_id, iban: ruw.betalen_rekening_iban || null, naam: ruw.betalen_rekening_naam || '' }
+      : null,
+    betalenMax: begrens(Number(ruw.betalen_max), BETALEN_MAX_MIN, BETALEN_MAX_MAX, 5000),
   };
 }
 
@@ -88,7 +103,7 @@ function begrens(n, min, max, terugval) {
 
 // Slaat alleen de sleutels op die in `nieuw` staan en echt veranderen.
 // Geeft {fouten, gewijzigd} terug; bij fouten wordt niets opgeslagen.
-export function bewaar(opslag, nieuw, { nu = new Date().toISOString() } = {}) {
+export function bewaar(opslag, nieuw, { nu = new Date().toISOString(), door = null } = {}) {
   const fouten = [];
   const schoon = {};
 
@@ -103,7 +118,7 @@ export function bewaar(opslag, nieuw, { nu = new Date().toISOString() } = {}) {
     schoon.doorstuur_tekst = String(nieuw.doorstuur_tekst || '').slice(0, 2000);
   }
 
-  const vlaggen = ['auto_doorsturen', 'testmodus', 'outlook_categorie', 'sorteren',
+  const vlaggen = ['auto_doorsturen', 'testmodus', 'outlook_categorie', 'sorteren', 'betalen_aan',
     ...SORTEER_MAPPEN.map((m) => 'sorteer_map_' + m.sleutel)];
   for (const sleutel of vlaggen) {
     if (sleutel in nieuw) schoon[sleutel] = waarheid(nieuw[sleutel]) ? '1' : '0';
@@ -143,6 +158,35 @@ export function bewaar(opslag, nieuw, { nu = new Date().toISOString() } = {}) {
     else schoon.website_afzenders = [...new Set(lijst)].join(', ');
   }
 
+  // De van-rekening: id, IBAN en naam samen. Dat het een bankrekening uit
+  // bunq is, controleert de route (die vraagt de lijst bij bunq op).
+  if ('betalen_rekening_id' in nieuw) {
+    const id = String(nieuw.betalen_rekening_id || '').trim();
+    if (id && !/^\d{1,20}$/.test(id)) fouten.push('Ongeldige rekening gekozen.');
+    else {
+      schoon.betalen_rekening_id = id;
+      schoon.betalen_rekening_iban = id ? String(nieuw.betalen_rekening_iban || '').slice(0, 40) : '';
+      schoon.betalen_rekening_naam = id ? String(nieuw.betalen_rekening_naam || '').slice(0, 100) : '';
+    }
+  }
+
+  if ('betalen_max' in nieuw) {
+    // "5.000,50" (Nederlands) of "5000.5" (zoals een number-veld verstuurt).
+    const ruw = String(nieuw.betalen_max).trim();
+    const n = Number(ruw.includes(',') ? ruw.replace(/\./g, '').replace(',', '.') : ruw);
+    if (!Number.isFinite(n) || n < BETALEN_MAX_MIN || n > BETALEN_MAX_MAX) {
+      fouten.push(`Maximumbedrag per conceptbetaling moet tussen € ${BETALEN_MAX_MIN} en € ${BETALEN_MAX_MAX.toLocaleString('nl-NL')} liggen.`);
+    } else {
+      schoon.betalen_max = String(Math.round(n * 100) / 100);
+    }
+  }
+
+  // Betalen kan pas aan als er een van-rekening is gekozen.
+  if (schoon.betalen_aan === '1') {
+    const rekening = 'betalen_rekening_id' in schoon ? schoon.betalen_rekening_id : opslag.instelling('betalen_rekening_id');
+    if (!rekening) fouten.push('Kies eerst de rekening waarvan betaald wordt; daarna kan "Betalen via bunq" aan.');
+  }
+
   if (fouten.length) return { fouten, gewijzigd: [] };
 
   const oud = { ...STANDAARD, ...opslag.alleInstellingen() };
@@ -158,7 +202,7 @@ export function bewaar(opslag, nieuw, { nu = new Date().toISOString() } = {}) {
     if (String(oud[sleutel] ?? '') === String(waarde)) continue;
     opslag.zetInstelling(sleutel, waarde);
     gewijzigd.push({ sleutel, oud: oud[sleutel] ?? '', nieuw: waarde });
-    opslag.log('info', `Instelling ${sleutel}: "${oud[sleutel] ?? ''}" -> "${waarde}"`);
+    opslag.log('info', `Instelling ${sleutel}: "${oud[sleutel] ?? ''}" -> "${waarde}"`, null, door);
   }
 
   return { fouten: [], gewijzigd };
