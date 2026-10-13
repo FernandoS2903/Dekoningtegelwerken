@@ -390,3 +390,43 @@ Vervaldatum van het client secret van de Microsoft-login: zet
 `ENTRA_PORTAL_CLIENT_SECRET_VERLOOPT=JJJJ-MM-DD` in de env (de datum staat in
 Entra onder Certificates & secrets). Vanaf dertig dagen vooraf komt er dagelijks
 een waarschuwing in het logboek en per mail naar `BREAKGLASS_MELD_NAAR`.
+
+## 11. Inkoopfacturen betalen via bunq (opdracht 13 oktober 2026)
+
+Opdracht en besluiten: `docs/opdrachten/bunq-betalen.md`. Het portaal zet
+alleen **conceptbetalingen** (DraftPayment) klaar; er gaat pas geld weg als
+de eigenaar ze in de bunq-app goedkeurt. Betalen staat standaard uit en kan
+pas aan als er een van-rekening is gekozen. Alleen met inloggen via
+Microsoft, niet via break-glass.
+
+Uitrol (Bob, per stap):
+
+1. Back-up van de database:
+   `sqlite3 /var/lib/dekoning-facturen/facturen.db ".backup /root/backups/facturen-voor-bunq-betalen-$(date +%Y%m%d-%H%M).db"`
+   (of `node` met `VACUUM INTO` als sqlite3 er niet staat).
+2. Mergen naar `main`, lokale `main` bijwerken, `deploy/facturen-deploy.sh`,
+   dienst herstarten. De journal noemt geen nieuwe env; de database gaat
+   naar schema 7 (alleen nieuwe kolommen en tabellen).
+3. Optioneel `BUNQ_ACCOUNT_IBANS` in `/etc/dekoning/facturen.env` op alleen
+   de zakelijke rekening(en) zetten en herstarten. Leeg leest de sync alle
+   vier de rekeningen van de sleutel (twee bank, twee spaar).
+4. Tenaamstelling en betaalwijze nalezen voor de open facturen (eenmalig,
+   Claude-kosten per factuur):
+   ```bash
+   cd /opt/dekoning-facturen
+   set -a; . /etc/dekoning/facturen.env; set +a
+   sudo -E -u dekoning-facturen DATA_DIR=/var/lib/dekoning-facturen node service/cli/betaalgegevens-nalezen.mjs            # droog: telt
+   sudo -E -u dekoning-facturen DATA_DIR=/var/lib/dekoning-facturen node service/cli/betaalgegevens-nalezen.mjs --uitvoeren
+   ```
+   Alleen `iban_naam` en `betaalwijze` worden bijgewerkt; vindt het nalezen
+   een ander IBAN, dan staat dat als waarschuwing in de geschiedenis.
+5. Instellingen › Inkoopfacturen › "Betalen via bunq": de zakelijke
+   bankrekening kiezen, maximum (standaard € 5.000) controleren, aanzetten.
+6. Proef: een factuur (of een testfactuur aan jezelf) van **€ 0,01**
+   klaarzetten, in de bunq-app goedkeuren, "Synchroniseren" en kijken of de
+   status "goedgekeurd" wordt en de factuur daarna op betaald gaat. Daarna
+   een tweede proef die je in de app **weigert**: de factuur moet weer vrij
+   komen.
+
+Terugdraaien: "Betalen via bunq" uitzetten in Instellingen is genoeg om de
+knop weg te halen; klaargezette drafts trek je in in de bunq-app.

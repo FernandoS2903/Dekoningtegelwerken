@@ -66,7 +66,7 @@ fi
 echo "Syntaxcontrole van de dienst..."
 while IFS= read -r -d '' bestand; do
   node --check "$bestand" >/dev/null
-done < <(find "$tmp/service/facturen" "$tmp/service/site" "$tmp/service/cli/migreer-projecten.mjs" -name '*.mjs' -print0)
+done < <(find "$tmp/service/facturen" "$tmp/service/site" "$tmp/service/cli/migreer-projecten.mjs" "$tmp/service/cli/betaalgegevens-nalezen.mjs" -name '*.mjs' -print0)
 
 rsync_opties=(
   --recursive --times --delete --delete-excluded --checksum
@@ -78,6 +78,8 @@ rsync_opties=(
   --include='/service/site/***'
   --include='/service/cli/'
   --include='/service/cli/migreer-projecten.mjs'
+  # Betalen via bunq: eenmalig tenaamstelling en betaalwijze nalezen.
+  --include='/service/cli/betaalgegevens-nalezen.mjs'
   --include='/_sjablonen/***'
   --include='/data/'
   --include='/data/beelden.json'
