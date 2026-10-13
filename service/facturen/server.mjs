@@ -51,7 +51,7 @@ import { maakBreakglass } from './lib/breakglass.mjs';
 import { maakSecretControle } from './lib/secretverloop.mjs';
 import { magAutomatisch, stuurDoor } from './lib/doorsturen.mjs';
 import * as instellingen from './lib/instellingen.mjs';
-import { ibanGeldig, naarBedrag, naarDatum, naarIban, nuIso, vandaag } from './lib/hulp.mjs';
+import { ibanGeldig, naarBedrag, naarDatum, naarIban, nuIso, schoonTenaamstelling, vandaag } from './lib/hulp.mjs';
 import { maakBetaalOpslag } from './lib/betalen-opslag.mjs';
 import { beoordeelFactuur, maakBetaler, toegangReden } from './lib/betalen.mjs';
 import { BETAALWIJZEN } from './lib/db.mjs';
@@ -260,7 +260,7 @@ export function maakFacturenApp({
         valuta: tekst(body.get('valuta'), 10)?.toUpperCase() ?? null,
         iban: naarIban(ibanInvoer),
         // Velden die het formulier niet meestuurt (oudere pagina) blijven staan.
-        iban_naam: body.has('iban_naam') ? tekst(body.get('iban_naam'), 120) : factuur.iban_naam,
+        iban_naam: body.has('iban_naam') ? schoonTenaamstelling(body.get('iban_naam')) : factuur.iban_naam,
         betalingskenmerk: tekst(body.get('betalingskenmerk'), 80),
         betaalwijze: body.has('betaalwijze') ? (BETAALWIJZEN.includes(betaalwijze) ? betaalwijze : null) : factuur.betaalwijze,
         omschrijving: tekst(body.get('omschrijving'), 200),

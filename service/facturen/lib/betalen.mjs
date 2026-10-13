@@ -23,7 +23,7 @@
 import crypto from 'node:crypto';
 import { DRAFT_AFGEWEZEN, DubbeleDraft } from './betalen-opslag.mjs';
 import { DraftFout } from './bunq.mjs';
-import { euro, ibanGeldig, ibanLeesbaar, naarIban, normaliseerNaam } from './hulp.mjs';
+import { euro, ibanGeldig, ibanLeesbaar, naarIban, normaliseerNaam, schoonTenaamstelling } from './hulp.mjs';
 
 export const MAX_REGELS = 25;
 export const OMSCHRIJVING_MAX = 140;
@@ -62,7 +62,7 @@ export function omschrijvingVoor(factuur) {
 }
 
 // De naam bij het IBAN: de tenaamstelling van de factuur, anders de leverancier.
-export const naamVoor = (factuur) => String(factuur.iban_naam || factuur.leverancier || '').trim().slice(0, 120);
+export const naamVoor = (factuur) => schoonTenaamstelling(factuur.iban_naam) || String(factuur.leverancier || '').trim().slice(0, 120);
 
 // Mag deze sessie überhaupt betalen? null = ja, anders de reden.
 export function toegangReden({ inst, kader, bunq }) {
@@ -224,7 +224,7 @@ export function maakBetaler({ opslag, betaalOpslag, bunq, klok = () => Date.now(
       if (b.iban && b.iban.status !== 'vertrouwd') {
         betaalOpslag.bevestigIban({
           leverancier: b.regel.leverancier, naam: b.factuur.leverancier, iban: b.regel.iban,
-          ibanNaam: b.factuur.iban_naam, door, nu: nu(),
+          ibanNaam: schoonTenaamstelling(b.factuur.iban_naam), door, nu: nu(),
         });
         opslag.log('warn', `${b.iban.status === 'afwijkend' ? 'Afwijkend' : 'Nieuw'} IBAN ${ibanLeesbaar(b.regel.iban)} bevestigd bij het klaarzetten`
           + (b.iban.vertrouwd.length ? ` (bekend was: ${b.iban.vertrouwd.map(ibanLeesbaar).join(', ')})` : '')

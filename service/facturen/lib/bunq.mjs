@@ -26,7 +26,7 @@
 import crypto from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { HttpFout, vraag } from './http.mjs';
-import { naarDatum, naarIban } from './hulp.mjs';
+import { naarDatum, naarIban, schoonTenaamstelling } from './hulp.mjs';
 
 export const PRODUCTIE_URL = 'https://api.bunq.com/v1';
 export const SANDBOX_URL = 'https://public-api.sandbox.bunq.com/v1';
@@ -418,7 +418,7 @@ export function draftLichaam(regels) {
   return {
     entries: regels.map((r) => ({
       amount: { value: Number(r.bedrag).toFixed(2), currency: 'EUR' },
-      counterparty_alias: { type: 'IBAN', value: r.iban, name: r.naam },
+      counterparty_alias: { type: 'IBAN', value: r.iban, name: schoonTenaamstelling(r.naam) ?? r.naam },
       description: String(r.omschrijving).slice(0, 140),
     })),
     number_of_required_accepts: 1,

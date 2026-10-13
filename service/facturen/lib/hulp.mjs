@@ -140,6 +140,19 @@ export function ibanLeesbaar(waarde) {
   return iban ? iban.replace(/(.{4})(?=.)/g, '$1 ') : String(waarde ?? '');
 }
 
+// Tenaamstelling zonder "t.n.v.", "tnv" of "ten name van" (met of zonder
+// dubbele punt) ervoor: "tnv DSG Diensten BV" -> "DSG Diensten BV". Zo gaat de
+// naam ook naar bunq. Alleen aan het begin en als los woord: "Tnvt BV" blijft
+// staan. Spaties worden enkel; leeg wordt null.
+const TNV = /^(?:t\.\s*n\.\s*v\.?|tnv\b\.?|ten\s+name\s+van\b)\s*:?\s*/i;
+export function schoonTenaamstelling(waarde, max = 120) {
+  if (waarde === null || waarde === undefined) return null;
+  let naam = String(waarde).replace(/\s+/g, ' ').trim().replace(/^:\s*/, '');
+  while (TNV.test(naam)) naam = naam.replace(TNV, '').replace(/^:\s*/, '');
+  naam = naam.slice(0, max).trim();
+  return naam || null;
+}
+
 // -- datums --------------------------------------------------------------
 const MAANDEN = {
   jan: 1, januari: 1, feb: 2, februari: 2, mrt: 3, maart: 3, apr: 4, april: 4,

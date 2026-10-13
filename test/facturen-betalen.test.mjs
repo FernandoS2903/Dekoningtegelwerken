@@ -15,9 +15,9 @@ import {
 } from '../service/facturen/lib/bunq.mjs';
 import { maakBetaalOpslag, DubbeleDraft } from '../service/facturen/lib/betalen-opslag.mjs';
 import {
-  ONZEKER_OPGEVEN_MS, beoordeelFactuur, maakBetaler, omschrijvingVoor, toegangReden, zelfdeRegels,
+  ONZEKER_OPGEVEN_MS, beoordeelFactuur, maakBetaler, naamVoor, omschrijvingVoor, toegangReden, zelfdeRegels,
 } from '../service/facturen/lib/betalen.mjs';
-import { ibanGeldig, ibanLeesbaar } from '../service/facturen/lib/hulp.mjs';
+import { ibanGeldig, ibanLeesbaar, schoonTenaamstelling } from '../service/facturen/lib/hulp.mjs';
 import { SCHEMA_VERSIE, maakOpslag, openDatabase } from '../service/facturen/lib/db.mjs';
 import * as instellingen from '../service/facturen/lib/instellingen.mjs';
 import { maakFacturenApp } from '../service/facturen/server.mjs';
@@ -556,13 +556,38 @@ test('scherm: instellingen tonen alleen bankrekeningen; aanzetten kan pas met ee
   }
 });
 
+test('tenaamstelling: t.n.v., tnv en ten name van eraf, ook met dubbele punt; de rest blijft', () => {
+  const gevallen = [
+    ['tnv DSG Diensten BV', 'DSG Diensten BV'],
+    ['t.n.v. MJ Constructie', 'MJ Constructie'],
+    ['T.N.V. Velthuijs Tegelwerken', 'Velthuijs Tegelwerken'],
+    ['t. n. v.: Norder BV', 'Norder BV'],
+    ['TNV: Bouwcenter Filippo', 'Bouwcenter Filippo'],
+    ['tnv. 123inkt.nl', '123inkt.nl'],
+    ['Ten name van  De Tegelhandel', 'De Tegelhandel'],
+    [':  DSG Diensten BV ', 'DSG Diensten BV'],
+    ['tnv t.n.v. Dubbel BV', 'Dubbel BV'],
+    ['DSG Diensten BV', 'DSG Diensten BV'],
+    ['Tnvt Bouw BV', 'Tnvt Bouw BV'],
+    ['Tegels tnv Jansen', 'Tegels tnv Jansen'],
+  ];
+  for (const [invoer, verwacht] of gevallen) assert.equal(schoonTenaamstelling(invoer), verwacht, invoer);
+  for (const leeg of [null, undefined, '', '  ', 't.n.v.', 'tnv :']) assert.equal(schoonTenaamstelling(leeg), null, String(leeg));
+  assert.equal(schoonTenaamstelling('x'.repeat(200)).length, 120);
+  // Ook wat al in de database staat gaat schoon naar bunq.
+  assert.equal(naamVoor({ iban_naam: 'tnv DSG Diensten BV', leverancier: 'DSG' }), 'DSG Diensten BV');
+  assert.equal(naamVoor({ iban_naam: 't.n.v.', leverancier: 'Norder BV' }), 'Norder BV');
+  assert.equal(draftLichaam([{ bedrag: 1, iban: IBAN_A, naam: 'T.N.V. Velthuijs', omschrijving: 'x' }])
+    .entries[0].counterparty_alias.name, 'Velthuijs');
+});
+
 test('scherm: een IBAN met een fout controlegetal wordt niet opgeslagen; tenaamstelling en betaalwijze wel', async () => {
   const w = await webOpzet();
   try {
     const f = voegFactuurToe(w.opslag, {});
     const velden = {
       leverancier: 'Tegelhandel Zuid B.V.', factuurnummer: '2026-0123', bedrag: '1210,00', valuta: 'EUR',
-      iban: 'NL91 ABNA 0417 1643 01', iban_naam: 'Tegelhandel Zuid', betaalwijze: 'incasso',
+      iban: 'NL91 ABNA 0417 1643 01', iban_naam: ' T.N.V.:  Tegelhandel Zuid ', betaalwijze: 'incasso',
     };
     const fout = await w.post(`/factuur/${f.id}/bewerken`, velden);
     assert.match(fout.headers.get('location'), /m=iban-ongeldig/);

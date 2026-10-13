@@ -13,7 +13,7 @@
 //
 // `parseerAntwoord()` is puur en wordt los getest.
 
-import { naarBedrag, naarDatum, naarIban } from './hulp.mjs';
+import { naarBedrag, naarDatum, naarIban, schoonTenaamstelling } from './hulp.mjs';
 import { HttpFout, jsonOfFout, vraag } from './http.mjs';
 
 export const API_URL = 'https://api.anthropic.com/v1/messages';
@@ -140,7 +140,7 @@ export function parseerAntwoord(tekst) {
       bedrag: naarBedrag(ruw.amount),
       valuta: naarValuta(ruw.currency),
       iban: naarIban(ruw.iban),
-      iban_naam: tekstOfNull(ruw.account_holder, 120),
+      iban_naam: schoonTenaamstelling(tekstOfNull(ruw.account_holder, 120)),
       betalingskenmerk: tekstOfNull(ruw.payment_reference, 80),
       betaalwijze: BETAALWIJZEN[String(ruw.payment_method ?? '').trim().toLowerCase()] ?? null,
       omschrijving: tekstOfNull(ruw.description, 80),

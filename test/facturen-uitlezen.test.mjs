@@ -95,6 +95,8 @@ test('tenaamstelling en betaalwijze komen uit het antwoord; een onbekende betaal
   assert.equal(parseerAntwoord(`{${basis}, "payment_method": "already_paid"}`).velden.betaalwijze, 'al_betaald');
   assert.equal(parseerAntwoord(`{${basis}, "payment_method": "cash"}`).velden.betaalwijze, null);
   assert.equal(parseerAntwoord(`{${basis}, "account_holder": "null"}`).velden.iban_naam, null);
+  assert.equal(parseerAntwoord(`{${basis}, "account_holder": "t.n.v. Groothandel Noord B.V."}`).velden.iban_naam, 'Groothandel Noord B.V.');
+  assert.equal(parseerAntwoord(`{${basis}, "account_holder": "tnv"}`).velden.iban_naam, null);
 });
 
 test('onbekende velden blijven null en is_invoice false wordt overgenomen', () => {
