@@ -1,0 +1,10 @@
+# Vernieuwt het Tailscale-certificaat van hfd-web01.tail20628d.ts.net voor
+# nginx (deploy/nginx/cms-tailnet.conf). tailscale cert haalt alleen een
+# nieuw certificaat als het huidige bijna verloopt.
+[Unit]
+Description=Tailscale-certificaat voor nginx vernieuwen
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tailscale cert --cert-file /etc/ssl/tailscale/hfd-web01.tail20628d.ts.net.crt --key-file /etc/ssl/tailscale/hfd-web01.tail20628d.ts.net.key hfd-web01.tail20628d.ts.net
+ExecStartPost=/usr/sbin/nginx -s reload

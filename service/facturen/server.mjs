@@ -47,6 +47,8 @@ import { maakSorteerder } from './lib/sorteren.mjs';
 import { maakWebhook } from './lib/webhook.mjs';
 import { maakSessies } from './lib/sessies.mjs';
 import { maakOidc, splitsLijst } from './lib/oidc.mjs';
+import { maakBreakglass } from './lib/breakglass.mjs';
+import { maakSecretControle } from './lib/secretverloop.mjs';
 import { magAutomatisch, stuurDoor } from './lib/doorsturen.mjs';
 import * as instellingen from './lib/instellingen.mjs';
 import { naarBedrag, naarDatum, naarIban, nuIso, vandaag } from './lib/hulp.mjs';
@@ -495,6 +497,15 @@ export function uitEnv(env = process.env) {
       toegestaan: splitsLijst(env.PORTAL_ALLOWED_EMAILS),
       sessieGeheim: env.SESSION_SECRET || '',
       offertesUrl: String(env.OFFERTES_URL || '').trim(),
+      // Vervaldatum van het client secret (lib/secretverloop.mjs), uit de Entra-portal.
+      secretVerloopt: String(env.ENTRA_PORTAL_CLIENT_SECRET_VERLOOPT || '').trim(),
+    },
+    // Noodtoegang via de tailnet (lib/breakglass.mjs); zie scripts/breakglass-setup.mjs.
+    breakglass: {
+      gebruiker: String(env.BREAKGLASS_USER || '').trim(),
+      wachtwoordHash: String(env.BREAKGLASS_PASSWORD_HASH || '').trim(),
+      totpGeheim: String(env.BREAKGLASS_TOTP_SECRET || '').trim(),
+      meldNaar: String(env.BREAKGLASS_MELD_NAAR || env.M365_MAILBOX || '').trim(),
     },
     // Koppeling met Offerteknop (lib/offerteknop.mjs); de sleutels blijven in de env.
     offerteknop: {
@@ -607,9 +618,11 @@ function start() {
     basisPad: '/mail', sorteerMinuten: cfg.sorteren.minuten,
   });
 
+  // Sessies zodra er een SESSION_SECRET is, ook zonder SSO: de noodtoegang
+  // (break-glass) maakt dezelfde sessie als het inloggen met Microsoft.
+  const sessies = String(cfg.portaal.sessieGeheim).length >= 32 ? maakSessies({ db: opslag.db, geheim: cfg.portaal.sessieGeheim }) : null;
   let auth;
   if (sso.aan) {
-    const sessies = maakSessies({ db: opslag.db, geheim: cfg.portaal.sessieGeheim });
     const oidc = maakOidc({ ...cfg.portaal, pogingen: sessies.pogingen });
     auth = { modus: 'sso', sessies, oidc, baseUrl: cfg.portaal.baseUrl };
   } else {
@@ -618,8 +631,27 @@ function start() {
       basic: maakBasicAuth({ gebruiker: cfg.gebruiker, wachtwoord: cfg.wachtwoord }),
       // Alleen voor de CSRF-tokens; zonder SESSION_SECRET één per start.
       geheim: cfg.portaal.sessieGeheim || crypto.randomBytes(32).toString('hex'),
+      sessies,
     };
   }
+  const breakglass = sessies ? maakBreakglass({
+    ...cfg.breakglass, sessies, db: opslag.db, log: logger,
+    meld: async ({ ip, gebruiker, tijd }) => {
+      if (!mail.beschikbaar || typeof mail.verstuurMail !== 'function' || !cfg.breakglass.meldNaar) return;
+      await mail.verstuurMail({
+        aan: cfg.breakglass.meldNaar,
+        onderwerp: 'Portaal: ingelogd via break-glass (noodtoegang)',
+        tekst: `Er is zojuist via de noodtoegang ingelogd op het portaal.
+
+Gebruiker: ${gebruiker}
+IP (tailnet): ${ip}
+Tijd: ${tijd}
+
+Was jij dit niet? Verwijder dan meteen BREAKGLASS_* uit de env en herstart de dienst.`,
+      });
+    },
+  }) : null;
+  if (breakglass?.beschikbaar) auth.breakglass = breakglass;
 
   const { server } = maakPortaal({
     opslag, sorteerOpslag, facturen, mailApp, webhook, auth, offertes, intern, aanvraag, site, projecten,
@@ -643,6 +675,7 @@ function start() {
     ? ' inloggen: Microsoft (SSO) voor ' + cfg.portaal.baseUrl
     : ' inloggen: Basic Auth, alleen lokaal (SSO mist: ' + sso.ontbreekt.join(', ') + ')'));
   if (!webhook.actief) console.log(nuIso() + ' webhook uit: de mailsorteerder pollt alleen');
+  console.log(nuIso() + (breakglass?.beschikbaar ? ' break-glass: ingesteld, alleen via de tailnet (/breakglass)' : ' break-glass: uit (BREAKGLASS_USER, BREAKGLASS_PASSWORD_HASH, BREAKGLASS_TOTP_SECRET en SESSION_SECRET nodig)'));
 
   server.listen(cfg.poort, '127.0.0.1', () => {
     console.log(`${nuIso()} portaal luistert op 127.0.0.1:${cfg.poort}, data in ${cfg.dataMap}`);
@@ -669,6 +702,15 @@ function start() {
   }), cfg.sorteren.minuten * 60 * 1000).unref();
 
   if (auth.sessies) setInterval(() => auth.sessies.opruimen(), 60 * 60 * 1000).unref();
+
+  // Vervaldatum van het client secret van de Microsoft-login: na een minuut en
+  // daarna dagelijks; vanaf dertig dagen vooraf een waarschuwing in het
+  // logboek en per mail (lib/secretverloop.mjs).
+  if (sso.aan) {
+    const secretControle = maakSecretControle({ verloopt: cfg.portaal.secretVerloopt, log: logger, mail, naar: cfg.breakglass.meldNaar });
+    setTimeout(() => secretControle().catch(() => {}), 60 * 1000).unref();
+    setInterval(() => secretControle().catch(() => {}), 24 * 60 * 60 * 1000).unref();
+  }
 
   // Wachtrij van website-aanvragen: elke minuut, en direct na een nieuwe
   // aanvraag (aanvraag.mjs). Een aanvraag die nog niet gemaild of

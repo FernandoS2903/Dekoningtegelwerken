@@ -7,8 +7,10 @@
 //   POST /intern/mail/verstuur         Offerteknop levert een mail aan, wij
 //                                      versturen hem vanuit de mailbox (Graph
 //                                      sendMail). Alleen naar het klantadres van
-//                                      de genoemde offerte of naar de mailbox zelf;
-//                                      met een limiet per uur en per dag.
+//                                      de genoemde offerte (de offerte zelf, of bij
+//                                      een factuur het meegegeven offerte_id) of
+//                                      naar de mailbox zelf; met een limiet per
+//                                      uur en per dag.
 
 import { nuIso } from './lib/hulp.mjs';
 import { KOPPEN, isLokaal } from './lib/offerteknop.mjs';
@@ -66,7 +68,11 @@ export function maakIntern({ offerteOpslag, offerteknop, mail = null, log = () =
   async function verstuur(res, body) {
     const aan = String(body.aan || '').trim().toLowerCase();
     const onderwerp = String(body.onderwerp || '').trim();
-    const offerteId = body.gerelateerd_type === 'offerte' && Number.isInteger(Number(body.gerelateerd_id)) ? Number(body.gerelateerd_id) : null;
+    // De offerte waar de mail bij hoort: de offerte zelf, of bij een factuur of
+    // herinnering het offerte_id dat Offerteknop meegeeft.
+    const geheel = (v) => v !== undefined && v !== null && v !== '' && Number.isInteger(Number(v));
+    const offerteId = body.gerelateerd_type === 'offerte' && geheel(body.gerelateerd_id) ? Number(body.gerelateerd_id)
+      : geheel(body.offerte_id) ? Number(body.offerte_id) : null;
     const weiger = (status, fout) => {
       offerteOpslag.noteerRelay({ offerteId, aan, onderwerp, status: 'geweigerd', fout });
       log('warn', `Mailrelay geweigerd (${status}): ${fout}`);

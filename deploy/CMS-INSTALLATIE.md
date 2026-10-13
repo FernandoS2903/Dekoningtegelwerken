@@ -344,3 +344,49 @@ Zonder vhost is het portaal weer alleen lokaal. Maak je `ENTRA_PORTAL_CLIENT_ID`
 leeg en herstart je de dienst, dan geldt weer Basic Auth (`DASHBOARD_USER` /
 `DASHBOARD_PASSWORD`). De subscription bij Microsoft verloopt dan vanzelf binnen
 drie dagen; de polling blijft sorteren.
+
+## 10. Noodtoegang (break-glass) via de tailnet
+
+Als inloggen met Microsoft niet werkt, is er een tweede ingang die niets van
+Entra nodig heeft: `https://hfd-web01.tail20628d.ts.net/breakglass`, alleen
+bereikbaar vanuit de Tailscale-tailnet. Via internet bestaat die host niet.
+
+Hoe het werkt (code: `service/facturen/lib/breakglass.mjs`):
+
+- nginx (`deploy/nginx/cms-tailnet.conf`) luistert alleen op het Tailscale-adres
+  van de server, laat alleen 100.64.0.0/10 toe en geeft `X-Real-IP` door; het
+  portaal controleert dat IP zelf nog eens (alleen vertrouwd van 127.0.0.1) en
+  antwoordt 404 voor alles daarbuiten.
+- Inloggen = gebruikersnaam + wachtwoord (scrypt-hash) + TOTP-code. Maximaal
+  vijf pogingen per vijftien minuten per IP; elke poging staat in de tabel
+  `breakglass_log` en in het logboek. Een geslaagde login geeft dezelfde sessie
+  als SSO (`auth_method = breakglass`), een banner in het portaal en een mail
+  naar `BREAKGLASS_MELD_NAAR` (leeg = de mailbox zelf).
+
+Inrichten (als root):
+
+```sh
+cd /opt/dekoning-facturen   # of de werkkopie
+node scripts/breakglass-setup.mjs --gebruiker <naam>
+#   vraagt het wachtwoord, toont de QR-code voor je authenticator-app en
+#   schrijft BREAKGLASS_USER, BREAKGLASS_PASSWORD_HASH en BREAKGLASS_TOTP_SECRET
+#   naar /etc/dekoning/facturen.env (met back-up en bevestiging)
+systemctl restart dekoning-facturen
+```
+
+Certificaat voor de tailnet-host (eenmalig; vereist "HTTPS certificates" in de
+Tailscale-console):
+
+```sh
+install -d -m 750 -o root -g www-data /etc/ssl/tailscale
+tailscale cert --cert-file /etc/ssl/tailscale/hfd-web01.tail20628d.ts.net.crt --key-file /etc/ssl/tailscale/hfd-web01.tail20628d.ts.net.key hfd-web01.tail20628d.ts.net
+cp deploy/nginx/cms-tailnet.conf /etc/nginx/sites-enabled/cms-tailnet.conf
+nginx -t && systemctl reload nginx
+cp deploy/systemd/tailscale-cert.service deploy/systemd/tailscale-cert.timer /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now tailscale-cert.timer
+```
+
+Vervaldatum van het client secret van de Microsoft-login: zet
+`ENTRA_PORTAL_CLIENT_SECRET_VERLOOPT=JJJJ-MM-DD` in de env (de datum staat in
+Entra onder Certificates & secrets). Vanaf dertig dagen vooraf komt er dagelijks
+een waarschuwing in het logboek en per mail naar `BREAKGLASS_MELD_NAAR`.

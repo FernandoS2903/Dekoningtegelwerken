@@ -1,0 +1,7 @@
+# Nachtelijke back-up van het portaal van De Koning Tegelwerken (deploy/dekoning-backup.sh).
+[Unit]
+Description=De Koning Tegelwerken, nachtelijke back-up van portaaldatabase en bestanden
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/dekoning-backup.sh

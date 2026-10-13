@@ -194,6 +194,10 @@ main { padding: 1rem var(--rand) 2.5rem; max-width: 80rem; margin: 0 auto; }
 .melding--fout { border-left-color: var(--fout); background: var(--fout-zacht); }
 .melding--goed { border-left-color: var(--goed); background: var(--goed-zacht); }
 .melding p { margin: 0; }
+.banner {
+  border: 1px solid var(--lijn); border-left: 4px solid var(--fout); background: var(--fout-zacht);
+  border-radius: var(--hoek); padding: 0.75rem 1rem; margin: 0 0 1rem;
+}
 
 /* -- kaarten ------------------------------------------------------------- */
 .paneel, .tegel, .veldgroep {

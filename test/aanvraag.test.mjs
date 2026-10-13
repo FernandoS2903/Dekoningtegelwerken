@@ -24,7 +24,7 @@ import { boundaryUit, leesMultipart, typeUitInhoud } from '../service/facturen/l
 import { maakSorteerOpslag } from '../service/facturen/lib/sorteer-opslag.mjs';
 import { maakSorteerder } from '../service/facturen/lib/sorteren.mjs';
 import { maakWebhook } from '../service/facturen/lib/webhook.mjs';
-import { openDatabase } from '../service/facturen/lib/db.mjs';
+import { openDatabase, SCHEMA_VERSIE } from '../service/facturen/lib/db.mjs';
 import * as instellingen from '../service/facturen/lib/instellingen.mjs';
 import { GEHEIM } from './portaal-hulp.mjs';
 import { nepMailbox } from './mail-hulp.mjs';
@@ -401,10 +401,17 @@ test('schema: een database van versie 3 krijgt de wachtrij-kolommen erbij zonder
     const pad = path.join(map, 'oud.db');
     const oud = openDatabase(pad);
     oud.exec(`DROP TABLE aanvragen; CREATE TABLE aanvragen (id INTEGER PRIMARY KEY AUTOINCREMENT, tijd TEXT NOT NULL, bron TEXT NOT NULL, velden TEXT NOT NULL, bestanden TEXT, status TEXT NOT NULL DEFAULT 'nieuw', offerte_id INTEGER);
-      INSERT INTO aanvragen (tijd, bron, velden) VALUES ('2026-10-10T10:00:00Z', 'website', '{}'); PRAGMA user_version = 3;`);
+      INSERT INTO aanvragen (tijd, bron, velden) VALUES ('2026-10-10T10:00:00Z', 'website', '{}');
+      DROP TABLE sessies; CREATE TABLE sessies (id TEXT PRIMARY KEY, email TEXT NOT NULL, naam TEXT, csrf TEXT NOT NULL, aangemaakt_op TEXT NOT NULL, verloopt_op INTEGER NOT NULL, bijgewerkt_op INTEGER NOT NULL);
+      INSERT INTO sessies VALUES ('s1', 'bob@voorbeeld.nl', 'Bob', 'c', '2026-10-10T10:00:00Z', 9999999999999, 1); PRAGMA user_version = 3;`);
     oud.close();
     const nieuw = openDatabase(pad);
-    assert.equal(nieuw.prepare('PRAGMA user_version').get().user_version, 5);
+    assert.equal(nieuw.prepare('PRAGMA user_version').get().user_version, SCHEMA_VERSIE);
+    /* versie 5: auth_method op sessies (bestaande sessies gelden als sso) en de tabel breakglass_log */
+    assert.equal(nieuw.prepare('SELECT auth_method FROM sessies').get().auth_method, 'sso');
+    assert.equal(nieuw.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE name = 'breakglass_log'").get().n, 1);
+    /* versie 6: de projecttabellen van het project-CMS */
+    assert.equal(nieuw.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE name IN ('projecten', 'project_fotos', 'project_slugs')").get().n, 3);
     const rij = nieuw.prepare('SELECT * FROM aanvragen').get();
     assert.equal(rij.bron, 'website');
     assert.equal(rij.mail_status, 'wacht');

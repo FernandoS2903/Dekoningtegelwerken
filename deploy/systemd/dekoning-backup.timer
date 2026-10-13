@@ -1,0 +1,10 @@
+[Unit]
+Description=Dagelijks om 03:15 de back-up van De Koning Tegelwerken
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

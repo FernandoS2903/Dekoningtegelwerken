@@ -96,7 +96,7 @@ async function bouw() {
   const offerteknop = maakOfferteknop({ baseUrl: nep.basis, tenant: TENANT, sleutelIn: SLEUTEL_IN, sleutelUit: SLEUTEL_UIT });
   const aanvraagLezer = { beschikbaar: true, aanroepen: [], async lees(invoer) { this.aanroepen.push(invoer); return { velden: { ...terugval(invoer), naam: 'Piet Aanvrager', telefoon: '06 1234 5678', adres: 'Dorpsstraat 1', postcode_plaats: 'IJmuiden', omschrijving: 'Badkamer: 8 m2 vloer, 30 m2 wand, 60x60.' }, bron: 'nep' }; } };
   const offertes = maakOffertesApp({ opslag, offerteOpslag, offerteknop, mail, aanvraagLezer, basisPad: '/offertes', publiekeUrl: 'https://de-koning-tegelwerken.offerteknop.nl/offertes/' });
-  const intern = maakIntern({ offerteOpslag, offerteknop, mail, limiet: { uur: 2, dag: 100 }, log: (n, b) => opslag.log(n, b) });
+  const intern = maakIntern({ offerteOpslag, offerteknop, mail, limiet: { uur: 3, dag: 100 }, log: (n, b) => opslag.log(n, b) });
   const mailApp = maakMailApp({ opslag, sorteerOpslag, sorteerder, webhook, mail, classificeerder: nepClassificeerder(), offertes, basisPad: '/mail' });
   const auth = { modus: 'basic', basic: maakBasicAuth({ gebruiker: 'bob', wachtwoord: 'test-wachtwoord' }), geheim: GEHEIM };
   const { server } = maakPortaal({ opslag, sorteerOpslag, facturen, mailApp, webhook, auth, offertes, intern, offertesUrl: 'https://de-koning-tegelwerken.offerteknop.nl/offertes/' });
@@ -178,7 +178,7 @@ test('webhook: ondertekend door Offerteknop werkt de spiegel bij; replay, dubbel
   assert.doesNotMatch(await (await haal('/')).text(), /geaccepteerd deze maand/);
 });
 
-test('mailrelay: alleen naar het klantadres van de offerte, met bijlage, vanuit de mailbox; vrije relay en te veel worden geweigerd', async () => {
+test('mailrelay: alleen naar het klantadres van de offerte (ook bij een factuur via offerte_id), met bijlage, vanuit de mailbox; vrije relay en te veel worden geweigerd', async () => {
   const mail = { tenant: TENANT, gerelateerd_type: 'offerte', gerelateerd_id: 1, aan: 'klant1@voorbeeld.nl', onderwerp: 'Offerte OFF-2026-0001', html: '<p>Hallo</p>', tekst: 'Hallo', reply_to: null, bijlagen: [{ naam: 'Offerte.pdf', type: 'application/pdf', inhoud_b64: Buffer.from('%PDF-1.4').toString('base64') }] };
   const ok = await internVerzoek('/intern/mail/verstuur', mail);
   const okTekst = await ok.text();
@@ -196,13 +196,19 @@ test('mailrelay: alleen naar het klantadres van de offerte, met bijlage, vanuit 
   assert.equal((await internVerzoek('/intern/mail/verstuur', { ...mail, gerelateerd_type: null, gerelateerd_id: null })).status, 403);
   const eigen = await internVerzoek('/intern/mail/verstuur', { ...mail, gerelateerd_type: null, gerelateerd_id: null, aan: 'info@dekoningtegelwerken.nl' });
   assert.equal(eigen.status, 200);
-  /* limiet: twee per uur in deze test */
+  /* een factuur hoort bij een offerte via offerte_id: naar de klant van die offerte wel, naar een ander adres niet */
+  const factuur = { ...mail, gerelateerd_type: 'factuur', gerelateerd_id: 9, offerte_id: 1, onderwerp: 'Factuur 2026-0001', bijlagen: [{ naam: 'Factuur-2026-0001.pdf', type: 'application/pdf', inhoud_b64: Buffer.from('%PDF-1.4').toString('base64') }] };
+  assert.equal((await internVerzoek('/intern/mail/verstuur', { ...factuur, aan: 'iemand@anders.nl' })).status, 403);
+  const factuurOk = await internVerzoek('/intern/mail/verstuur', factuur);
+  assert.equal(factuurOk.status, 200, await factuurOk.text());
+  assert.equal(p.mail.verstuurd.at(-1).bijlagen[0].naam, 'Factuur-2026-0001.pdf');
+  /* limiet: drie per uur in deze test */
   const derde = await internVerzoek('/intern/mail/verstuur', mail);
   assert.equal(derde.status, 429);
-  assert.equal(p.mail.verstuurd.length, 2);
+  assert.equal(p.mail.verstuurd.length, 3);
   const log = p.offerteOpslag.relayLijst();
-  assert.equal(log.filter((r) => r.status === 'verzonden').length, 2);
-  assert.equal(log.filter((r) => r.status === 'geweigerd').length, 3);
+  assert.equal(log.filter((r) => r.status === 'verzonden').length, 3);
+  assert.equal(log.filter((r) => r.status === 'geweigerd').length, 4);
   /* te grote bijlagen */
   const groot = await internVerzoek('/intern/mail/verstuur', { ...mail, bijlagen: [{ naam: 'x.pdf', type: 'application/pdf', inhoud_b64: 'A'.repeat(5 * 1024 * 1024) }] });
   assert.equal(groot.status, 429, 'de limiet gaat voor');

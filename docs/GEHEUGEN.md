@@ -587,6 +587,12 @@ niet bewaren, meer categorieën per project, branch vanaf `main`, preview-vhost
 ongewijzigd. **Nog niet live**: mergen en uitrollen doet Bob volgens
 `deploy/PROJECTEN-INSTALLATIE.md`.
 
+13 oktober 2026: `feature/breakglass` (met daarin `feature/relay-facturen`) in
+deze branch samengevoegd; de projecttabellen zijn schemaversie 6 geworden (5 was
+intussen break-glass en staat live). Besluiten Bob: voorbeeldprojecten als
+concept overzetten; nachtelijke back-up erbij (`deploy/dekoning-backup.sh`,
+`dekoning-backup.timer`, naar `/var/backups/dekoning`).
+
 ## Wat er was (Fase A)
 
 - Projecten stonden alleen in `data/projecten.json`: zes voorbeeldprojecten met
@@ -638,3 +644,9 @@ ongewijzigd. **Nog niet live**: mergen en uitrollen doet Bob volgens
 - Back-up van `/var/lib/dekoning-facturen` en `/var/lib/dekoning/uploads/projecten`.
 - Foto's van een verwijderd project blijven op schijf (onvindbare namen); alleen
   een losse foto verwijderen haalt de bestanden weg.
+### Noodtoegang (break-glass) via de tailnet (13 oktober 2026)
+
+Bob kon niet meer inloggen met Microsoft (fout aan de kant van Microsoft, vóór de callback; server-side niets te vinden). Branch `feature/breakglass`: route `/breakglass` (`service/facturen/lib/breakglass.mjs`), alleen via de tailnet-vhost `deploy/nginx/cms-tailnet.conf` op het Tailscale-adres met `X-Real-IP` in 100.64.0.0/10, gebruikersnaam + wachtwoord (scrypt, geen argon2: Node 22 en geen npm) + TOTP (eigen RFC 6238), vijf pogingen per kwartier per IP, log in `breakglass_log`, sessie met `auth_method = breakglass` (schema versie 5), banner, mail bij succes. Helper `scripts/breakglass-setup.mjs` (QR in de terminal via `lib/qr.mjs`, kopie uit Offerteknop). Bewaking vervaldatum client secret: `ENTRA_PORTAL_CLIENT_SECRET_VERLOOPT` (`lib/secretverloop.mjs`). Stappen in `deploy/CMS-INSTALLATIE.md`.
+### Mailrelay: ook factuurmails (11 oktober 2026)
+
+Offerteknop stuurt bij een factuurmail of herinnering `offerte_id` mee; de relay (`service/facturen/intern.mjs`) controleert dan het klantadres van die offerte, net als bij een offertemail. Branch `feature/relay-facturen`. Hoort bij de betaal-QR en betaallink op facturen in Offerteknop (`/root/ok-main/docs/FACTUUR-BETAALVERZOEK-RAPPORT.md`).

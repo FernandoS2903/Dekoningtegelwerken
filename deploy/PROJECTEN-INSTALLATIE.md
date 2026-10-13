@@ -25,6 +25,10 @@ STEMPEL=$(date +%Y%m%d-%H%M)
 
 ## 0. Mergen (Bob)
 
+`feature/projecten-cms` bevat sinds 13 oktober ook `feature/breakglass` en
+`feature/relay-facturen` (allebei al live). Eén fast-forward naar main brengt
+dus alles samen; de andere twee branches hoeven niet apart gemerged.
+
 ```bash
 cd $REPO && git fetch origin
 git log --oneline origin/main..origin/feature/projecten-cms   # wat er bijkomt
@@ -32,8 +36,6 @@ vraag "feature/projecten-cms naar main mergen (fast-forward)?" && {
   git checkout main && git merge --ff-only origin/feature/projecten-cms && git push origin main
 }
 ```
-
-`feature/relay-facturen` staat er los van; die kan ervoor of erna.
 
 ## 1. jpegtran installeren
 
@@ -48,12 +50,12 @@ jpegtran -version 2>&1 | head -1
 
 ## 2. Back-up van de database
 
-De dienst zet het schema bij de start van 4 naar 5 (alleen nieuwe tabellen).
+De dienst zet het schema bij de start naar 6 (alleen nieuwe tabellen; de live database staat op 5 sinds break-glass).
 
 ```bash
 mkdir -p /root/backups
 sqlite3 /var/lib/dekoning-facturen/facturen.db ".backup /root/backups/facturen-voor-projecten-$STEMPEL.db"
-sqlite3 /root/backups/facturen-voor-projecten-$STEMPEL.db 'PRAGMA integrity_check; PRAGMA user_version;'   # ok / 4
+sqlite3 /root/backups/facturen-voor-projecten-$STEMPEL.db 'PRAGMA integrity_check; PRAGMA user_version;'   # ok / 5
 ```
 
 ## 3. Uploadmap
@@ -90,8 +92,8 @@ vraag "portaal uitrollen naar /opt/dekoning-facturen en herstarten?" && {
   systemctl restart dekoning-facturen && sleep 2
   journalctl -u dekoning-facturen --since '-1 min' --no-pager | tail -5
 }
-# Schema 5, en de journal noemt GEEN "projectfoto's (... niet schrijfbaar)":
-sudo -u dekoning-facturen sqlite3 /var/lib/dekoning-facturen/facturen.db 'PRAGMA user_version;'   # 5
+# Schema 6, en de journal noemt GEEN "projectfoto's (... niet schrijfbaar)":
+sudo -u dekoning-facturen sqlite3 /var/lib/dekoning-facturen/facturen.db 'PRAGMA user_version;'   # 6
 ```
 
 Geen env-wijziging nodig. Optioneel in `/etc/dekoning/facturen.env`:
@@ -105,16 +107,15 @@ over met het label "Voorbeeldkaart" (niet geïndexeerd) en "Sfeerbeeld" op de
 foto's, zoals nu. Twee keer draaien kan geen kwaad: een bestaande slug wordt
 overgeslagen.
 
-- **Zonder `--publiceer`** (standaard) komen ze als concept binnen. Na stap 8
-  toont de site dan "Hier komen binnenkort projecten van De Koning Tegelwerken"
-  tot er iets gepubliceerd is.
-- **Met `--publiceer`** blijft de site er precies zo uitzien als nu.
+Besluit Bob (13 oktober 2026): **als concept** overzetten. Na stap 8 toont de
+site "Hier komen binnenkort projecten van De Koning Tegelwerken" tot er een
+echt project is gepubliceerd; de voorbeeldprojecten staan in het portaal klaar
+om te bekijken of te verwijderen. (`--publiceer` zou de site laten zoals nu.)
 
 ```bash
 MIGREER="sudo -u dekoning-facturen node /opt/dekoning-facturen/service/cli/migreer-projecten.mjs --beelden /var/www/dekoningtegelwerken/assets/beelden"
 $MIGREER --droog
-if vraag "voorbeeldprojecten ook meteen publiceren (site blijft zoals nu)?"; then OPTIE=--publiceer; else OPTIE=; fi
-vraag "projecten overzetten${OPTIE:+ en publiceren}?" && $MIGREER $OPTIE
+vraag "projecten als concept overzetten?" && $MIGREER
 ls /var/lib/dekoning/uploads/projecten | wc -l   # ongeveer 40 bestanden
 ```
 
@@ -169,12 +170,23 @@ telefoonfoto (staand), kijk via "Bekijk voorbeeld" en verwijder het daarna.
 
 ## 10. Back-up
 
-**Er is nog geen back-up van De Koning op deze server**: niet van
-`/var/lib/dekoning-facturen` (database, PDF's) en niet van de nieuwe uploadmap
-`/var/lib/dekoning/uploads/projecten`. De bestaande timers dekken alleen
-Offerteknop, hfd-portaal en tuinplan; de CloudPanel-back-up alleen `/home/clp`.
-Beide mappen horen in een back-up (de database met `sqlite3 .backup`, de
-uploads als bestanden). Dat is een aparte opdracht.
+Tot nu toe was er geen back-up van De Koning op deze server. Besluit Bob
+(13 oktober 2026): een nachtelijke back-up zoals de andere projecten hier,
+naar `/var/backups/dekoning`: de database met `sqlite3 .backup` (gecomprimeerd,
+30 dagen bewaard), en de PDF's, aanvragen en projectfoto's als bestanden
+(`deploy/dekoning-backup.sh`, timer 03:15).
+
+```bash
+vraag "nachtelijke back-up installeren (dekoning-backup.timer)?" && {
+  install -m 755 $REPO/deploy/dekoning-backup.sh /usr/local/sbin/dekoning-backup.sh
+  cp $REPO/deploy/systemd/dekoning-backup.service $REPO/deploy/systemd/dekoning-backup.timer /etc/systemd/system/
+  systemctl daemon-reload && systemctl enable --now dekoning-backup.timer
+  systemctl start dekoning-backup.service && ls -la /var/backups/dekoning /var/backups/dekoning/db | tail -5
+}
+```
+
+Let op: dit is een back-up op dezelfde schijf. Een kopie naar een andere
+machine (zoals de externe back-up van Offerteknop) is een volgende stap.
 
 ## Terugdraaien
 
@@ -188,5 +200,5 @@ vraag "vorige vhosts terugzetten en nginx herladen?" && {
 
 Zonder `ssi on` en zonder de proxy voor `/projecten/` toont de site weer de
 statische grids en pagina's; de SSI-opdrachten zijn dan gewoon commentaar. De
-tabellen van schema 5 kunnen blijven staan; de rest van het portaal gebruikt ze
+tabellen van schema 6 kunnen blijven staan; de rest van het portaal gebruikt ze
 niet.
