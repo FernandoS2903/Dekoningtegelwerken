@@ -650,3 +650,7 @@ Bob kon niet meer inloggen met Microsoft (fout aan de kant van Microsoft, vóór
 ### Mailrelay: ook factuurmails (11 oktober 2026)
 
 Offerteknop stuurt bij een factuurmail of herinnering `offerte_id` mee; de relay (`service/facturen/intern.mjs`) controleert dan het klantadres van die offerte, net als bij een offertemail. Branch `feature/relay-facturen`. Hoort bij de betaal-QR en betaallink op facturen in Offerteknop (`/root/ok-main/docs/FACTUUR-BETAALVERZOEK-RAPPORT.md`).
+
+### Project-CMS live (13 oktober 2026)
+
+Op verzoek van Bob zelf uitgevoerd, per ronde met akkoord: `feature/projecten-cms` (met break-glass en relay) fast-forward naar main (a574020) en gepusht; jpegtran geïnstalleerd; database-back-up in `/root/backups`; uploadmap `/var/lib/dekoning/uploads/projecten` (dekoning-facturen:www-data, 2750); unit met `ReadWritePaths`; portaal uitgerold en herstart (schema 6); zes voorbeeldprojecten als concept overgezet (40 WebP's); beide vhosts vervangen (back-ups in `/root/vhost-werk`), site uitgerold met `--forceer`; controle-URL's allemaal zoals verwacht (sitemap-index 200, fragment van buiten 404, SSI verwerkt, uploads image/webp met een jaar cache, upload zonder sessie 401); `dekoning-backup.timer` actief (eerste back-up 3,0 MB in `/var/backups/dekoning`). De site toont nu "Hier komen binnenkort projecten" tot het eerste echte project is gepubliceerd.
