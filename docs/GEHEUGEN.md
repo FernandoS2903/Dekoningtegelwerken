@@ -827,3 +827,9 @@ Stand 13 okt 20:20: stap 1–4 klaar (herstart 20:02 door Bob); tenaamstelling-f
 8. Opruimen: `rm -rf /tmp/bunqdoc` (bunq-docs en swagger uit fase A; dat
    mocht van de hook niet vanuit Claude), en na het mergen de worktree
    (`git worktree remove /root/dkt-bunq`).
+
+### Homepage herontworpen (15 oktober 2026, `feature/over-sectie`)
+
+Zeven secties op verzoek van Bob, elk alleen op de homepage: hero en header (fullscreen editorial, kop 76–90 px, header 76/68 px), Projecten (`gen:projecten uitgelicht galerij`: max. vijf uitgelichte projecten, filters alleen voor aanwezige categorieën; klassen `werkgalerij`, want `.galerij` is de fotogalerij van de projectpagina), Specialismen (`gen:dienstkaarten portfolio`, 3 × 2), Vakmanschap (tabs met crossfade, `initVakmanschap`), Werkwijze (`gen:werkwijze stappen`, tijdlijn die meevult, `initStappen`), Over De Koning (split-screen, nieuw sfeerbeeld `over-uitvoering`, knop naar /contact/ omdat er geen over-ons-pagina is). Sitebreed alleen: `@view-transition` (zachte paginaovergang) en drie iconen in de sprite.
+
+**Uitrollen samen met het portaal**: de homepage vraagt via SSI `/_fragment/projecten/uitgelicht/galerij`; het portaal kent dat argument pas vanaf deze branch. Rolt alleen de site uit, dan geeft het fragment 404 en toont nginx de statische terugval (voorbeeldkaarten). Dus eerst `facturen-deploy.sh` + herstart, dan `live-deploy.sh`.
