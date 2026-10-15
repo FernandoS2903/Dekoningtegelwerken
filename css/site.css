@@ -792,6 +792,10 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   .hero { min-height: min(100svh, 58rem); }
   .hero__inhoud { padding-top: calc(var(--kop-hoogte) + var(--r-4)); padding-bottom: var(--r-4); }
   .hero__inhoud > * { max-width: min(40rem, 46vw); }
+  /* Tekst links in beeld, los van de gecentreerde wrap: op brede schermen
+     schuift hij anders naar het midden, over de lichte badkamer. */
+  .hero__inhoud { max-width: none; margin-inline: 0; padding-left: clamp(var(--rand), 6.4vw, 7.5rem); }
+  .hero__diensten ul { max-width: none; margin-inline: 0; padding-inline: clamp(var(--rand), 6.4vw, 7.5rem); }
   .hero h1 { font-size: clamp(4.75rem, 1rem + 5.4vw, 6.75rem); }
   .hero__intro { font-size: 1.3rem; }
 }
