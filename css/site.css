@@ -803,6 +803,44 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   .hero__inhoud > * { max-width: 34rem; }
 }
 
+/* Maten zoals de mockup van Bob (1700 × 924): grotere bovenregel, intro,
+   knoppen, vertrouwenspunten en specialismenbalk; rechts de 01/03-aanduiding. */
+.hero__teller { display: none; }
+@media (min-width: 60em) {
+  .hero__boven { grid-template-columns: 2.6rem auto; font-size: 0.9375rem; letter-spacing: 0.16em; line-height: 1.65; margin-bottom: var(--r-4); }
+  .hero__boven::before { width: 2.6rem; }
+  .hero__intro { margin-top: var(--r-3); max-width: 32rem; font-size: 1.375rem; line-height: 1.55; color: var(--licht); }
+  .hero__acties { gap: 1.25rem; margin-top: var(--r-4); }
+  .hero .hero__offerte { min-height: 3.625rem; padding: 0.6rem 1.8rem; font-size: 1.125rem; }
+  .hero .hero__projecten { min-height: 3.625rem; padding: 0.4rem 1.5rem 0.4rem 1.4rem; gap: 1rem; font-size: 1.125rem; }
+  .hero__rondje { width: 2.125rem; height: 2.125rem; }
+  .hero__rondje .icoon { width: 1rem; height: 1rem; }
+  .hero__usps { margin-top: var(--r-5); }
+  .hero__usps li { gap: 1rem; padding-right: var(--r-4); font-size: 1rem; line-height: 1.35; }
+  .hero__usps li + li { padding-left: var(--r-4); }
+  .hero__usps .icoon { width: 2.25rem; height: 2.25rem; }
+  .hero__teller {
+    position: absolute;
+    right: clamp(2rem, 3.4vw, 4rem);
+    top: calc(var(--kop-hoogte) + clamp(6rem, 14vh, 9rem));
+    display: grid;
+    justify-items: center;
+    gap: 0.9rem;
+    color: var(--licht);
+    font-size: var(--t-s);
+    letter-spacing: 0.08em;
+  }
+  .hero__teller-lijn { width: 1px; height: clamp(8rem, 18vh, 11.5rem); background: rgba(237, 230, 218, 0.6); }
+  .hero__ontdek { right: clamp(2rem, 3vw, 3.5rem); }
+  .hero__ontdek-rondje { width: 3.875rem; height: 3.875rem; }
+}
+@media (min-width: 64em) {
+  .hero__diensten li { padding: 1.5rem var(--r-4); }
+  .hero__dienst { grid-template-columns: 6.875rem minmax(0, 1fr) auto; gap: 1.4rem; }
+  .hero__dienst img { width: 6.875rem; height: 4.625rem; }
+  .hero__dienst span { font-size: 1.125rem; padding-block: 1rem; }
+}
+
 /* Laden: foto zoomt rustig uit, tekst verschijnt na elkaar. */
 @keyframes hero-zoom { from { transform: scale(1.04); } to { transform: none; } }
 @keyframes hero-in { from { opacity: 0; } to { opacity: 1; } }
