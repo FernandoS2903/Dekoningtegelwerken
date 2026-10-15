@@ -188,6 +188,10 @@ export function maakFacturenApp({
     }
 
     kop(res, 200, 'application/pdf', {
+      // De factuurpagina toont de PDF in een <object>; met de standaard-CSP
+      // (frame-ancestors 'none') weigert de browser dat. De PDF zelf mag dus
+      // alleen door het portaal zelf ingesloten worden, verder niets.
+      'content-security-policy': "default-src 'none'; frame-ancestors 'self'",
       'content-disposition': 'inline; filename="factuur.pdf"',
       'content-length': String(statSync(echt).size),
     });

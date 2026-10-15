@@ -279,6 +279,9 @@ test('de PDF komt alleen uit de pdf-map', async () => {
   const goed = await haal(`/factuur/${metPdf.id}/pdf`);
   assert.equal(goed.status, 200);
   assert.equal(goed.headers.get('content-type'), 'application/pdf');
+  /* de factuurpagina sluit de PDF in (<object>): alleen het portaal zelf mag dat */
+  assert.match(goed.headers.get('content-security-policy'), /frame-ancestors 'self'/);
+  assert.doesNotMatch(goed.headers.get('content-security-policy'), /frame-ancestors 'none'/);
   assert.match(await goed.text(), /^%PDF-1\.7/);
 
   // Een pad dat uit de map probeert te breken komt nooit bij het bestand.
