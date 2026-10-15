@@ -15,6 +15,7 @@
 //       <!-- gen:header [over-hero] -->  header + mobiel menu (_sjablonen/header.html)
 //       <!-- gen:footer -->       footer + sticky CTA (_sjablonen/footer.html)
 //       <!-- gen:werkwijze -->    tijdlijn (_sjablonen/werkwijze.html)
+//       <!-- gen:werkwijze stappen -->  tijdlijn met iconen en scrollvulling (_sjablonen/werkwijze-stappen.html, homepage)
 //       <!-- gen:eind -->         contact-CTA-sectie (_sjablonen/eind.html)
 //       <!-- gen:dienstkaarten --> de zes specialismen als kaarten
 //       <!-- gen:projecten uitgelicht|alle|categorie=<c> [filters] -->

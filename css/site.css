@@ -852,68 +852,109 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   }
 }
 
-/* Detailsectie: tabbladen met een macrofoto per detail */
-.details {
-  display: grid;
-  gap: var(--r-4);
+/* Vakmanschap: interactieve showcase. Mobiel: kop, één grote foto (4:3) en
+   daaronder de vijf technieken. Vanaf 60em twee kolommen: links (40 %) kop en
+   technieken, rechts (60 %) de foto. Alle vijf beelden liggen op elkaar; het
+   gekozen beeld vloeit in 450 ms in met een schaal van 1,03 naar 1. */
+.sectie--vak { padding-block: clamp(3.5rem, 2rem + 4vw, 6rem); }
+.vak { display: grid; gap: var(--r-4); }
+.vak__kop { display: grid; gap: var(--r-2); }
+.vak__kop .lead { max-width: 30rem; }
+.vak__buhne {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--hoek);
+  background: var(--antraciet);
 }
-@media (min-width: 60em) {
-  .details { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--r-6); align-items: start; }
+.vak__beeld {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+  opacity: 0;
+  transform: scale(1.03);
+  transition: opacity 450ms var(--ease), transform 450ms var(--ease), visibility 0s linear 450ms;
+  visibility: hidden;
 }
-.details__lijst {
-  display: grid;
-  border-top: 1px solid var(--lijn-donker);
-}
-.details__item { border-bottom: 1px solid var(--lijn-donker); }
-.details__tab {
-  display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr);
-  gap: 0 var(--r-2);
+/* Zonder JS de eerste foto; met JS de gekozen foto (.actief). */
+html:not(.js) .vak__beeld:first-child,
+.vak__beeld.actief { opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
+.vak__label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  gap: 0.75rem;
   align-items: baseline;
+  padding: 2.5rem var(--r-3) var(--r-2);
+  background: linear-gradient(to top, rgba(30, 29, 27, 0.78), rgba(30, 29, 27, 0));
+  color: var(--licht);
+  font-size: var(--t-s);
+  pointer-events: none;
+}
+.vak__label [data-vak-label-nr] { color: var(--brons-licht); font-weight: 600; letter-spacing: 0.08em; }
+.vak__label [data-vak-label-titel] { font-family: var(--font-kop); font-size: var(--t-l); }
+.vak__label.wissel [data-vak-label-titel] { animation: vak-in 450ms var(--ease); }
+@keyframes vak-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.vak__keuzes { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--lijn-donker); }
+.vak__keuzes > li { border-bottom: 1px solid var(--lijn-donker); }
+.vak__keuze {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--r-2);
   width: 100%;
-  min-height: 3.5rem;
-  padding: var(--r-3) 0;
+  min-height: var(--tik);
+  padding: 0.85rem 0;
   border: 0;
   background: none;
+  color: inherit;
+  font: inherit;
   text-align: left;
-  color: var(--licht-zacht);
+  cursor: pointer;
 }
-.details__nr {
+.vak__nr {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--lijn-donker);
+  border-radius: 50%;
+  color: var(--licht-zacht);
   font-size: var(--t-xs);
   font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--brons-licht);
+  letter-spacing: 0.04em;
+  transition: background-color 300ms var(--ease), border-color 300ms var(--ease), color 300ms var(--ease);
 }
-.details__titel {
-  font-family: var(--font-kop);
-  font-size: var(--t-xl);
-  line-height: 1.2;
-  color: var(--licht);
-  transition: color var(--duur-kort) var(--ease);
-}
-.details__tab[aria-expanded="false"] .details__titel { color: var(--licht-zacht); }
-.details__tab:hover .details__titel { color: var(--licht); }
-.details__tekst {
-  display: grid;
-  gap: var(--r-3);
-  padding: 0 0 var(--r-3) calc(2.5rem + var(--r-2));
-  color: var(--licht-zacht);
-}
-.details__tekst p { max-width: 28rem; }
-.details__foto-mobiel { --ratio: 4 / 3; }
-/* Zonder JS staan alle details open met hun eigen foto. Met JS: één grote
-   close-up (het paneel) die meewisselt met het geopende detail; op mobiel
-   bovenaan en te vegen, op desktop ernaast. */
-.details__paneel { display: none; }
-.js .details__foto-mobiel { display: none; }
-.js .details__paneel { display: block; order: -1; touch-action: pan-y; }
-.details__paneel .foto { --ratio: 4 / 5; }
-.details__veeg { margin-top: 0.6rem; font-size: var(--t-s); color: var(--licht-zacht); }
+.vak__tekst { display: grid; gap: 0.2rem; }
+.vak__titel { font-family: var(--font-kop); font-size: var(--t-xl); line-height: 1.2; color: var(--licht-zacht); transition: color 300ms var(--ease); }
+.vak__uitleg { font-size: var(--t-s); line-height: 1.45; color: var(--licht-zacht); }
+.vak__pijl { width: 1.1rem; height: 1.1rem; color: var(--licht-zacht); transition: transform var(--duur) var(--ease), color 300ms var(--ease); }
+.vak__keuze:hover .vak__titel { color: var(--licht); }
+.vak__keuze:hover .vak__pijl { transform: translateX(3px); color: var(--brons-licht); }
+.vak__keuze:focus-visible { outline: 2px solid var(--brons-licht); outline-offset: 4px; border-radius: var(--hoek); }
+/* De gekozen techniek: warme accentkleur, uitleg licht op */
+.vak__keuze[aria-selected="true"] .vak__nr { background: var(--brons-licht); border-color: var(--brons-licht); color: var(--antraciet); }
+.vak__keuze[aria-selected="true"] .vak__titel { color: var(--licht); }
+.vak__keuze[aria-selected="true"] .vak__uitleg { color: var(--licht); animation: vak-in 400ms var(--ease); }
+.vak__keuze[aria-selected="true"] .vak__pijl { color: var(--brons-licht); transform: translateX(3px); }
+/* Zonder JS is er geen keuze; dan staat alles gelijkwaardig en leesbaar. */
+html:not(.js) .vak__keuze { cursor: default; }
+html:not(.js) .vak__pijl { display: none; }
+
 @media (min-width: 60em) {
-  .details__foto-mobiel { display: none; }
-  .js .details__paneel { order: 0; position: sticky; top: calc(var(--kop-hoogte) + var(--r-4)); }
-  .details__paneel .foto { --ratio: 1 / 1; }
-  .details__veeg { display: none; }
+  .vak {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-rows: auto 1fr;
+    column-gap: var(--r-6);
+    row-gap: var(--r-4);
+  }
+  .vak__kop { grid-column: 1; grid-row: 1; }
+  .vak__keuzes { grid-column: 1; grid-row: 2; align-self: end; }
+  .vak__buhne { grid-column: 2; grid-row: 1 / span 2; aspect-ratio: auto; min-height: clamp(28rem, 38vw, 38rem); }
 }
 
 /* Voor/na-slider */
@@ -1098,24 +1139,143 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
 .reviews__score strong { font-family: var(--font-kop); font-size: var(--t-kop-3); font-weight: 400; color: var(--inkt); line-height: 1; }
 .reviews__score .sterren { color: var(--brons); letter-spacing: 0.1em; }
 
-/* Over De Koning */
-.over {
-  display: grid;
-  gap: var(--r-5);
-  align-items: center;
-}
-@media (min-width: 60em) { .over { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--r-6); } }
-.over .foto { --ratio: 4 / 5; }
-.over__tekst { display: grid; gap: var(--r-3); }
-.over__feiten {
+/* Over De Koning: asymmetrisch split-screen. Mobiel foto (4:3) boven en de
+   tekst eronder; vanaf 60em loopt de foto tot de linkerrand van het scherm
+   (7 van 12 delen) en staat de tekst verticaal gecentreerd, rechts
+   uitgelijnd op de wrap. */
+.sectie--over { background: var(--zand-diep); }
+.over { display: grid; }
+.over .foto { --ratio: 4 / 3; }
+.over__tekst {
   display: grid;
   gap: var(--r-2);
-  padding-top: var(--r-3);
-  border-top: 1px solid var(--lijn);
+  align-content: center;
+  padding: var(--r-4) var(--rand) var(--r-5);
 }
-.over__feiten div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: var(--r-2); }
-@media (min-width: 40em) { .over__feiten div { grid-template-columns: 9rem minmax(0, 1fr); } }
-.over__feiten dt { color: var(--inkt-zacht); }
+.over__tekst h2 { max-width: 14ch; }
+.over__tekst .lead { max-width: 34rem; color: var(--inkt-zacht); }
+.over__actie { margin-top: var(--r-1); }
+.over__actie .knop { width: 100%; }
+@media (min-width: 40em) { .over__actie .knop { width: auto; } }
+@media (min-width: 60em) {
+  .over { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .over .foto { aspect-ratio: auto; height: 100%; min-height: clamp(28rem, 36vw, 40rem); }
+  .over__tekst {
+    gap: var(--r-3);
+    padding-block: var(--r-5);
+    padding-left: clamp(2.5rem, 1rem + 3vw, 5rem);
+    padding-right: max(var(--rand), calc((100vw - var(--breedte)) / 2));
+  }
+  .over__actie { margin-top: var(--r-2); }
+}
+/* Foto-reveal bij scrollen (700 ms): het beeld schuift van links open en
+   zakt licht in schaal terug. Alleen met JS; zonder of met reduced motion
+   staat het beeld er gewoon. */
+/* Het beeld zelf wordt geknipt, niet .onthul: een volledig weggeknipt element
+   telt voor de IntersectionObserver als onzichtbaar en zou nooit .in krijgen. */
+.js .onthul img { clip-path: inset(0 100% 0 0); transform: scale(1.06); transition: clip-path 700ms var(--ease), transform 700ms var(--ease); }
+.js .onthul.in img { clip-path: inset(0 0 0 0); transform: none; }
+
+/* Werkwijze op de homepage: titel en intro naast een grote foto, daaronder
+   de vijf stappen. Compacter dan een gewone sectie. */
+.sectie--werkwijze { padding-block: clamp(3rem, 2rem + 3vw, 5rem); }
+.werkwijze__boven { display: grid; gap: var(--r-3); margin-bottom: var(--r-4); }
+.werkwijze__intro { display: grid; gap: var(--r-2); align-content: center; }
+.werkwijze__intro .lead { max-width: 34rem; color: var(--inkt-zacht); }
+.werkwijze__foto { --ratio: 16 / 9; }
+.werkwijze__foto img { object-position: 50% 42%; }
+@media (min-width: 64em) {
+  .werkwijze__boven { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--r-6); align-items: center; }
+  .werkwijze__foto { --ratio: 2 / 1; }
+}
+.werkwijze__actie { margin-top: var(--r-4); }
+.werkwijze__actie .knop { width: 100%; }
+@media (min-width: 40em) { .werkwijze__actie .knop { width: auto; } }
+
+/* De stappen. Mobiel verticaal: nummer en icoon links op de lijn, tekst
+   rechts, 28 px tussen de stappen. Vanaf 64em één horizontale rij. Elke stap
+   tekent de lijn naar de volgende: ::before is de lijn, ::after de vulling
+   in brons, geschaald met --vul (0 tot 1, gezet door js/site.js tijdens het
+   scrollen). Bereikte stappen krijgen een bronzen rand, de laatst bereikte
+   (.actief) een gevuld bronzen nummer. */
+.stappen { display: grid; gap: 1.75rem; }
+.stappen__stap {
+  --vul: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: var(--r-2);
+  row-gap: 0.5rem;
+  align-content: start;
+}
+.stappen__nr {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--lijn-sterk);
+  border-radius: 50%;
+  background: var(--zand);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: background-color 400ms var(--ease), border-color 400ms var(--ease), color 400ms var(--ease);
+}
+.stappen__icoon {
+  position: relative;
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0.15rem;
+  background: var(--zand-diep);
+  color: var(--brons);
+}
+.stappen__tekst { grid-column: 2; grid-row: 1 / span 2; padding-top: 0.45rem; transition: opacity 450ms var(--ease), transform 450ms var(--ease); }
+.stappen h3 { font-family: var(--font-kop); font-size: var(--t-xl); font-weight: 400; line-height: 1.2; }
+.stappen p { margin-top: 0.35rem; color: var(--inkt-zacht); max-width: 30rem; }
+.stappen__stap::before,
+.stappen__stap::after {
+  content: "";
+  position: absolute;
+  left: 1.375rem;
+  top: 2.75rem;
+  bottom: -1.75rem;
+  width: 1px;
+  background: var(--lijn-sterk);
+  transform-origin: top;
+}
+.stappen__stap::after { background: var(--brons); transform: scaleY(var(--vul)); transition: transform 300ms var(--ease); }
+.stappen__stap:last-child::before,
+.stappen__stap:last-child::after { display: none; }
+.stappen__stap.bereikt .stappen__nr { border-color: var(--brons); color: var(--brons); }
+.stappen__stap.actief .stappen__nr { background: var(--brons); border-color: var(--brons); color: var(--zand); }
+/* Met de scrollvulling actief: nog niet bereikte stappen iets terug, bereikte
+   tekst schuift subtiel op zijn plek. Zonder JS of met reduced motion alles vol. */
+.stappen--live .stappen__stap:not(.bereikt) .stappen__tekst { opacity: 0.45; transform: translateY(6px); }
+@media (min-width: 64em) {
+  .stappen { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--r-4); }
+  .stappen__stap { grid-template-columns: 1fr; grid-template-rows: auto auto auto; row-gap: 1rem; }
+  .stappen__icoon { grid-row: 2; justify-self: start; padding: 0; background: none; }
+  .stappen__tekst { grid-column: 1; grid-row: 3; padding-top: 0; }
+  .stappen p { max-width: 15rem; }
+  .stappen__stap::before,
+  .stappen__stap::after {
+    left: calc(2.75rem + 0.75rem);
+    right: calc(var(--r-4) * -1 + 0.75rem);
+    top: 1.375rem;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+    transform-origin: left;
+  }
+  .stappen__stap::after { transform: scaleX(var(--vul)); }
+}
 
 /* Contact-CTA (eindsectie) */
 .eind {
@@ -1570,6 +1730,7 @@ a.projectkaart__link:hover .projectkaart__naam { color: var(--brons); }
 /* Kleine verschuiving per kolom, als data-attribuut (geen inline style i.v.m. CSP). */
 [data-vertraging="1"] { --vertraging: 90ms; }
 [data-vertraging="2"] { --vertraging: 180ms; }
+[data-vertraging="3"] { --vertraging: 270ms; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -1584,6 +1745,9 @@ a.projectkaart__link:hover .projectkaart__naam { color: var(--brons); }
   .js .reveal { opacity: 1; transform: none; }
   .js .tijdlijn:not(.in) .tijdlijn__stap::before { transform: none; }
   .foto__vlak, .foto img { transform: none !important; }
+  .js .onthul img { clip-path: none; }
+  .vak__beeld { transform: none; }
+  .stappen--live .stappen__stap .stappen__tekst { opacity: 1; transform: none; }
 }
 
 /* 11. Offertewizard (/offerte/) -------------------------------------------- */

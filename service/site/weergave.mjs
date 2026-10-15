@@ -59,6 +59,12 @@ export const MATEN = {
   kaart: '(min-width: 60em) 55vw, (min-width: 40em) 50vw, 100vw',
   dienstkaart: '(min-width: 64em) 30vw, (min-width: 40em) 50vw, 100vw',
   half: '(min-width: 60em) 45vw, 100vw',
+  // Over De Koning: de foto loopt tot de rand van het scherm (7 van 12 kolommen).
+  split: '(min-width: 60em) 58vw, 100vw',
+  // Werkwijze op de homepage: foto naast de titel, binnen de wrap.
+  werkwijze: '(min-width: 90em) 48rem, (min-width: 64em) 55vw, calc(100vw - 2.5rem)',
+  // Vakmanschap: de grote detailfoto rechts (60 % van de wrap), mobiel de volle breedte.
+  vak: '(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)',
   galerij: '(min-width: 40em) 50vw, 100vw',
   kwart: '(min-width: 60em) 22vw, (min-width: 40em) 50vw, 100vw',
 };
@@ -261,6 +267,7 @@ export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
     header: lees('_sjablonen/header.html'),
     footer: lees('_sjablonen/footer.html'),
     werkwijze: lees('_sjablonen/werkwijze.html'),
+    stappen: lees('_sjablonen/werkwijze-stappen.html'),
     eind: lees('_sjablonen/eind.html'),
   });
 
@@ -285,7 +292,9 @@ export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
         return h;
       }
       case 'footer': return PARTIALS().footer;
-      case 'werkwijze': return PARTIALS().werkwijze;
+      // 'stappen': de tijdlijn met iconen en scrollvulling (homepage); zonder
+      // argument de eenvoudige tijdlijn van de dienstpagina's.
+      case 'werkwijze': return args.includes('stappen') ? PARTIALS().stappen : PARTIALS().werkwijze;
       case 'eind': return PARTIALS().eind;
       case 'dienstkaarten': return dienstkaartenBlok();
       case 'projecten': {

@@ -805,6 +805,37 @@
         "taak": "a344edb360920080753cd0c13c25184a",
         "credits": 18
       }
+    },
+    {
+      "id": "over-uitvoering",
+      "soort": "sfeerbeeld",
+      "verhouding": "4:3",
+      "breedtes": [
+        480,
+        800,
+        1200,
+        1600,
+        2000
+      ],
+      "prompt": "Tiling work in progress on a floor, seen from a low angle: a large matte porcelain floor tile of 60 x 120 cm in warm greige being set into a fresh combed adhesive bed, the notched ridges of the adhesive sharply visible in the foreground, a row of finished tiles with thin straight joints and red levelling clips behind it, a long aluminium spirit level lying across the finished tiles, a notched trowel and a bucket of adhesive at the edge, the untiled grey screed next to the work, no people, no hands, calm warm daylight from a large window raking across the surface, shallow depth of field, editorial architectural photography.",
+      "alt": "Sfeerbeeld: tegelvloer in uitvoering, een grote tegel in een vers gekamd lijmbed naast een rij gelegde tegels met een waterpas",
+      "afmeting": {
+        "hoogte": 1792,
+        "breedte": 2400
+      },
+      "varianten": [
+        480,
+        800,
+        1200,
+        1600,
+        2000
+      ],
+      "gegenereerd": {
+        "datum": "2026-10-15",
+        "model": "nano-banana-pro",
+        "taak": "4b067a44ec45d45d62b374b0aa66051c",
+        "credits": 18
+      }
     }
   ]
 }

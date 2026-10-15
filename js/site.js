@@ -114,9 +114,61 @@ function initMobielMenu() {
   matchMedia('(min-width: 64em)').addEventListener('change', (e) => { if (e.matches && !menu.hidden) zet(false); });
 }
 
+/* -- werkwijze: tijdlijn die meevult tijdens het scrollen ------------------ */
+/** Vult de lijn tussen de stappen ([data-stappen]) naargelang de scrollpositie
+ *  en markeert de bereikte stappen. Horizontaal (vanaf 64em): de rij vult van
+ *  links naar rechts terwijl de tijdlijn door het scherm schuift. Verticaal:
+ *  de lijn volgt een denkbeeldige markering op 65 % van het scherm. Geen
+ *  scroll-lock, alleen lezen van posities; met reduced motion staat alles vol. */
+function initStappen() {
+  const lijst = $('[data-stappen]');
+  if (!lijst) return;
+  const stappen = $$('.stappen__stap', lijst);
+  const n = stappen.length;
+  const begrens = (x) => Math.min(1, Math.max(0, x));
+  const midden = (li) => { const r = $('.stappen__nr', li).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+
+  function teken(vul, bereikt) {
+    let laatste = -1;
+    stappen.forEach((li, i) => {
+      li.style.setProperty('--vul', vul[i].toFixed(3));
+      li.classList.toggle('bereikt', bereikt[i]);
+      if (bereikt[i]) laatste = i;
+    });
+    stappen.forEach((li, i) => li.classList.toggle('actief', i === laatste));
+  }
+
+  if (rustig) {
+    teken(stappen.map(() => 1), stappen.map(() => true));
+    return;
+  }
+  lijst.classList.add('stappen--live');
+  const breed = matchMedia('(min-width: 64em)');
+
+  function bereken() {
+    const vh = innerHeight;
+    if (breed.matches) {
+      const r = lijst.getBoundingClientRect();
+      const p = begrens((vh * 0.9 - r.top) / (vh * 0.45));
+      const vul = stappen.map((_, i) => begrens(p * (n - 1) - i));
+      teken(vul, stappen.map((_, i) => (i === 0 ? p > 0 : vul[i - 1] >= 0.999)));
+    } else {
+      const markering = vh * 0.65;
+      const punten = stappen.map(midden);
+      const vul = stappen.map((_, i) => (i === n - 1 ? 0 : begrens((markering - punten[i].y) / (punten[i + 1].y - punten[i].y))));
+      teken(vul, punten.map((pt) => pt.y <= markering));
+    }
+  }
+  let gepland = false;
+  const plan = () => { if (!gepland) { gepland = true; requestAnimationFrame(() => { gepland = false; bereken(); }); } };
+  addEventListener('scroll', plan, { passive: true });
+  addEventListener('resize', plan);
+  bereken();
+}
+
 /* -- reveal bij scrollen --------------------------------------------------- */
 function initReveal() {
-  const items = $$('.reveal, [data-tijdlijn]');
+  const items = $$('.reveal, .onthul, [data-tijdlijn]');
   if (!items.length) return;
   if (rustig || !('IntersectionObserver' in window)) {
     items.forEach((el) => el.classList.add('in'));
@@ -168,46 +220,59 @@ function initFilters() {
   }
 }
 
-/* -- detailsectie: één item open, desktopfoto wisselt mee ------------------ */
-function initDetails() {
-  const blok = $('[data-details]');
+/* -- vakmanschap: showcase met tabs ---------------------------------------- */
+/** Vijf technieken als tabs (roving tabindex): klik, Enter/spatie of de
+ *  pijltoetsen (en Home/End) kiezen een techniek; de bijbehorende foto vloeit
+ *  in (CSS, 450 ms) en het label onder de foto wisselt mee. Nooit automatisch.
+ *  Alle beelden staan al in de HTML; ze worden vooraf gedecodeerd zodra de
+ *  sectie in de buurt komt, zodat het wisselen niet flikkert. */
+function initVakmanschap() {
+  const blok = $('[data-vak-showcase]');
   if (!blok) return;
-  const tabs = $$('.details__tab', blok);
-  const paneel = $('[data-details-paneel]', blok);
-
-  const open = (index) => {
-    tabs.forEach((tab, i) => {
-      const isOpen = i === index;
-      tab.setAttribute('aria-expanded', String(isOpen));
-      document.getElementById(tab.getAttribute('aria-controls')).hidden = !isOpen;
-    });
-    if (paneel) {
-      const bron = $('.details__foto-mobiel', document.getElementById(tabs[index].getAttribute('aria-controls')));
-      if (bron) {
-        const kopie = bron.cloneNode(true);
-        kopie.classList.remove('details__foto-mobiel');
-        const veeg = Object.assign(document.createElement('p'), { className: 'details__veeg', textContent: `Detail ${index + 1} van ${tabs.length} · veeg voor het volgende` });
-        veeg.setAttribute('aria-hidden', 'true');
-        paneel.replaceChildren(kopie, veeg);
-      }
-    }
-    huidig = index;
-  };
+  const tabs = $$('.vak__keuze', blok);
+  const beelden = $$('.vak__beeld', blok);
+  const buhne = $('[data-vak-buhne]', blok);
+  const label = $('.vak__label', blok);
+  const labelNr = $('[data-vak-label-nr]', blok);
+  const labelTitel = $('[data-vak-label-titel]', blok);
   let huidig = 0;
-  tabs.forEach((tab, i) => tab.addEventListener('click', () => open(i)));
-  // Mobiel: horizontaal vegen over de grote foto bladert door de details.
-  if (paneel) {
-    let startX = null;
-    paneel.addEventListener('pointerdown', (e) => { startX = e.clientX; });
-    paneel.addEventListener('pointerup', (e) => {
-      if (startX === null) return;
-      const dx = e.clientX - startX;
-      startX = null;
-      if (Math.abs(dx) > 50) open((huidig + (dx < 0 ? 1 : -1) + tabs.length) % tabs.length);
+
+  function kies(index, { focus = false } = {}) {
+    huidig = (index + tabs.length) % tabs.length;
+    tabs.forEach((tab, i) => {
+      const aan = i === huidig;
+      tab.setAttribute('aria-selected', String(aan));
+      tab.tabIndex = aan ? 0 : -1;
     });
-    paneel.addEventListener('pointercancel', () => { startX = null; });
+    beelden.forEach((b, i) => {
+      b.classList.toggle('actief', i === huidig);
+      b.setAttribute('aria-hidden', String(i !== huidig));
+    });
+    buhne.setAttribute('aria-labelledby', tabs[huidig].id);
+    labelNr.textContent = `${String(huidig + 1).padStart(2, '0')} / ${String(tabs.length).padStart(2, '0')}`;
+    labelTitel.textContent = $('.vak__titel', tabs[huidig]).textContent;
+    if (!rustig) { label.classList.remove('wissel'); void label.offsetWidth; label.classList.add('wissel'); }
+    if (focus) tabs[huidig].focus();
   }
-  open(0);
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => kies(i));
+    tab.addEventListener('keydown', (e) => {
+      const stap = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+      if (stap) { e.preventDefault(); kies(huidig + stap, { focus: true }); }
+      else if (e.key === 'Home') { e.preventDefault(); kies(0, { focus: true }); }
+      else if (e.key === 'End') { e.preventDefault(); kies(tabs.length - 1, { focus: true }); }
+    });
+  });
+
+  // Vooraf laden: lazy-beelden in de buurt alvast ophalen en decoderen.
+  const laadAlles = () => beelden.forEach((b) => { const img = $('img', b); if (!img) return; img.loading = 'eager'; img.decode?.().catch(() => {}); });
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { laadAlles(); io.disconnect(); } }, { rootMargin: '600px 0px' });
+    io.observe(blok);
+  } else laadAlles();
+
+  kies(0);
 }
 
 /* -- voor/na-slider -------------------------------------------------------- */
@@ -455,8 +520,9 @@ initKop();
 initNavGroep();
 initMobielMenu();
 initReveal();
+initStappen();
 initFilters();
-initDetails();
+initVakmanschap();
 initVoorNa();
 initLichtbak();
 initSiteGegevens();
