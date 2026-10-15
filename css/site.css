@@ -1189,19 +1189,22 @@ a.werkgalerij__link:focus-visible { outline: 2px solid var(--brons); outline-off
   ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 280ms; }
 }
 
-/* Vakmanschap: interactieve showcase. Mobiel: kop, één grote foto (4:3) en
-   daaronder de vijf technieken. Vanaf 60em twee kolommen: links (40 %) kop en
-   technieken, rechts (60 %) de foto. Alle vijf beelden liggen op elkaar; het
-   gekozen beeld vloeit in 450 ms in met een schaal van 1,03 naar 1. */
+/* Vakmanschap: interactieve showcase (mockup Bob). Mobiel: kop, grote foto
+   (4:3) met bijschrift eronder, daarna de vijf technieken. Vanaf 64em drie
+   kolommen: technieken (± 38 %), grote foto met bijschrift erop (± 40 %) en
+   vijf miniaturen. Het gekozen beeld vloeit in 450 ms in, schaal 1,03 naar 1. */
 .sectie--vak { padding-block: clamp(3.5rem, 2rem + 4vw, 6rem); }
 .vak { display: grid; gap: var(--r-4); }
+/* mobiel: kop, foto, technieken */
+.vak__buhne { order: 1; }
+.vak__keuzes { order: 2; }
 .vak__kop { display: grid; gap: var(--r-2); }
 .vak__kop .lead { max-width: 30rem; }
+
 .vak__buhne {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
-  border-radius: var(--hoek);
+  border-radius: 10px;
   background: var(--antraciet);
 }
 .vak__beeld {
@@ -1213,39 +1216,67 @@ a.werkgalerij__link:focus-visible { outline: 2px solid var(--brons); outline-off
   transition: opacity 450ms var(--ease), transform 450ms var(--ease), visibility 0s linear 450ms;
   visibility: hidden;
 }
-/* Zonder JS de eerste foto; met JS de gekozen foto (.actief). */
 html:not(.js) .vak__beeld:first-child,
 .vak__beeld.actief { opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
-.vak__label {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  display: flex;
-  gap: 0.75rem;
-  align-items: baseline;
-  padding: 2.5rem var(--r-3) var(--r-2);
-  background: linear-gradient(to top, rgba(30, 29, 27, 0.78), rgba(30, 29, 27, 0));
-  color: var(--licht);
-  font-size: var(--t-s);
-  pointer-events: none;
+/* Mobiel: het beeldvlak 4:3 bovenaan, bijschrift eronder op de donkere achtergrond */
+.vak__buhne { display: grid; grid-template-rows: auto auto; }
+.vak__buhne::before { content: ""; grid-row: 1; display: block; aspect-ratio: 4 / 3; }
+.vak__beeld { bottom: auto; aspect-ratio: 4 / 3; }
+.vak__bijschrift {
+  position: relative;
+  z-index: 2;
+  grid-row: 2;
+  display: grid;
+  gap: var(--r-1);
+  padding: var(--r-3) var(--r-3) var(--r-3);
+  background: #252321;
 }
-.vak__label [data-vak-label-nr] { color: var(--brons-licht); font-weight: 600; letter-spacing: 0.08em; }
-.vak__label [data-vak-label-titel] { font-family: var(--font-kop); font-size: var(--t-l); }
-.vak__label.wissel [data-vak-label-titel] { animation: vak-in 450ms var(--ease); }
-@keyframes vak-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.vak__plek { font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brons-licht); }
+.vak__plek [data-vak-label-nr] { color: var(--licht); }
+.vak__bijkop { font-family: var(--font-kop); font-size: var(--t-kop-3); font-weight: 400; line-height: 1.1; color: var(--licht); max-width: 16ch; }
+.vak__bijtekst { max-width: 30rem; color: var(--licht-zacht); line-height: 1.6; }
+.vak__bijschrift.wissel .vak__bijkop,
+.vak__bijschrift.wissel .vak__bijtekst { animation: vak-in 450ms var(--ease); }
+@keyframes vak-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.vak__bladeren { display: flex; gap: 0.75rem; margin-top: var(--r-2); }
+.vak__blader {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid rgba(237, 230, 218, 0.55);
+  border-radius: 50%;
+  background: none;
+  color: var(--licht);
+  cursor: pointer;
+  transition: border-color 300ms var(--ease), color 300ms var(--ease);
+}
+.vak__blader .icoon { width: 1rem; height: 1rem; }
+.vak__blader[data-vak-vorige] .icoon { transform: rotate(180deg); }
+.vak__blader:hover { border-color: var(--brons-licht); color: var(--brons-licht); }
+.vak__blader:focus-visible { outline: 2px solid var(--brons-licht); outline-offset: 3px; }
+html:not(.js) .vak__bladeren { display: none; }
 
-.vak__keuzes { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--lijn-donker); }
-.vak__keuzes > li { border-bottom: 1px solid var(--lijn-donker); }
+/* De technieken: nummer in een cirkel op een doorlopende lijn, titel, korte uitleg, pijl */
+.vak__keuzes { display: grid; margin: 0; padding: 0; list-style: none; }
+.vak__keuzes > li { position: relative; }
+.vak__keuzes > li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 1.5rem;
+  top: calc(50% + 1.5rem);
+  bottom: calc(-50% + 1.5rem);
+  width: 1px;
+  background: var(--lijn-donker);
+}
 .vak__keuze {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--r-2);
+  gap: var(--r-3);
   width: 100%;
   min-height: var(--tik);
-  padding: 0.85rem 0;
+  padding: 0.95rem 0;
   border: 0;
   background: none;
   color: inherit;
@@ -1253,45 +1284,94 @@ html:not(.js) .vak__beeld:first-child,
   text-align: left;
   cursor: pointer;
 }
+.vak__keuze .vak__tekst { padding-bottom: 0.95rem; border-bottom: 1px solid var(--lijn-donker); margin-bottom: -0.95rem; }
 .vak__nr {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 1px solid var(--lijn-donker);
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid rgba(237, 230, 218, 0.28);
   border-radius: 50%;
+  background: var(--antraciet);
   color: var(--licht-zacht);
   font-size: var(--t-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   transition: background-color 300ms var(--ease), border-color 300ms var(--ease), color 300ms var(--ease);
 }
-.vak__tekst { display: grid; gap: 0.2rem; }
-.vak__titel { font-family: var(--font-kop); font-size: var(--t-xl); line-height: 1.2; color: var(--licht-zacht); transition: color 300ms var(--ease); }
+.vak__tekst { display: grid; gap: 0.25rem; }
+.vak__titel { font-family: var(--font-kop); font-size: var(--t-xl); line-height: 1.2; color: var(--licht); transition: color 300ms var(--ease); }
 .vak__uitleg { font-size: var(--t-s); line-height: 1.45; color: var(--licht-zacht); }
 .vak__pijl { width: 1.1rem; height: 1.1rem; color: var(--licht-zacht); transition: transform var(--duur) var(--ease), color 300ms var(--ease); }
-.vak__keuze:hover .vak__titel { color: var(--licht); }
 .vak__keuze:hover .vak__pijl { transform: translateX(3px); color: var(--brons-licht); }
 .vak__keuze:focus-visible { outline: 2px solid var(--brons-licht); outline-offset: 4px; border-radius: var(--hoek); }
-/* De gekozen techniek: warme accentkleur, uitleg licht op */
 .vak__keuze[aria-selected="true"] .vak__nr { background: var(--brons-licht); border-color: var(--brons-licht); color: var(--antraciet); }
-.vak__keuze[aria-selected="true"] .vak__titel { color: var(--licht); }
-.vak__keuze[aria-selected="true"] .vak__uitleg { color: var(--licht); animation: vak-in 400ms var(--ease); }
-.vak__keuze[aria-selected="true"] .vak__pijl { color: var(--brons-licht); transform: translateX(3px); }
-/* Zonder JS is er geen keuze; dan staat alles gelijkwaardig en leesbaar. */
+.vak__keuze[aria-selected="true"] .vak__pijl { color: var(--brons-licht); }
 html:not(.js) .vak__keuze { cursor: default; }
 html:not(.js) .vak__pijl { display: none; }
 
-@media (min-width: 60em) {
+/* Miniaturen: alleen vanaf 64em */
+.vak__duimen { display: none; }
+
+@media (min-width: 64em) {
   .vak {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-columns: minmax(0, 19fr) minmax(0, 20fr) minmax(0, 10fr);
     grid-template-rows: auto 1fr;
-    column-gap: var(--r-6);
+    column-gap: var(--r-4);
     row-gap: var(--r-4);
+    align-items: stretch;
   }
   .vak__kop { grid-column: 1; grid-row: 1; }
+  .vak__buhne, .vak__keuzes { order: 0; }
   .vak__keuzes { grid-column: 1; grid-row: 2; align-self: end; }
-  .vak__buhne { grid-column: 2; grid-row: 1 / span 2; aspect-ratio: auto; min-height: clamp(28rem, 38vw, 38rem); }
+  .vak__buhne { grid-column: 2; grid-row: 1 / span 2; display: block; min-height: 38rem; }
+  .vak__buhne::before { display: none; }
+  .vak__beeld { bottom: 0; aspect-ratio: auto; }
+  .vak__buhne::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(to top, rgba(30, 29, 27, 0.88) 0%, rgba(30, 29, 27, 0.55) 34%, rgba(30, 29, 27, 0) 58%);
+    pointer-events: none;
+  }
+  .vak__bijschrift { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--r-4); background: none; }
+  .vak__duimen {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    display: grid;
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .vak__duim {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: var(--antraciet);
+    color: var(--licht);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 300ms var(--ease), opacity 300ms var(--ease);
+    opacity: 0.72;
+  }
+  .vak__duim img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease); }
+  .vak__duim::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(30, 29, 27, 0.8), rgba(30, 29, 27, 0) 60%); }
+  .vak__duim-titel, .vak__duim-nr { position: absolute; bottom: 0.75rem; z-index: 1; }
+  .vak__duim-titel { left: 0.9rem; font-family: var(--font-kop); font-size: 1.15rem; }
+  .vak__duim-nr { right: 0.9rem; font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.08em; }
+  .vak__duim:hover { opacity: 1; }
+  .vak__duim:hover img { transform: scale(1.03); }
+  .vak__duim[aria-current="true"] { opacity: 1; border-color: rgba(237, 230, 218, 0.7); }
 }
 
 /* Voor/na-slider */

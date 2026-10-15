@@ -272,10 +272,13 @@ function initVakmanschap() {
   if (!blok) return;
   const tabs = $$('.vak__keuze', blok);
   const beelden = $$('.vak__beeld', blok);
+  const duimen = $$('[data-vak-duim]', blok);
   const buhne = $('[data-vak-buhne]', blok);
-  const label = $('.vak__label', blok);
-  const labelNr = $('[data-vak-label-nr]', blok);
-  const labelTitel = $('[data-vak-label-titel]', blok);
+  const bijschrift = $('.vak__bijschrift', blok);
+  const nr = $('[data-vak-label-nr]', blok);
+  const titel = $('[data-vak-label-titel]', blok);
+  const kop = $('[data-vak-kop]', blok);
+  const tekst = $('[data-vak-tekst]', blok);
   let huidig = 0;
 
   function kies(index, { focus = false } = {}) {
@@ -289,11 +292,15 @@ function initVakmanschap() {
       b.classList.toggle('actief', i === huidig);
       b.setAttribute('aria-hidden', String(i !== huidig));
     });
-    buhne.setAttribute('aria-labelledby', tabs[huidig].id);
-    labelNr.textContent = `${String(huidig + 1).padStart(2, '0')} / ${String(tabs.length).padStart(2, '0')}`;
-    labelTitel.textContent = $('.vak__titel', tabs[huidig]).textContent;
-    if (!rustig) { label.classList.remove('wissel'); void label.offsetWidth; label.classList.add('wissel'); }
-    if (focus) tabs[huidig].focus();
+    duimen.forEach((d, i) => (i === huidig ? d.setAttribute('aria-current', 'true') : d.removeAttribute('aria-current')));
+    const tab = tabs[huidig];
+    buhne.setAttribute('aria-labelledby', tab.id);
+    nr.textContent = String(huidig + 1).padStart(2, '0');
+    titel.textContent = $('.vak__titel', tab).textContent;
+    kop.textContent = tab.dataset.kop || '';
+    tekst.textContent = tab.dataset.tekst || '';
+    if (!rustig) { bijschrift.classList.remove('wissel'); void bijschrift.offsetWidth; bijschrift.classList.add('wissel'); }
+    if (focus) tab.focus();
   }
 
   tabs.forEach((tab, i) => {
@@ -305,6 +312,9 @@ function initVakmanschap() {
       else if (e.key === 'End') { e.preventDefault(); kies(tabs.length - 1, { focus: true }); }
     });
   });
+  duimen.forEach((d, i) => d.addEventListener('click', () => kies(i)));
+  $('[data-vak-vorige]', blok)?.addEventListener('click', () => kies(huidig - 1));
+  $('[data-vak-volgende]', blok)?.addEventListener('click', () => kies(huidig + 1));
 
   // Vooraf laden: lazy-beelden in de buurt alvast ophalen en decoderen.
   const laadAlles = () => beelden.forEach((b) => { const img = $('img', b); if (!img) return; img.loading = 'eager'; img.decode?.().catch(() => {}); });

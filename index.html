@@ -7,14 +7,14 @@
 <meta name="theme-color" content="#f3eee6">
 <link rel="preload" href="/assets/fonts/fraunces-latin-opsz-wght.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/site.css?v=b22c631ead">
+<link rel="stylesheet" href="/css/site.css?v=dce0330a50">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta property="og:image" content="https://dekoningtegelwerken.nl/assets/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo van De Koning Tegelwerken met de tekst Tegelwerk tot in detail, op een sfeerbeeld van een badkamer">
-<script type="module" src="/js/site.js?v=2a6fcd6ae2"></script>
+<script type="module" src="/js/site.js?v=a732496169"></script>
 <!-- /gen:head -->
 <title>De Koning Tegelwerken | Tegelwerk tot in detail</title>
 <meta name="description" content="Van complete badkamers en tegelvloeren tot grootformaat en specialistisch tegelwerk. Strak geplaatst en zorgvuldig afgewerkt.">
@@ -187,11 +187,11 @@
     </div>
   </section>
 
-  <!-- §7 Vakmanschap: interactieve showcase. Links de vijf technieken (tabs,
-       met nummer, titel en korte uitleg), rechts één grote detailfoto die met
-       een crossfade meewisselt (js/site.js initVakmanschap). Alle vijf beelden
-       staan in de HTML, dus ze laden vooraf en wisselen zonder flikkeren.
-       Zonder JS: alle uitleg leesbaar en de eerste foto zichtbaar. -->
+  <!-- §7 Vakmanschap: interactieve showcase (mockup Bob, 15 okt 2026). Links de
+       vijf technieken (tabs, met verbindingslijn), in het midden de grote foto
+       met kop, uitleg en vorige/volgende, rechts vijf miniaturen. De foto vloeit
+       mee (js/site.js initVakmanschap); alle beelden staan in de HTML en laden
+       vooraf. Nooit automatisch wisselen. Zonder JS: eerste foto en alle uitleg. -->
   <section class="sectie sectie--vak donker" aria-labelledby="details-kop">
     <div class="wrap vak" data-vak-showcase>
       <div class="vak__kop">
@@ -199,60 +199,75 @@
         <h2 id="details-kop">Het verschil zit in de details.</h2>
         <p class="lead">Wat vakmanschap betekent, zie je pas als je dichtbij komt.</p>
       </div>
-      <div class="vak__buhne" id="vak-buhne" role="tabpanel" aria-labelledby="vak-tab-1" data-vak-buhne>
-          <!-- gen:beeld id=detail-verstek maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
-<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-verstek-800.webp" srcset="/assets/beelden/detail-verstek-480.webp 480w, /assets/beelden/detail-verstek-800.webp 800w, /assets/beelden/detail-verstek-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: close-up van een buitenhoek met 45° verstek, zonder tegelprofiel" loading="lazy" decoding="async"></div>
-<!-- /gen:beeld -->
-          <!-- gen:beeld id=detail-tegelverdeling maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
-<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-tegelverdeling-800.webp" srcset="/assets/beelden/detail-tegelverdeling-480.webp 480w, /assets/beelden/detail-tegelverdeling-800.webp 800w, /assets/beelden/detail-tegelverdeling-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: tegelwand met een symmetrische tegelverdeling rond een nis en de kraan" loading="lazy" decoding="async"></div>
-<!-- /gen:beeld -->
-          <!-- gen:beeld id=detail-nis maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
-<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-nis-800.webp" srcset="/assets/beelden/detail-nis-480.webp 480w, /assets/beelden/detail-nis-800.webp 800w, /assets/beelden/detail-nis-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: betegelde nis met voegen die precies doorlopen in de wand" loading="lazy" decoding="async"></div>
-<!-- /gen:beeld -->
-          <!-- gen:beeld id=detail-grootformaat maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
-<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-grootformaat-800.webp" srcset="/assets/beelden/detail-grootformaat-480.webp 480w, /assets/beelden/detail-grootformaat-800.webp 800w, /assets/beelden/detail-grootformaat-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: grote keramische plaat op een draagframe met zuignappen, naast een lijmbed" loading="lazy" decoding="async"></div>
-<!-- /gen:beeld -->
-          <!-- gen:beeld id=detail-voeg maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
-<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-voeg-800.webp" srcset="/assets/beelden/detail-voeg-480.webp 480w, /assets/beelden/detail-voeg-800.webp 800w, /assets/beelden/detail-voeg-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: macro van een voeg van 2 mm tussen twee grootformaat tegels" loading="lazy" decoding="async"></div>
-<!-- /gen:beeld -->
-          <p class="vak__label" aria-hidden="true"><span data-vak-label-nr>01 / 05</span><span data-vak-label-titel>45° verstek</span></p>
-      </div>
       <ul class="vak__keuzes" role="tablist" aria-orientation="vertical" aria-label="Technieken">
           <li role="presentation">
-            <button class="vak__keuze" type="button" role="tab" id="vak-tab-1" aria-selected="true" aria-controls="vak-buhne" data-vak="0">
+            <button class="vak__keuze" type="button" role="tab" id="vak-tab-1" aria-selected="true" aria-controls="vak-buhne" data-vak="0" data-kop="Strakke, naadloze hoeken." data-tekst="Bij een verstek worden beide tegelranden onder 45° geslepen, zodat de hoek doorloopt zonder zichtbaar profiel. Dat vraagt nauwkeurig zagen en passen.">
               <span class="vak__nr" aria-hidden="true">01</span>
               <span class="vak__tekst"><span class="vak__titel">45° verstek</span><span class="vak__uitleg">Strakke buitenhoeken zonder standaard zichtbare tegelprofielen waar de situatie dit toelaat.</span></span>
               <svg class="icoon vak__pijl" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg>
             </button>
           </li>
           <li role="presentation">
-            <button class="vak__keuze" type="button" role="tab" id="vak-tab-2" aria-selected="false" aria-controls="vak-buhne" tabindex="-1" data-vak="1">
+            <button class="vak__keuze" type="button" role="tab" id="vak-tab-2" aria-selected="false" aria-controls="vak-buhne" tabindex="-1" data-vak="1" data-kop="Rust in het hele vlak." data-tekst="Vooraf bepalen waar voegen en snijlijnen komen voorkomt smalle stroken op opvallende plekken, zoals bij de deur, de nis of de kraan.">
               <span class="vak__nr" aria-hidden="true">02</span>
               <span class="vak__tekst"><span class="vak__titel">Tegelverdeling</span><span class="vak__uitleg">Vooraf bepalen waar voegen, snijlijnen en aansluitingen komen.</span></span>
               <svg class="icoon vak__pijl" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg>
             </button>
           </li>
           <li role="presentation">
-            <button class="vak__keuze" type="button" role="tab" id="vak-tab-3" aria-selected="false" aria-controls="vak-buhne" tabindex="-1" data-vak="2">
+            <button class="vak__keuze" type="button" role="tab" id="vak-tab-3" aria-selected="false" aria-controls="vak-buhne" tabindex="-1" data-vak="2" data-kop="Een nis die meeloopt met de wand." data-tekst="De voegen van de nis sluiten aan op die van de wand, en de randen worden strak afgewerkt, zodat de nis onderdeel is van het ontwerp.">
               <span class="vak__nr" aria-hidden="true">03</span>
               <span class="vak__tekst"><span class="vak__titel">Nissen</span><span class="vak__uitleg">Nauwkeurig betegelde nissen die onderdeel worden van het ontwerp.</span></span>
               <svg class="icoon vak__pijl" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg>
             </button>
           </li>
           <li role="presentation">
-            <button class="vak__keuze" type="button" role="tab" id="vak-tab-4" aria-selected="false" aria-controls="vak-buhne" tabindex="-1" data-vak="3">
+            <button class="vak__keuze" type="button" role="tab" id="vak-tab-4" aria-selected="false" aria-controls="vak-buhne" tabindex="-1" data-vak="3" data-kop="Grote platen, weinig voegen." data-tekst="Grote keramische platen vragen een vlakke ondergrond, extra handen en een nivelleersysteem om ze zonder hoogteverschil te leggen.">
               <span class="vak__nr" aria-hidden="true">04</span>
               <span class="vak__tekst"><span class="vak__titel">Grootformaat</span><span class="vak__uitleg">Specialistische verwerking van grote keramische platen.</span></span>
               <svg class="icoon vak__pijl" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg>
             </button>
           </li>
           <li role="presentation">
-            <button class="vak__keuze" type="button" role="tab" id="vak-tab-5" aria-selected="false" aria-controls="vak-buhne" tabindex="-1" data-vak="4">
+            <button class="vak__keuze" type="button" role="tab" id="vak-tab-5" aria-selected="false" aria-controls="vak-buhne" tabindex="-1" data-vak="4" data-kop="De voeg maakt het af." data-tekst="Voegbreedte en voegkleur worden afgestemd op de tegel, zodat het vlak rustig oogt en de voeg niet de aandacht trekt.">
               <span class="vak__nr" aria-hidden="true">05</span>
               <span class="vak__tekst"><span class="vak__titel">Voegwerk</span><span class="vak__uitleg">Een voegbreedte en kleur die aansluiten bij het gekozen tegelwerk.</span></span>
               <svg class="icoon vak__pijl" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg>
             </button>
           </li>
+      </ul>
+      <div class="vak__buhne" id="vak-buhne" role="tabpanel" aria-labelledby="vak-tab-1" data-vak-buhne>
+        <!-- gen:beeld id=detail-verstek maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
+<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-verstek-800.webp" srcset="/assets/beelden/detail-verstek-480.webp 480w, /assets/beelden/detail-verstek-800.webp 800w, /assets/beelden/detail-verstek-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: close-up van een buitenhoek met 45° verstek, zonder tegelprofiel" loading="lazy" decoding="async"></div>
+<!-- /gen:beeld -->
+        <!-- gen:beeld id=detail-tegelverdeling maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
+<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-tegelverdeling-800.webp" srcset="/assets/beelden/detail-tegelverdeling-480.webp 480w, /assets/beelden/detail-tegelverdeling-800.webp 800w, /assets/beelden/detail-tegelverdeling-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: tegelwand met een symmetrische tegelverdeling rond een nis en de kraan" loading="lazy" decoding="async"></div>
+<!-- /gen:beeld -->
+        <!-- gen:beeld id=detail-nis maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
+<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-nis-800.webp" srcset="/assets/beelden/detail-nis-480.webp 480w, /assets/beelden/detail-nis-800.webp 800w, /assets/beelden/detail-nis-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: betegelde nis met voegen die precies doorlopen in de wand" loading="lazy" decoding="async"></div>
+<!-- /gen:beeld -->
+        <!-- gen:beeld id=detail-grootformaat maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
+<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-grootformaat-800.webp" srcset="/assets/beelden/detail-grootformaat-480.webp 480w, /assets/beelden/detail-grootformaat-800.webp 800w, /assets/beelden/detail-grootformaat-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: grote keramische plaat op een draagframe met zuignappen, naast een lijmbed" loading="lazy" decoding="async"></div>
+<!-- /gen:beeld -->
+        <!-- gen:beeld id=detail-voeg maat=vak klasse=vak__beeld donker label=Detailfoto_volgt -->
+<div class="foto foto--donker vak__beeld" data-soort="sfeerbeeld"><img src="/assets/beelden/detail-voeg-800.webp" srcset="/assets/beelden/detail-voeg-480.webp 480w, /assets/beelden/detail-voeg-800.webp 800w, /assets/beelden/detail-voeg-1200.webp 1200w" sizes="(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1200" alt="Sfeerbeeld: macro van een voeg van 2 mm tussen twee grootformaat tegels" loading="lazy" decoding="async"></div>
+<!-- /gen:beeld -->
+        <div class="vak__bijschrift" aria-live="polite">
+          <p class="vak__plek"><span data-vak-label-nr>01</span> <span aria-hidden="true">—</span> <span data-vak-label-titel>45° verstek</span></p>
+          <h3 class="vak__bijkop" data-vak-kop>Strakke, naadloze hoeken.</h3>
+          <p class="vak__bijtekst" data-vak-tekst>Bij een verstek worden beide tegelranden onder 45° geslepen, zodat de hoek doorloopt zonder zichtbaar profiel. Dat vraagt nauwkeurig zagen en passen.</p>
+          <div class="vak__bladeren">
+            <button class="vak__blader" type="button" data-vak-vorige aria-label="Vorige techniek"><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></button>
+            <button class="vak__blader" type="button" data-vak-volgende aria-label="Volgende techniek"><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <ul class="vak__duimen" role="list" aria-hidden="true">
+        <li><button class="vak__duim" type="button" tabindex="-1" data-vak-duim="0" aria-current="true"><img src="/assets/beelden/detail-verstek-480.webp" width="480" height="480" alt="Sfeerbeeld: buitenhoek met 45° verstek" loading="lazy" decoding="async"><span class="vak__duim-titel">45° verstek</span><span class="vak__duim-nr">01</span></button></li>
+        <li><button class="vak__duim" type="button" tabindex="-1" data-vak-duim="1"><img src="/assets/beelden/detail-tegelverdeling-480.webp" width="480" height="480" alt="Sfeerbeeld: symmetrische tegelverdeling" loading="lazy" decoding="async"><span class="vak__duim-titel">Tegelverdeling</span><span class="vak__duim-nr">02</span></button></li>
+        <li><button class="vak__duim" type="button" tabindex="-1" data-vak-duim="2"><img src="/assets/beelden/detail-nis-480.webp" width="480" height="480" alt="Sfeerbeeld: betegelde nis in de wand" loading="lazy" decoding="async"><span class="vak__duim-titel">Nissen</span><span class="vak__duim-nr">03</span></button></li>
+        <li><button class="vak__duim" type="button" tabindex="-1" data-vak-duim="3"><img src="/assets/beelden/detail-grootformaat-480.webp" width="480" height="480" alt="Sfeerbeeld: grote keramische plaat" loading="lazy" decoding="async"><span class="vak__duim-titel">Grootformaat</span><span class="vak__duim-nr">04</span></button></li>
+        <li><button class="vak__duim" type="button" tabindex="-1" data-vak-duim="4"><img src="/assets/beelden/detail-voeg-480.webp" width="480" height="480" alt="Sfeerbeeld: smalle voeg tussen tegels" loading="lazy" decoding="async"><span class="vak__duim-titel">Voegwerk</span><span class="vak__duim-nr">05</span></button></li>
       </ul>
     </div>
   </section>
