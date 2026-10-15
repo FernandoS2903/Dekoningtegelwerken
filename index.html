@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#f3eee6">
 <link rel="preload" href="/assets/fonts/fraunces-latin-opsz-wght.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/site.css?v=ad1486d3cd">
+<link rel="stylesheet" href="/css/site.css?v=66d20e9ef7">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta property="og:image" content="https://dekoningtegelwerken.nl/assets/og-image.jpg">
@@ -301,17 +301,23 @@
   <!-- §9 Werkwijze: titel, intro en foto, daaronder de vijf stappen als
        tijdlijn (horizontaal vanaf 64em, verticaal op mobiel). -->
   <section class="sectie sectie--diep sectie--werkwijze" id="werkwijze" aria-labelledby="werkwijze-kop">
-    <div class="wrap">
-      <div class="werkwijze__boven">
+    <div class="wrap werkwijze">
         <div class="werkwijze__intro">
           <span class="eyebrow">Werkwijze</span>
           <h2 id="werkwijze-kop">Van eerste idee tot laatste voeg.</h2>
-          <p class="lead">Een duidelijk proces, heldere afspraken en persoonlijk contact. Zo weet je bij elke stap waar je aan toe bent.</p>
+          <p class="lead">Een duidelijk proces, heldere afspraken en persoonlijk contact. Zo weet je precies waar je aan toe bent, van eerste schets tot eindresultaat.</p>
         </div>
-        <!-- gen:beeld id=vak-gereedschap maat=werkwijze klasse=werkwijze__foto -->
-<div class="foto werkwijze__foto" data-soort="sfeerbeeld"><img src="/assets/beelden/vak-gereedschap-800.webp" srcset="/assets/beelden/vak-gereedschap-480.webp 480w, /assets/beelden/vak-gereedschap-800.webp 800w, /assets/beelden/vak-gereedschap-1200.webp 1200w" sizes="(min-width: 90em) 48rem, (min-width: 64em) 55vw, calc(100vw - 2.5rem)" width="1200" height="1490" alt="Sfeerbeeld: tegelzettersgereedschap (lijmkam, waterpas, tegelkruisjes) op een half betegelde vloer" loading="lazy" decoding="async"></div>
+        <div class="werkwijze__beeld">
+        <p class="werkwijze__notitie" aria-hidden="true">Zorgvuldig van begin tot eind.</p>
+        <!-- gen:beeld id=over-uitvoering maat=werkwijze klasse=werkwijze__foto -->
+<div class="foto werkwijze__foto" data-soort="sfeerbeeld"><img src="/assets/beelden/over-uitvoering-800.webp" srcset="/assets/beelden/over-uitvoering-480.webp 480w, /assets/beelden/over-uitvoering-800.webp 800w, /assets/beelden/over-uitvoering-1200.webp 1200w, /assets/beelden/over-uitvoering-1600.webp 1600w, /assets/beelden/over-uitvoering-2000.webp 2000w" sizes="(min-width: 90em) 48rem, (min-width: 64em) 55vw, calc(100vw - 2.5rem)" width="2000" height="1493" alt="Sfeerbeeld: tegelvloer in uitvoering, een grote tegel in een vers gekamd lijmbed naast een rij gelegde tegels met een waterpas" loading="lazy" decoding="async"></div>
 <!-- /gen:beeld -->
-      </div>
+        </div>
+      <ul class="werkwijze__duimen" role="list" aria-hidden="true">
+        <li><img src="/assets/beelden/detail-verstek-480.webp" width="480" height="480" alt="Sfeerbeeld: buitenhoek met verstek" loading="lazy" decoding="async"><span>Oog voor detail</span></li>
+        <li><img src="/assets/beelden/detail-nis-480.webp" width="480" height="480" alt="Sfeerbeeld: betegelde nis in de wand" loading="lazy" decoding="async"><span>Strakke afwerking</span></li>
+        <li><img src="/assets/beelden/dienst-vloer-480.webp" width="480" height="596" alt="Sfeerbeeld: doorlopende tegelvloer" loading="lazy" decoding="async"><span>Rustige vloeren</span></li>
+      </ul>
       <!-- gen:werkwijze stappen -->
 <ol class="stappen" role="list" data-stappen>
   <li class="stappen__stap">
@@ -332,7 +338,7 @@
   <li class="stappen__stap">
     <span class="stappen__nr" aria-hidden="true">04</span>
     <svg class="icoon stappen__icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#waterpas"/></svg>
-    <div class="stappen__tekst"><h3>Uitvoering</h3><p>Het tegelwerk wordt volgens afspraak uitgevoerd.</p></div>
+    <div class="stappen__tekst"><h3>Uitvoering</h3><p>Het tegelwerk wordt volgens afspraak uitgevoerd, met oog voor detail.</p></div>
   </li>
   <li class="stappen__stap">
     <span class="stappen__nr" aria-hidden="true">05</span>
@@ -370,18 +376,34 @@
     </div>
   </section>
 
-  <!-- §21 Over De Koning: asymmetrisch split-screen. Persoonlijke achtergrond
-       (verhaal en foto van de eigenaar) volgt pas als De Koning die aanlevert. -->
+  <!-- §21 Over De Koning (mockup Bob, 15 okt 2026): links de foto met de
+       vertrouwenspunten erop, rechts kop, intro, specialisaties en werkgebied
+       en twee knoppen. Persoonlijke achtergrond volgt pas als De Koning die
+       aanlevert. -->
   <section class="sectie--over" id="over" aria-labelledby="over-kop">
     <div class="over">
-      <!-- gen:beeld id=over-uitvoering maat=split klasse=onthul -->
-<div class="foto onthul" data-soort="sfeerbeeld"><img src="/assets/beelden/over-uitvoering-800.webp" srcset="/assets/beelden/over-uitvoering-480.webp 480w, /assets/beelden/over-uitvoering-800.webp 800w, /assets/beelden/over-uitvoering-1200.webp 1200w, /assets/beelden/over-uitvoering-1600.webp 1600w, /assets/beelden/over-uitvoering-2000.webp 2000w" sizes="(min-width: 60em) 58vw, 100vw" width="2000" height="1493" alt="Sfeerbeeld: tegelvloer in uitvoering, een grote tegel in een vers gekamd lijmbed naast een rij gelegde tegels met een waterpas" loading="lazy" decoding="async"></div>
+      <div class="over__beeld">
+        <!-- gen:beeld id=vak-gereedschap maat=split klasse=onthul -->
+<div class="foto onthul" data-soort="sfeerbeeld"><img src="/assets/beelden/vak-gereedschap-800.webp" srcset="/assets/beelden/vak-gereedschap-480.webp 480w, /assets/beelden/vak-gereedschap-800.webp 800w, /assets/beelden/vak-gereedschap-1200.webp 1200w" sizes="(min-width: 60em) 58vw, 100vw" width="1200" height="1490" alt="Sfeerbeeld: tegelzettersgereedschap (lijmkam, waterpas, tegelkruisjes) op een half betegelde vloer" loading="lazy" decoding="async"></div>
 <!-- /gen:beeld -->
+        <ul class="over__usps" role="list" aria-label="Waarom De Koning Tegelwerken">
+          <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#persoon"/></svg><span>Persoonlijk contact</span></li>
+          <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#waterpas"/></svg><span>Strakke afwerking</span></li>
+          <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#afspraak"/></svg><span>Duidelijke afspraken</span></li>
+        </ul>
+      </div>
       <div class="over__tekst">
         <span class="eyebrow reveal">Over De Koning</span>
-        <h2 class="reveal" id="over-kop" data-vertraging="1">Goed tegelwerk begint bij aandacht.</h2>
-        <p class="lead reveal" data-vertraging="2">Elke ruimte is anders. Daarom kijken we eerst goed: we meten nauwkeurig, denken mee over de indeling en de tegelkeuze, en werken alles zorgvuldig af, tot en met de laatste voeg.</p>
-        <p class="over__actie reveal" data-vertraging="3"><a class="knop" href="/contact/">Maak kennis met De Koning <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a></p>
+        <h2 class="reveal" id="over-kop" data-vertraging="1">Persoonlijk vakmanschap.</h2>
+        <p class="lead reveal" data-vertraging="2">Wij maken tegelwerk in badkamers, vloeren, toiletten en meer. Met oog voor detail en een strakke afwerking, van de eerste meting tot de laatste voeg.</p>
+        <dl class="over__feiten reveal" data-vertraging="2">
+          <div><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#waterpas"/></svg><dt>Specialisaties</dt><dd>Badkamers, tegelvloeren, toiletten, grootformaat en XXL, visgraat, natuursteen</dd></div>
+          <div data-veld-blok="werkgebied"><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#locatie"/></svg><dt>Werkgebied</dt><dd data-veld="werkgebied"><span class="ph">[WERKGEBIED]</span></dd></div>
+        </dl>
+        <div class="over__actie reveal" data-vertraging="3">
+          <a class="knop" href="/offerte/">Bespreek je project <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
+          <a class="knop knop--lijn over__projecten" href="#werk">Bekijk onze projecten <span class="hero__rondje" aria-hidden="true"><svg class="icoon"><use href="/assets/iconen/iconen.svg#afspelen"/></svg></span></a>
+        </div>
       </div>
     </div>
   </section>
@@ -435,19 +457,26 @@
     <div class="voet__boven">
       <div class="voet__merk">
         <a class="logo" href="/"><img class="logo__beeld" src="/assets/brand/logo.svg" alt="De Koning Tegelwerken" width="542" height="442" loading="lazy"></a>
-        <p>Badkamers, tegelvloeren, grootformaat en specialistisch tegelwerk.</p>
+        <p class="voet__slogan">Tegelwerk<br>tot in detail.</p>
+        <p class="voet__omschrijving">Badkamers, tegelvloeren, grootformaat en specialistisch tegelwerk in IJmuiden en omgeving.</p>
+        <ul class="voet__usps" role="list">
+          <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#persoon"/></svg><span>Persoonlijk contact</span></li>
+          <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#waterpas"/></svg><span>Strakke afwerking</span></li>
+          <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#afspraak"/></svg><span>Duidelijke afspraken</span></li>
+        </ul>
       </div>
-      <div>
+      <div class="voet__kolom">
         <h2>Diensten</h2>
         <ul role="list">
           <li><a href="/badkamer-tegelen/">Badkamers</a></li>
           <li><a href="/vloer-betegelen/">Tegelvloeren</a></li>
           <li><a href="/grootformaat-tegels/">Grootformaat</a></li>
-          <li><a href="/visgraat-tegels/">Visgraat</a></li>
+          <li><a href="/visgraat-tegels/">Visgraat &amp; patronen</a></li>
           <li><a href="/natuursteen/">Natuursteen</a></li>
+          <li><a href="/toilet-betegelen/">Toiletten</a></li>
         </ul>
       </div>
-      <div>
+      <div class="voet__kolom">
         <h2>De Koning</h2>
         <ul role="list">
           <li><a href="/#over">Over ons</a></li>
@@ -456,23 +485,26 @@
           <li><a href="/contact/">Contact</a></li>
         </ul>
       </div>
-      <div>
+      <div class="voet__kolom voet__contact">
         <h2>Contact</h2>
         <ul role="list">
-          <li data-veld-blok="telefoon"><a data-veld="telefoon"><span class="ph">[TELEFOONNUMMER]</span></a></li>
-          <li data-veld-blok="email"><a data-veld="email"><span class="ph">[E-MAILADRES]</span></a></li>
-          <li data-veld-blok="werkgebied"><span>Werkgebied:&nbsp;<span data-veld="werkgebied"><span class="ph">[WERKGEBIED]</span></span></span></li>
+          <li data-veld-blok="werkgebied"><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#locatie"/></svg><span>Werkgebied:<br><span data-veld="werkgebied"><span class="ph">[WERKGEBIED]</span></span></span></li>
+          <li class="voet__knop"><a class="knop knop--licht" href="/offerte/">Vraag vrijblijvend offerte aan <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a></li>
+          <li data-veld-blok="telefoon"><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#telefoon"/></svg><a data-veld="telefoon"><span class="ph">[TELEFOONNUMMER]</span></a></li>
+          <li data-veld-blok="email"><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#mail"/></svg><a data-veld="email"><span class="ph">[E-MAILADRES]</span></a></li>
         </ul>
       </div>
     </div>
     <div class="voet__onder">
       <ul class="voet__juridisch" role="list">
+        <li>&copy; 2026 De Koning Tegelwerken</li>
+        <li data-veld-blok="kvk"><span>KvK&nbsp;<span data-veld="kvk"><span class="ph">[KVK-NUMMER]</span></span></span></li>
         <li><a href="/privacy/">Privacyverklaring</a></li>
         <li><a href="/algemene-voorwaarden/">Algemene voorwaarden</a></li>
         <!-- Cookiebeleid: niet nodig zolang de site geen tracking- of analytische cookies plaatst. -->
-        <li data-veld-blok="kvk"><span>KvK&nbsp;<span data-veld="kvk"><span class="ph">[KVK-NUMMER]</span></span></span></li>
       </ul>
       <p class="voet__hfd">Website &amp; automatisering door <a href="https://handsfree-digital.nl" rel="noopener">Handsfree Digital</a></p>
+      <a class="voet__omhoog" href="#"><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#chevron"/></svg><span>Naar boven</span></a>
     </div>
   </div>
 </footer>

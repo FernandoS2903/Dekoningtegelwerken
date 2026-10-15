@@ -1600,34 +1600,61 @@ html:not(.js) .vak__pijl { display: none; }
 .reviews__score strong { font-family: var(--font-kop); font-size: var(--t-kop-3); font-weight: 400; color: var(--inkt); line-height: 1; }
 .reviews__score .sterren { color: var(--brons); letter-spacing: 0.1em; }
 
-/* Over De Koning: asymmetrisch split-screen. Mobiel foto (4:3) boven en de
-   tekst eronder; vanaf 60em loopt de foto tot de linkerrand van het scherm
-   (7 van 12 delen) en staat de tekst verticaal gecentreerd, rechts
-   uitgelijnd op de wrap. */
-.sectie--over { background: var(--zand-diep); }
+/* Over De Koning (mockup Bob, 15 okt 2026): links de foto met de drie
+   vertrouwenspunten erop, rechts op een lichte achtergrond kop, intro,
+   specialisaties en werkgebied, en twee knoppen. Mobiel foto boven. */
+.sectie--over { background: linear-gradient(110deg, var(--zand) 0%, var(--kalk) 60%, var(--zand-diep) 100%); }
 .over { display: grid; }
-.over .foto { --ratio: 4 / 3; }
-.over__tekst {
-  display: grid;
-  gap: var(--r-2);
-  align-content: center;
-  padding: var(--r-4) var(--rand) var(--r-5);
+.over__beeld { position: relative; }
+.over__beeld .foto { --ratio: 4 / 3; height: 100%; }
+.over__beeld::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(30, 29, 27, 0.72) 0%, rgba(30, 29, 27, 0.2) 30%, rgba(30, 29, 27, 0) 50%);
+  pointer-events: none;
 }
-.over__tekst h2 { max-width: 14ch; }
+.over__usps {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  gap: var(--r-2) 0;
+  margin: 0;
+  list-style: none;
+  color: var(--licht);
+}
+.over .over__usps { padding: var(--r-3) var(--rand); }
+.over__usps li { display: flex; flex: 1 1 0; align-items: center; gap: 0.6rem; padding-right: var(--r-2); font-size: 0.8125rem; line-height: 1.3; }
+.over__usps li + li { padding-left: var(--r-2); border-left: 1px solid rgba(237, 230, 218, 0.35); }
+.over__usps .icoon { flex: none; width: 1.5rem; height: 1.5rem; color: var(--brons-licht); }
+.over__tekst { display: grid; gap: var(--r-2); align-content: center; padding: var(--r-5) var(--rand); }
+.over__tekst h2 { max-width: 12ch; }
 .over__tekst .lead { max-width: 34rem; color: var(--inkt-zacht); }
-.over__actie { margin-top: var(--r-1); }
-.over__actie .knop { width: 100%; }
-@media (min-width: 40em) { .over__actie .knop { width: auto; } }
+.over__feiten { display: grid; gap: var(--r-3); margin: var(--r-2) 0 0; }
+.over__feiten > div { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); grid-auto-rows: min-content; column-gap: 0.9rem; row-gap: 0.15rem; align-content: start; }
+.over__feiten .icoon { grid-row: 1 / span 2; width: 2rem; height: 2rem; color: var(--brons); }
+.over__feiten dt { font-size: var(--t-s); color: var(--inkt-zacht); }
+.over__feiten dd { margin: 0; color: var(--inkt); }
+.over__actie { display: grid; gap: 0.75rem; margin-top: var(--r-3); }
+.over__actie .knop { width: 100%; min-height: 3.5rem; }
+.over__projecten { gap: 1rem; }
+@media (min-width: 40em) {
+  .over__actie { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .over__actie .knop { width: auto; padding-inline: 2rem; }
+  .over__usps li { font-size: var(--t-s); }
+  .over__usps .icoon { width: 2rem; height: 2rem; }
+}
 @media (min-width: 60em) {
-  .over { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
-  .over .foto { aspect-ratio: auto; height: 100%; min-height: clamp(28rem, 36vw, 40rem); }
-  .over__tekst {
-    gap: var(--r-3);
-    padding-block: var(--r-5);
-    padding-left: clamp(2.5rem, 1rem + 3vw, 5rem);
-    padding-right: max(var(--rand), calc((100vw - var(--breedte)) / 2));
-  }
-  .over__actie { margin-top: var(--r-2); }
+  .over { grid-template-columns: minmax(0, 52fr) minmax(0, 48fr); min-height: clamp(34rem, 36vw, 38rem); }
+  .over__beeld .foto { position: absolute; inset: 0; height: auto; aspect-ratio: auto; }
+  .over .over__usps { padding: var(--r-4) clamp(var(--rand), 5vw, 5.5rem); }
+  .over__tekst { padding-block: var(--r-5); padding-left: clamp(2.5rem, 1rem + 6vw, 6.5rem); padding-right: max(var(--rand), 4vw); }
+  .over__feiten { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 0; }
+  .over__feiten > div + div { padding-left: var(--r-3); border-left: 1px solid var(--lijn); }
+  .over__feiten > div:first-child { padding-right: var(--r-3); }
 }
 /* Foto-reveal bij scrollen (700 ms): het beeld schuift van links open en
    zakt licht in schaal terug. Alleen met JS; zonder of met reduced motion
@@ -1637,22 +1664,79 @@ html:not(.js) .vak__pijl { display: none; }
 .js .onthul img { clip-path: inset(0 100% 0 0); transform: scale(1.06); transition: clip-path 700ms var(--ease), transform 700ms var(--ease); }
 .js .onthul.in img { clip-path: inset(0 0 0 0); transform: none; }
 
-/* Werkwijze op de homepage: titel en intro naast een grote foto, daaronder
-   de vijf stappen. Compacter dan een gewone sectie. */
+/* Werkwijze op de homepage (mockup Bob, 15 okt 2026): links titel en intro,
+   in het midden een grote foto met een handgeschreven notitie, rechts drie
+   miniaturen over de volle hoogte; de tijdlijn en de knop onder titel en foto. */
 .sectie--werkwijze { padding-block: clamp(3rem, 2rem + 3vw, 5rem); }
-.werkwijze__boven { display: grid; gap: var(--r-3); margin-bottom: var(--r-4); }
+.werkwijze { display: grid; gap: var(--r-4); }
 .werkwijze__intro { display: grid; gap: var(--r-2); align-content: center; }
 .werkwijze__intro .lead { max-width: 34rem; color: var(--inkt-zacht); }
-.werkwijze__foto { --ratio: 16 / 9; }
-.werkwijze__foto img { object-position: 50% 42%; }
-@media (min-width: 64em) {
-  .werkwijze__boven { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--r-6); align-items: center; }
-  .werkwijze__foto { --ratio: 2 / 1; }
+.werkwijze__beeld { position: relative; }
+.werkwijze__foto { --ratio: 16 / 9; border-radius: 10px; overflow: hidden; }
+.werkwijze__notitie {
+  position: absolute;
+  top: 12%;
+  left: 7%;
+  z-index: 1;
+  max-width: 8.5rem;
+  font-family: var(--font-kop);
+  font-style: italic;
+  font-size: clamp(1.1rem, 0.8rem + 0.8vw, 1.45rem);
+  line-height: 1.25;
+  color: var(--antraciet);
+  text-shadow: 0 0 12px rgba(251, 248, 243, 0.85);
 }
-.werkwijze__actie { margin-top: var(--r-4); }
+.werkwijze__notitie::after {
+  content: "";
+  display: block;
+  width: 2.25rem;
+  height: 1.25rem;
+  margin: 0.35rem 0 0 2.5rem;
+  border-left: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  border-radius: 0 0 0 1.5rem;
+}
+.werkwijze__duimen { display: none; }
+.werkwijze__actie { margin-top: var(--r-2); }
 .werkwijze__actie .knop { width: 100%; }
-@media (min-width: 40em) { .werkwijze__actie .knop { width: auto; } }
-
+@media (min-width: 40em) { .werkwijze__actie .knop { width: auto; min-height: 3.75rem; padding-inline: 2.5rem; } }
+@media (min-width: 64em) {
+  .sectie--werkwijze .wrap { max-width: calc(100rem + 2 * var(--rand)); }
+  .werkwijze {
+    grid-template-columns: minmax(0, 9fr) minmax(0, 11fr) minmax(0, 4.6fr);
+    grid-template-areas: "intro beeld duimen" "stappen stappen duimen" "actie actie duimen";
+    column-gap: var(--r-4);
+    row-gap: var(--r-4);
+    align-items: start;
+  }
+  .werkwijze__intro { grid-area: intro; align-self: center; }
+  .werkwijze__beeld { grid-area: beeld; }
+  .werkwijze .stappen { grid-area: stappen; }
+  .werkwijze__actie { grid-area: actie; margin-top: 0; }
+  .werkwijze > .whatsapp-cta { grid-column: 1 / 3; }
+  .werkwijze__foto { --ratio: 16 / 9; }
+  .werkwijze__duimen {
+    grid-area: duimen;
+    align-self: stretch;
+    display: grid;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .werkwijze__duimen li { position: relative; overflow: hidden; border-radius: 10px; min-height: 10rem; }
+  .werkwijze__duimen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .werkwijze__duimen span {
+    position: absolute;
+    left: 0;
+    bottom: 1rem;
+    padding: 0.45rem 0.9rem;
+    background: rgba(30, 29, 27, 0.72);
+    color: var(--licht);
+    font-size: var(--t-s);
+  }
+}
 /* De stappen. Mobiel verticaal: nummer en icoon links op de lijn, tekst
    rechts, 28 px tussen de stappen. Vanaf 64em één horizontale rij. Elke stap
    tekent de lijn naar de volgende: ::before is de lijn, ::after de vulling
@@ -2150,6 +2234,63 @@ a.projectkaart__link:hover .projectkaart__naam { color: var(--brons); }
 .voet__juridisch a { color: var(--licht-zacht); }
 .voet__hfd a { color: var(--licht-zacht); text-decoration: underline; text-decoration-color: var(--lijn-donker); text-underline-offset: 0.25em; }
 .voet__hfd a:hover { color: var(--brons-licht); }
+/* Footer naar de mockup van Bob (15 okt 2026): slogan en vertrouwenspunten
+   onder het logo, koppen met een lijntje, contact met iconen en de offerteknop,
+   onderin "Naar boven". Rechts een donker detailbeeld als achtergrond. */
+.voet { position: relative; overflow: hidden; isolation: isolate; }
+@media (min-width: 64em) {
+  .voet::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: -1;
+    width: 22%;
+    background: url("/assets/beelden/detail-verstek-800.webp") center / cover no-repeat;
+    opacity: 0.55;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 60%);
+    mask-image: linear-gradient(90deg, transparent, #000 60%);
+  }
+  .voet .wrap { max-width: calc(94rem + 2 * var(--rand)); padding-right: max(var(--rand), 10vw); }
+  .voet__boven { grid-template-columns: minmax(0, 5fr) minmax(0, 2.6fr) minmax(0, 2.2fr) minmax(0, 3.6fr); column-gap: var(--r-4); }
+}
+.voet__slogan { margin-top: var(--r-3); font-family: var(--font-kop); font-size: var(--t-kop-3); line-height: 1.05; color: var(--licht); }
+.voet__merk .voet__omschrijving { margin-top: var(--r-2); max-width: 22rem; line-height: 1.6; }
+.voet__usps { display: flex !important; flex-wrap: wrap; gap: var(--r-2) 0 !important; margin-top: var(--r-4); }
+.voet__usps li { display: flex; align-items: center; gap: 0.6rem; padding-right: var(--r-2); font-size: var(--t-s); line-height: 1.3; color: var(--licht); }
+.voet__usps li + li { padding-left: var(--r-2); border-left: 1px solid var(--lijn-donker); }
+.voet__usps li span { max-width: 5.5rem; }
+.voet__usps .icoon { width: 1.9rem; height: 1.9rem; color: var(--brons-licht); flex: none; }
+.voet h2 { display: flex; align-items: center; gap: 0.9rem; }
+.voet h2::before { content: ""; width: 1.75rem; height: 1px; background: var(--brons-licht); }
+.voet__kolom ul { padding-left: calc(1.75rem + 0.9rem); }
+.voet__contact ul { gap: 0.4rem; }
+.voet__contact li { display: flex; align-items: center; gap: 0.9rem; }
+.voet__contact li > span { display: block !important; min-height: 0 !important; line-height: 1.5; }
+.voet__contact li > .icoon { width: 1.25rem; height: 1.25rem; color: var(--brons-licht); flex: none; }
+.voet__contact .voet__knop { margin-block: var(--r-2); }
+.voet__contact .voet__knop .knop { min-height: 3.5rem; color: var(--antraciet); }
+.voet__contact .voet__knop .knop:hover { color: var(--antraciet); }
+.voet__onder { align-items: center; }
+.voet .voet__juridisch li { display: inline-flex; align-items: center; min-height: var(--tik); }
+@media (min-width: 64em) {
+  .voet .voet__juridisch li { min-height: 2.25rem; white-space: nowrap; }
+  .voet .voet__juridisch { flex-wrap: nowrap; gap: 0 var(--r-2); }
+  .voet .voet__juridisch li + li { padding-left: var(--r-2); }
+  .voet__onder { flex-wrap: nowrap; }
+  .voet__hfd { margin-left: auto; white-space: nowrap; }
+  .voet__omhoog { white-space: nowrap; }
+}
+.voet .voet__juridisch li + li { padding-left: var(--r-3); border-left: 1px solid var(--lijn-donker); }
+.voet .voet__juridisch { gap: 0 var(--r-3); }
+.voet__omhoog { display: inline-flex; align-items: center; gap: 0.6rem; min-height: var(--tik); color: var(--licht); }
+.voet__omhoog .icoon { width: 1rem; height: 1rem; transform: rotate(-90deg); color: var(--brons-licht); }
+@media (max-width: 39.99em) {
+  .voet__kolom ul { padding-left: 0; }
+  .voet__usps li { flex: 1 1 0; gap: 0.4rem; padding-right: 0.5rem; font-size: 0.75rem; }
+  .voet__usps li + li { padding-left: 0.5rem; }
+  .voet__usps .icoon { width: 1.25rem; height: 1.25rem; }
+  .voet .voet__juridisch li + li { padding-left: 0; border-left: 0; }
+}
 
 /* Sticky actiebalk onderin (alleen smalle schermen): WhatsApp en offerte,
    subtiel en half doorzichtig. Zonder WhatsApp-nummer vult de offerteknop de balk. */
