@@ -256,8 +256,10 @@ export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
     const lijst = (uitgelicht.length ? uitgelicht : lijstIn).slice(0, 5);
     if (!lijst.length) return `<p class="ph-blok">Hier komen binnenkort projecten van De Koning Tegelwerken.</p>`;
     const kaart = (p, i, { groot = false, breed = false } = {}) => {
-      const meta = [p.plaats, p.type].filter(Boolean).map(tekstOfPh).join(' · ');
+      // Soort (ruimte) als label linksboven, onder de naam alleen de plaats (mockup Bob).
+      const meta = p.plaats ? tekstOfPh(p.plaats) : '';
       const binnen = beeld(p.kaartBeeld, { maat: groot ? 'galerijGroot' : 'galerijKlein', sfeer: true, laden: 'lazy', label: 'Projectfoto volgt' })
+        + (p.type ? `<span class="werkgalerij__soort">${esc(p.type)}</span>` : '')
         + `<span class="werkgalerij__info">`
         + (p.placeholder ? `<span class="werkgalerij__badge">Voorbeeldkaart</span>` : '')
         + `<span class="werkgalerij__naam">${tekstOfPh(p.naam)}</span>`

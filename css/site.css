@@ -1042,6 +1042,24 @@ a.werkgalerij__link:focus-visible { outline: 2px solid var(--brons); outline-off
 .werkgalerij__leeg { margin-top: var(--r-2); color: var(--inkt-zacht); }
 .js .werkgalerij .reveal { transition-duration: 450ms; }
 
+/* Soortlabel linksboven (mockup Bob); het sfeerbeeldlabel schuift dan naar rechts. */
+.werkgalerij__soort {
+  position: absolute;
+  top: var(--r-2);
+  left: var(--r-2);
+  z-index: 2;
+  padding: 0.3rem 0.55rem;
+  border-radius: 3px;
+  background: rgba(30, 29, 27, 0.62);
+  color: var(--licht);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.werkgalerij .foto--sfeer::after { left: auto; right: 0.75rem; }
+.werkgalerij__link { border-radius: 10px; }
+
 /* Mobiel: hooguit drie kaarten, tenzij er gefilterd is. */
 @media (max-width: 39.99em) {
   .werkgalerij:not(.gefilterd) > .werkgalerij__kaart:nth-child(n + 4) { display: none; }
