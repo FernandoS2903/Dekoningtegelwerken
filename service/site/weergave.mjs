@@ -18,6 +18,7 @@
 // het CMS, zonder SSI (preview, lokaal) blijft de statische versie staan.
 
 import { readFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 export const SITE_URL = 'https://dekoningtegelwerken.nl';
@@ -130,6 +131,18 @@ export const HEAD = `<meta charset="utf-8">
 export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
   const lees = (rel) => readFileSync(path.join(root, rel), 'utf8');
   const leesJson = (rel) => JSON.parse(lees(rel));
+
+  // Versie in de URL van css en js (eerste tien tekens van de sha256 van de
+  // inhoud): nginx laat ze een uur cachen, dus zonder versie ziet een
+  // bezoeker na een uitrol nieuwe HTML met de oude opmaak. Ontbreekt het
+  // bestand (de kopie van het portaal in /opt heeft geen css/js), dan zonder.
+  const versie = (rel) => {
+    const pad = path.join(root, rel);
+    return existsSync(pad) ? '?v=' + createHash('sha256').update(readFileSync(pad)).digest('hex').slice(0, 10) : '';
+  };
+  const head = () => HEAD
+    .replace('href="/css/site.css"', `href="/css/site.css${versie('css/site.css')}"`)
+    .replace('src="/js/site.js"', `src="/js/site.js${versie('js/site.js')}"`);
 
   // -- beelden ----------------------------------------------------------------
   // Sfeerbeelden uit data/beelden.json (AI-gegenereerd, soort: sfeerbeeld). Een
@@ -343,7 +356,7 @@ export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
 
   function blok(naam, args, paginaPad) {
     switch (naam) {
-      case 'head': return HEAD;
+      case 'head': return head();
       case 'header': {
         const overHero = args.includes('over-hero');
         // Het logo is overal hetzelfde: het paarse origineel (besluit Bob, 4 okt 2026).
