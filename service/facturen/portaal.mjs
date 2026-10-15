@@ -33,7 +33,7 @@ import { OidcFout, veiligTerug } from './lib/oidc.mjs';
 import { LOGIN_COOKIE, SESSIE_COOKIE, cookieRegel, leesCookies } from './lib/sessies.mjs';
 import { nuIso, vandaag } from './lib/hulp.mjs';
 import {
-  bezoekerIp, doorsturen, kop, leesBody, leesRuw, stuurHtml, stuurTekst, zelfdeHerkomst, zelfdeTekst,
+  bezoekerIp, doorsturen, herkomstUitleg, kop, leesBody, leesRuw, stuurHtml, stuurTekst, zelfdeHerkomst, zelfdeTekst,
 } from './lib/web.mjs';
 import { STATISCH, stuurStatisch } from './web/statisch.mjs';
 import { losPagina } from './web/portaal.mjs';
@@ -234,7 +234,10 @@ export function maakPortaal({
 
       let body = null;
       if (req.method === 'POST') {
-        if (!zelfdeHerkomst(req)) return stuurTekst(res, 403, 'Dit formulier moet van het portaal zelf komen.');
+        if (!zelfdeHerkomst(req)) {
+          meld(req, `POST geweigerd: andere herkomst (${herkomstUitleg(req)})`);
+          return stuurTekst(res, 403, 'Dit formulier moet van het portaal zelf komen.');
+        }
       }
       // Een foto-upload is multipart en groter dan 64 KB: projecten.mjs leest
       // die body zelf en controleert daar het CSRF-token.

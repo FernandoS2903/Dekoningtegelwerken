@@ -29,7 +29,9 @@ export function kop(res, status, type, extra = {}) {
     'content-type': type,
     'content-security-policy': CSP,
     'x-content-type-options': 'nosniff',
-    'referrer-policy': 'no-referrer',
+    // same-origin: binnen het portaal gaan Referer en Origin gewoon mee (Safari
+    // stuurt bij no-referrer 'Origin: null' bij een formulier), naar buiten niets.
+    'referrer-policy': 'same-origin',
     'x-robots-tag': 'noindex, nofollow',
     'cache-control': 'no-store',
     ...extra,
@@ -68,18 +70,32 @@ export async function leesBody(req) {
 
 // Een POST moet van dezelfde herkomst komen. Basic Auth en cookies gaan bij
 // elk verzoek mee, ook bij een formulier op een andere site.
+//
+// Volgorde: Sec-Fetch-Site (moderne browsers), dan Origin, dan Referer.
+// 'none' (de gebruiker zelf, bijv. opnieuw verzenden) en 'Origin: null'
+// (Safari bij een strikte referrer-policy) bewijzen niets; dan beslist de
+// volgende kop. Zonder enig bewijs: weigeren.
+const zelfdeHost = (waarde, host) => {
+  try { return new URL(waarde).host === host; } catch { return false; }
+};
 export function zelfdeHerkomst(req) {
   const site = req.headers['sec-fetch-site'];
-  if (site) return site === 'same-origin';
+  if (site === 'same-origin') return true;
+  if (site && site !== 'none') return false;
+  const host = req.headers.host;
   const origin = req.headers.origin;
-  if (origin) {
-    try {
-      return new URL(origin).host === req.headers.host;
-    } catch {
-      return false;
-    }
-  }
+  if (origin && origin !== 'null') return zelfdeHost(origin, host);
+  const referer = req.headers.referer;
+  if (referer) return zelfdeHost(referer, host);
   return false;
+}
+
+// Voor het logboek bij een weigering: welke koppen er waren, zonder waarden
+// die iets over de gebruiker zeggen.
+export function herkomstUitleg(req) {
+  const h = req.headers;
+  const host = (v) => { try { return new URL(v).host; } catch { return v ? 'ongeldig' : '-'; } };
+  return `sec-fetch-site=${h['sec-fetch-site'] || '-'} origin=${h.origin === 'null' ? 'null' : host(h.origin)} referer=${host(h.referer)} host=${h.host || '-'}`;
 }
 
 export function zelfdeTekst(a, b) {
