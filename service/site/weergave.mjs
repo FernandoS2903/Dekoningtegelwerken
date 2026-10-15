@@ -272,10 +272,13 @@ export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
     };
 
     if (lijst.length === 1) {
+      // Eén project: dezelfde opbouw als de volle galerij (mockup Bob), met
+      // links het project en rechts tot vier andere foto's van dat project.
       const p = lijst[0];
-      const extra = (p.fotos || []).slice(0, 2);
-      const extraHtml = p.pagina ? extra.map((f) => `<li class="werkgalerij__kaart reveal"><a class="werkgalerij__link" href="/projecten/${esc(p.slug)}/" tabindex="-1" aria-hidden="true">${beeld(f, { maat: 'galerijKlein', sfeer: true })}</a></li>`).join('') : '';
-      return `<ul class="werkgalerij werkgalerij--een${extraHtml ? ' werkgalerij--met-extra' : ''}" role="list" data-werkgalerij>${kaart(p, 0, { groot: true })}${extraHtml}</ul>`;
+      const extra = p.pagina ? (p.fotos || []).filter(Boolean).slice(0, 4) : [];
+      const totaal = 1 + extra.length;
+      const extraHtml = extra.map((f, i) => `<li class="werkgalerij__kaart werkgalerij__kaart--extra reveal${totaal === 4 && i === 2 ? ' werkgalerij__kaart--breed' : ''}"><a class="werkgalerij__link" href="/projecten/${esc(p.slug)}/" tabindex="-1" aria-hidden="true">${beeld(f, { maat: 'galerijKlein', sfeer: true })}<span class="werkgalerij__pijl" aria-hidden="true">${icoon('pijl')}</span></a></li>`).join('');
+      return `<ul class="werkgalerij werkgalerij--een" role="list" data-werkgalerij data-aantal="${totaal}">${kaart(p, 0, { groot: true })}${extraHtml}</ul>`;
     }
 
     const aanwezig = FILTERS.slice(1).filter(([k]) => lijst.some((p) => p.categorieen.includes(k)));

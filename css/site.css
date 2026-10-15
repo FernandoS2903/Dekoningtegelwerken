@@ -841,6 +841,11 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   .hero__dienst span { font-size: 1.125rem; padding-block: 1rem; }
 }
 
+/* Projecten en Vakmanschap lopen breder door dan de standaardwrap, zoals in
+   de mockups van Bob (± 1500 px inhoud op 1700 px). */
+.sectie--werkgalerij .wrap,
+.sectie--vak .wrap { max-width: calc(94rem + 2 * var(--rand)); }
+
 /* Laden: foto zoomt rustig uit, tekst verschijnt na elkaar. */
 @keyframes hero-zoom { from { transform: scale(1.04); } to { transform: none; } }
 @keyframes hero-in { from { opacity: 0; } to { opacity: 1; } }
@@ -1128,11 +1133,8 @@ a.werkgalerij__link:focus-visible { outline: 2px solid var(--brons); outline-off
   .werkgalerij[data-aantal="1"] { grid-template-columns: 1fr; grid-auto-rows: clamp(20rem, 34vw, 32rem); }
   .werkgalerij__kaart--groot .werkgalerij__naam { font-size: var(--t-kop-3); }
 }
-/* Eén project: groot, met (als die er zijn) twee extra foto's ernaast. */
-@media (min-width: 64em) {
-  .werkgalerij--een { grid-template-columns: 1fr; grid-auto-rows: clamp(20rem, 34vw, 32rem); }
-  .werkgalerij--met-extra { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-auto-rows: clamp(13rem, 15vw, 16.5rem); }
-}
+/* Eén project: op desktop de grote kaart met tot vier foto's van dat project
+   (layout via data-aantal); op tablet en mobiel alleen de grote kaart. */
 @media (min-width: 40em) and (max-width: 63.99em) {
   .werkgalerij--een .werkgalerij__kaart:not(.werkgalerij__kaart--groot) { display: none; }
 }
@@ -1318,7 +1320,7 @@ html:not(.js) .vak__bladeren { display: none; }
   gap: var(--r-3);
   width: 100%;
   min-height: var(--tik);
-  padding: 0.95rem 0;
+  padding: 0.75rem 0;
   border: 0;
   background: none;
   color: inherit;
@@ -1326,7 +1328,7 @@ html:not(.js) .vak__bladeren { display: none; }
   text-align: left;
   cursor: pointer;
 }
-.vak__keuze .vak__tekst { padding-bottom: 0.95rem; border-bottom: 1px solid var(--lijn-donker); margin-bottom: -0.95rem; }
+.vak__keuze .vak__tekst { padding-bottom: 0.9rem; border-bottom: 1px solid var(--lijn-donker); margin-bottom: -0.75rem; }
 .vak__nr {
   position: relative;
   z-index: 1;
