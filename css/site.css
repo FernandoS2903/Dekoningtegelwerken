@@ -454,8 +454,12 @@ h3 {
   .logo { --logo-h: 4.1rem; }
   .kop--vast { --kop-hoogte: 5rem; }
   .kop--vast .logo { --logo-h: 4.25rem; }
-  .kop--over-hero:not(.kop--vast) { --kop-hoogte: 7rem; }
-  .kop--over-hero:not(.kop--vast) .logo { --logo-h: 6rem; }
+  /* Homepage: 76 px boven de hero, 68 px na scrollen. De header ligt vast
+     over de hero (fixed), dus het verkleinen verschuift niets op de pagina. */
+  .kop--over-hero:not(.kop--vast) { --kop-hoogte: 4.75rem; }
+  .kop--over-hero:not(.kop--vast) .logo { --logo-h: 4.4rem; }
+  .kop--over-hero.kop--vast { --kop-hoogte: 4.25rem; }
+  .kop--over-hero.kop--vast .logo { --logo-h: 3.9rem; }
 }
 .mobielmenu .logo { --logo-h: 4.3rem; }
 .voet .logo { --logo-h: 6rem; }
@@ -634,15 +638,20 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
 
 /* 7. Secties van de homepage ----------------------------------------------- */
 
-/* Hero */
+/* Hero: fullscreen editorial. De tekst in een linkerkolom (± 45 %) over een
+   donker verloop dat links blijft; de badkamer rechts blijft helder. Desktop
+   hoogstens ± 880 px, mobiel ± 78svh. Bij het laden zoomt de foto rustig van
+   1,04 naar 1 (1,5 s) en verschijnen bovenregel, kop, specialismen en knop na
+   elkaar. Geen slider. */
 .hero {
   position: relative;
-  min-height: 78svh;         /* mobiel: 70–80svh, de vertrouwenspunten eronder komen in beeld */
+  min-height: 78svh;
   display: flex;
   align-items: flex-end;
   color: var(--licht);
   background: var(--antraciet);
   isolation: isolate;
+  overflow: hidden;
 }
 .hero__beeld {
   position: absolute;
@@ -658,38 +667,42 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   text-align: right;
 }
 .hero__beeld img { object-position: 50% 40%; }   /* douche en wand in beeld op smalle schermen */
-@media (min-width: 40em) { .hero__beeld img { object-position: 50% 50%; } }
+@media (min-width: 40em) { .hero__beeld img { object-position: 62% 50%; } }
 .hero__beeld::after {
-  /* rustige verduistering onderaan voor leesbaarheid van de tekst */
   content: "";
   position: absolute;
   inset: 0;
-  /* desktop: zacht donker vanaf links (waar de tekst staat) plus onderaan; de rest van de foto blijft helder */
-  background:
-    linear-gradient(90deg, rgba(30, 29, 27, 0.66) 0%, rgba(30, 29, 27, 0.56) 34%, rgba(30, 29, 27, 0) 62%),
-    linear-gradient(180deg, rgba(30, 29, 27, 0) 0%, rgba(30, 29, 27, 0.1) 40%, rgba(30, 29, 27, 0.7) 100%);
+  /* alleen links donker, waar de tekst staat; rechts blijft de foto helder */
+  background: linear-gradient(90deg, rgba(30, 29, 27, 0.74) 0%, rgba(30, 29, 27, 0.62) 30%, rgba(30, 29, 27, 0.22) 48%, rgba(30, 29, 27, 0) 60%);
   pointer-events: none;
 }
-/* mobiel: de tekst beslaat het onderste deel van een lichte foto, dus daar wat donkerder */
 @media (max-width: 39.99em) {
   .hero__beeld::after {
-    /* boven helder; het donkere deel begint waar de kop staat (± 35–55% van de hero) */
-    background: linear-gradient(180deg, rgba(30, 29, 27, 0) 0%, rgba(30, 29, 27, 0.12) 18%, rgba(30, 29, 27, 0.6) 38%, rgba(30, 29, 27, 0.72) 60%, rgba(30, 29, 27, 0.78) 100%);
+    /* boven helder; het donkere deel begint waar de kop staat */
+    background: linear-gradient(180deg, rgba(30, 29, 27, 0) 0%, rgba(30, 29, 27, 0.12) 18%, rgba(30, 29, 27, 0.6) 38%, rgba(30, 29, 27, 0.72) 60%, rgba(30, 29, 27, 0.8) 100%);
   }
 }
 .hero__inhoud {
   padding-top: calc(var(--kop-hoogte) + var(--r-5));
-  padding-bottom: clamp(2.5rem, 1.5rem + 4vw, 7rem);
+  padding-bottom: clamp(2.5rem, 1.5rem + 4vw, 6rem);
 }
-@media (min-width: 60em) { .hero { min-height: 100svh; } }
-.hero h1 { max-width: 12ch; font-weight: 440; }   /* iets voller dan de andere koppen: staat op een foto */
+.hero__boven {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brons-licht);
+  margin-bottom: var(--r-2);
+}
+.hero h1 { max-width: 11ch; font-weight: 440; line-height: 1.02; }   /* iets voller dan de andere koppen: staat op een foto */
 .hero__specialismen {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 0;
   margin-top: var(--r-3);
-  font-size: var(--t-m);       /* past op één regel vanaf 360 px */
+  font-size: var(--t-m);
   font-weight: 500;
+  line-height: 1.6;
   color: var(--licht);
 }
 /* scheidingsteken achter het woord: breekt de regel af, dan begint de volgende nooit met een • */
@@ -698,53 +711,80 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   margin-inline: 0.45rem;
   color: var(--brons-licht);
 }
-@media (min-width: 40em) {
+.hero__acties { display: flex; flex-wrap: wrap; align-items: center; gap: var(--r-2) var(--r-4); margin-top: var(--r-4); }
+.hero .hero__offerte { min-height: 3.375rem; padding: 0.7rem 1.6rem; font-size: 1.0625rem; }   /* 54 px */
+.hero__projecten {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--tik);
+  color: var(--licht);
+  font-weight: 500;
+  text-decoration: none;
+}
+.hero__projecten span { text-decoration: underline; text-decoration-color: rgba(237, 230, 218, 0.45); text-decoration-thickness: 1px; text-underline-offset: 0.3em; }
+.hero__projecten .icoon { width: 1rem; height: 1rem; transition: transform var(--duur) var(--ease); }
+.hero__projecten:hover { color: var(--brons-licht); }
+.hero__projecten:hover .icoon { transform: translateX(5px); }
+/* scrollindicator: een dun lijntje dat zacht op en neer beweegt (desktop) */
+.hero__scroll { display: none; }
+@media (min-width: 60em) {
+  .hero { min-height: min(100svh, 55rem); align-items: center; }
+  .hero__inhoud { padding-top: calc(var(--kop-hoogte) + var(--r-4)); padding-bottom: var(--r-6); }
+  .hero__inhoud > * { max-width: min(42rem, 45vw); }
+  .hero h1 { font-size: clamp(4.75rem, 2rem + 4.2vw, 5.625rem); }   /* 76–90 px */
   .hero__specialismen { font-size: var(--t-l); }
   .hero__specialismen li:not(:last-child)::after { margin-inline: 0.65rem; }
+  .hero__acties { margin-top: var(--r-5); }
+  .hero__scroll {
+    position: absolute;
+    left: 50%;
+    bottom: var(--r-3);
+    display: grid;
+    place-items: center;
+    width: var(--tik);
+    height: var(--tik);
+    transform: translateX(-50%);
+  }
+  .hero__scroll span { display: block; width: 1px; height: 2.25rem; background: rgba(237, 230, 218, 0.7); animation: hero-scroll 2.4s var(--ease) infinite; }
 }
-.hero__sub {
-  margin-top: 0.35rem;
-  max-width: 34rem;
-  font-size: var(--t-l);
-  color: var(--licht);       /* volle lichte kleur: de hero-foto is licht */
+@keyframes hero-scroll { 0%, 100% { transform: translateY(-4px); opacity: 0.5; } 50% { transform: translateY(4px); opacity: 1; } }
+@media (min-width: 40em) and (max-width: 59.99em) {
+  .hero__inhoud > * { max-width: 34rem; }
+  .hero__specialismen { font-size: var(--t-l); }
 }
-.hero .knoppen { margin-top: var(--r-4); }
-/* Mobiel: compacte hero (± 74svh) als portfolio-opening. Grote serif-kop,
-   rustige regels eronder, één dominante knop en "Bekijk onze projecten" als
-   tekstlink. Desktop blijft ongewijzigd. */
+
+/* Laden: foto zoomt rustig uit, tekst verschijnt na elkaar. */
+@keyframes hero-zoom { from { transform: scale(1.04); } to { transform: none; } }
+@keyframes hero-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hero-op { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+.hero__beeld img { animation: hero-zoom 1500ms var(--ease) both; }
+.hero__boven { animation: hero-in 500ms var(--ease) 150ms both; }
+.hero h1 { animation: hero-op 650ms var(--ease) 200ms both; }
+.hero__specialismen { animation: hero-in 500ms var(--ease) 400ms both; }
+.hero__acties { animation: hero-in 500ms var(--ease) 550ms both; }
+@media (prefers-reduced-motion: reduce) {
+  .hero__beeld img, .hero__boven, .hero h1, .hero__specialismen, .hero__acties, .hero__scroll span { animation: none; }
+}
+
+/* Mobiel: compacte hero als portfolio-opening, één grote knop en
+   "Bekijk projecten" als tekstlink eronder. */
 .alleen-mobiel { display: none; }
 @media (max-width: 39.99em) {
   .alleen-mobiel { display: inline; }
-  .hero { min-height: 74svh; }
-  .hero__inhoud { padding-top: calc(var(--kop-hoogte) + var(--r-5)); padding-bottom: calc(var(--r-3) + 2.5rem); }   /* tekstblok ± 40 px hoger */
-  .hero h1 { font-size: clamp(2.75rem, 1.5rem + 5.2vw, 3rem); line-height: 1.04; }   /* 44–46 px */
+  .hero { min-height: 78svh; }
+  .hero__inhoud { padding-top: calc(var(--kop-hoogte) + var(--r-5)); padding-bottom: calc(var(--r-3) + 1.5rem); }
+  .hero__boven { margin-bottom: var(--r-1); font-size: 0.6875rem; }
+  .hero h1 { font-size: clamp(2.5rem, 1.6rem + 4.6vw, 3rem); line-height: 1.04; }   /* 40–48 px */
   .hero__specialismen { margin-top: var(--r-2); font-size: 0.9375rem; }
-  .hero__sub { margin-top: 0.25rem; font-size: 0.9375rem; color: rgba(255, 255, 255, 0.88); }
-  .hero .knoppen { display: grid; gap: 0.25rem; margin-top: var(--r-3); }
-  .hero .knop { width: 100%; }
-  .hero .knop:not(.hero__tweede) { min-height: 3.125rem; padding: 0.6rem 1rem; gap: 0.6rem; font-size: 1.0625rem; line-height: 1.4; white-space: nowrap; }   /* 50 px, 17 px tekst */
-  .hero .hero__tweede {
-    --knop-bg: transparent;
-    --knop-rand: transparent;
-    justify-self: center;
-    width: auto;
-    min-height: var(--tik);
-    gap: 0.4rem;
-    padding-inline: 0.5rem;
-    font-weight: 500;
-  }
-  .hero__tweede-tekst {
-    text-decoration: underline;
-    text-decoration-color: rgba(237, 230, 218, 0.45);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.3em;
-  }
-  .hero .hero__tweede:hover { --knop-bg: transparent; --knop-rand: transparent; --knop-tekst: var(--brons-licht); }
-  .hero .hero__tweede .icoon { transform: rotate(90deg); width: 1rem; height: 1rem; }
-  .hero .hero__tweede:hover .icoon { transform: rotate(90deg) translateX(3px); }
+  .hero__acties { display: grid; gap: 0.25rem; margin-top: var(--r-3); }
+  .hero .hero__offerte { width: 100%; min-height: 3.25rem; padding: 0.6rem 1rem; gap: 0.6rem; white-space: nowrap; }
+  .hero__projecten { justify-self: center; }
+  .hero__projecten .icoon { transform: rotate(90deg); }
+  .hero__projecten:hover .icoon { transform: rotate(90deg) translateX(5px); }
 }
 @media (max-width: 23.99em) {
-  .hero .knop:not(.hero__tweede) { font-size: var(--t-m); }   /* 360 px: past op één regel */
+  .hero .hero__offerte { font-size: var(--t-m); }   /* 360 px: past op één regel */
   .hero__specialismen { font-size: var(--t-s); }
   .hero__specialismen li:not(:last-child)::after { margin-inline: 0.35rem; }
 }
@@ -850,6 +890,234 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+}
+
+/* Projecten op de homepage: editorial werkgalerij. Desktop: één grote kaart
+   links, de rest klein rechts (layout volgt data-aantal en de klassen
+   --groot/--breed, die js/site.js bij filteren opnieuw zet); 16 px tussen de
+   kaarten. Tablet twee kolommen, mobiel één kaart per rij (4:3) en hooguit
+   drie kaarten. Naam en plaats staan altijd op de foto. */
+.sectie--werkgalerij { padding-block: clamp(3.5rem, 2rem + 4vw, 6rem); }
+.sectiekop--werkgalerij { display: grid; gap: var(--r-2) var(--r-5); align-items: end; }
+.sectiekop--werkgalerij .lead { max-width: 30rem; }
+.werkgalerij__alle { justify-self: start; }
+@media (min-width: 64em) {
+  .sectiekop--werkgalerij { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; }
+}
+@media (max-width: 39.99em) { .werkgalerij__alle { display: none; } }
+
+.werkgalerij-filters { margin-bottom: var(--r-3); }
+.werkgalerij-filters .filters { margin: 0; }
+.werkgalerij-filters__keuze { display: none; }
+@media (max-width: 39.99em) {
+  .werkgalerij-filters .filters { display: none; }
+  .werkgalerij-filters__keuze { display: block; }
+  .werkgalerij-filters__keuze select { width: 100%; min-height: var(--tik); padding: 0 0.875rem; border: 1px solid var(--lijn-sterk); border-radius: var(--hoek); background-color: var(--kalk); color: var(--inkt); font: inherit; font-size: var(--t-m); }
+}
+
+.werkgalerij {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: opacity 300ms var(--ease);
+}
+.werkgalerij.wisselt { opacity: 0; }
+.werkgalerij__kaart[hidden] { display: none; }
+.werkgalerij__link {
+  position: relative;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--hoek);
+  color: var(--licht);
+  text-decoration: none;
+  isolation: isolate;
+}
+.werkgalerij__link .foto { --ratio: 4 / 3; }
+.werkgalerij__link .foto img { transition: transform 500ms var(--ease); }
+.werkgalerij__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to top, rgba(30, 29, 27, 0.74) 0%, rgba(30, 29, 27, 0.28) 34%, rgba(30, 29, 27, 0) 58%);
+  pointer-events: none;
+  transition: opacity 400ms var(--ease);
+  opacity: 0.92;
+}
+.werkgalerij__info {
+  position: absolute;
+  left: 0;
+  right: 4rem;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  gap: 0.2rem;
+  padding: var(--r-2) var(--r-3) var(--r-3);
+}
+.werkgalerij__badge {
+  justify-self: start;
+  margin-bottom: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  background: rgba(237, 230, 218, 0.92);
+  color: var(--antraciet);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.werkgalerij__naam { font-family: var(--font-kop); font-size: var(--t-xl); line-height: 1.15; }
+.werkgalerij__meta { font-size: var(--t-s); color: rgba(237, 230, 218, 0.9); }
+.werkgalerij__pijl {
+  position: absolute;
+  right: var(--r-3);
+  bottom: var(--r-3);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgba(237, 230, 218, 0.7);
+  border-radius: 50%;
+}
+.werkgalerij__pijl .icoon { width: 1rem; height: 1rem; transition: transform var(--duur) var(--ease); }
+a.werkgalerij__link:hover .foto img { transform: scale(1.03); }
+a.werkgalerij__link:hover::after { opacity: 1; }
+a.werkgalerij__link:hover .werkgalerij__pijl .icoon,
+a.werkgalerij__link:focus-visible .werkgalerij__pijl .icoon { transform: translateX(5px); }
+a.werkgalerij__link:focus-visible { outline: 2px solid var(--brons); outline-offset: 3px; }
+.werkgalerij__leeg { margin-top: var(--r-2); color: var(--inkt-zacht); }
+.js .werkgalerij .reveal { transition-duration: 450ms; }
+
+/* Mobiel: hooguit drie kaarten, tenzij er gefilterd is. */
+@media (max-width: 39.99em) {
+  .werkgalerij:not(.gefilterd) > .werkgalerij__kaart:nth-child(n + 4) { display: none; }
+  .werkgalerij__info { padding: var(--r-2); right: 3.5rem; }
+  .werkgalerij__pijl { right: var(--r-2); bottom: var(--r-2); }
+  .werkgalerij__naam { font-size: 1.5rem; }
+}
+/* Tablet: twee kolommen, de grote kaart over de volle breedte. */
+@media (min-width: 40em) and (max-width: 63.99em) {
+  .werkgalerij { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .werkgalerij__kaart--groot { grid-column: 1 / -1; }
+  .werkgalerij__kaart--groot .foto { --ratio: 16 / 9; }
+}
+/* Desktop: de grote kaart links over twee rijen, kleine kaarten rechts. */
+@media (min-width: 64em) {
+  .werkgalerij { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); grid-auto-rows: clamp(13rem, 15vw, 16.5rem); }
+  .werkgalerij .foto { aspect-ratio: auto; height: 100%; }
+  .werkgalerij__kaart--groot { grid-row: span 2; }
+  .werkgalerij__kaart--breed { grid-column: span 2; }
+  .werkgalerij[data-aantal="3"] { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .werkgalerij[data-aantal="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: clamp(18rem, 26vw, 26rem); }
+  .werkgalerij[data-aantal="2"] .werkgalerij__kaart--groot,
+  .werkgalerij[data-aantal="1"] .werkgalerij__kaart--groot { grid-row: auto; }
+  .werkgalerij[data-aantal="1"] { grid-template-columns: 1fr; grid-auto-rows: clamp(20rem, 34vw, 32rem); }
+  .werkgalerij__kaart--groot .werkgalerij__naam { font-size: var(--t-kop-3); }
+}
+/* Eén project: groot, met (als die er zijn) twee extra foto's ernaast. */
+@media (min-width: 64em) {
+  .werkgalerij--een { grid-template-columns: 1fr; grid-auto-rows: clamp(20rem, 34vw, 32rem); }
+  .werkgalerij--met-extra { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-auto-rows: clamp(13rem, 15vw, 16.5rem); }
+}
+@media (min-width: 40em) and (max-width: 63.99em) {
+  .werkgalerij--een .werkgalerij__kaart:not(.werkgalerij__kaart--groot) { display: none; }
+}
+@media (max-width: 39.99em) {
+  .werkgalerij--een .werkgalerij__kaart:not(.werkgalerij__kaart--groot) { display: none; }
+}
+
+/* Specialismen op de homepage: editorial portfoliogrid. Zes even grote
+   kaarten (4:3) in 3 × 2, titel en korte tekst (max. twee regels) op de foto
+   boven een zachte donkere verloop, rond pijlicoon rechtsonder; de hele kaart
+   is de link. Hover: foto 1,03, verloop iets sterker, pijl 5 px. */
+.sectie--portfolio { padding-block: clamp(3.5rem, 2rem + 4vw, 6rem); }
+.sectiekop--portfolio { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--r-2) var(--r-4); }
+.portfolio { display: grid; gap: 0.875rem; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 40em) { .portfolio { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; } }
+@media (min-width: 64em) { .portfolio { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.125rem; } }
+.portfolio__link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--hoek);
+  color: var(--licht);
+  text-decoration: none;
+  isolation: isolate;
+}
+.portfolio__link .foto { --ratio: 4 / 3; }
+.portfolio__link .foto img { transition: transform 500ms var(--ease); }
+.portfolio__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to top, rgba(30, 29, 27, 0.78) 0%, rgba(30, 29, 27, 0.34) 38%, rgba(30, 29, 27, 0) 62%);
+  transition: opacity 400ms var(--ease);
+  opacity: 0.92;
+  pointer-events: none;
+}
+.portfolio__info {
+  position: absolute;
+  left: 0;
+  right: 4.25rem;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  gap: 0.3rem;
+  padding: var(--r-3);
+}
+.portfolio__titel { font-family: var(--font-kop); font-size: var(--t-xl); line-height: 1.15; }
+.portfolio__tekst {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--t-s);
+  line-height: 1.45;
+  color: rgba(237, 230, 218, 0.9);
+}
+.portfolio__pijl {
+  position: absolute;
+  right: var(--r-3);
+  bottom: var(--r-3);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgba(237, 230, 218, 0.7);
+  border-radius: 50%;
+}
+.portfolio__pijl .icoon { width: 1rem; height: 1rem; transition: transform var(--duur) var(--ease); }
+.portfolio__link:hover .foto img { transform: scale(1.03); }
+.portfolio__link:hover::after { opacity: 1; }
+.portfolio__link:hover .portfolio__pijl .icoon,
+.portfolio__link:focus-visible .portfolio__pijl .icoon { transform: translateX(5px); }
+.portfolio__link:focus-visible { outline: 2px solid var(--brons); outline-offset: 3px; }
+/* Mobiel: compacter, minder ruimte rond de tekst */
+@media (max-width: 39.99em) {
+  .portfolio__info { padding: var(--r-2); right: 3.5rem; }
+  .portfolio__pijl { right: var(--r-2); bottom: var(--r-2); }
+  .portfolio__titel { font-size: 1.5rem; }
+}
+/* Verschijnen: 450 ms, hooguit 14 px, 70 ms tussen de kolommen. */
+.js .portfolio .reveal { transition-duration: 450ms; }
+@media (min-width: 64em) {
+  .portfolio > li:nth-child(3n + 2) { --vertraging: 70ms; }
+  .portfolio > li:nth-child(3n) { --vertraging: 140ms; }
+}
+@media (min-width: 40em) and (max-width: 63.99em) {
+  .portfolio > li:nth-child(2n) { --vertraging: 70ms; }
+}
+
+/* Zachte paginaovergang tussen pagina's van de site (alleen browsers die
+   dit ondersteunen, en niet bij reduced motion). */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 280ms; }
 }
 
 /* Vakmanschap: interactieve showcase. Mobiel: kop, één grote foto (4:3) en

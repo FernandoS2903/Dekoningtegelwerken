@@ -109,7 +109,7 @@ export function naarWeergave(p, { uploadUrl = UPLOAD_URL } = {}) {
 function fragmentArgs(rest) {
   const args = rest.split('/').filter(Boolean).map((a) => decodeURIComponent(a));
   if (!args.length || args.length > 2) return null;
-  const goed = args.every((a) => a === 'uitgelicht' || a === 'alle' || a === 'filters'
+  const goed = args.every((a) => a === 'uitgelicht' || a === 'alle' || a === 'filters' || a === 'galerij'
     || (a.startsWith('categorie=') && CATEGORIEEN.includes(a.slice('categorie='.length))));
   const soorten = args.filter((a) => a === 'uitgelicht' || a === 'alle' || a.startsWith('categorie=')).length;
   return goed && soorten === 1 ? args : null;

@@ -220,6 +220,47 @@ function initFilters() {
   }
 }
 
+/* -- projectgalerij op de homepage ------------------------------------------ */
+/** Filters (knoppen, op mobiel een keuzelijst) op de werkgalerij ([data-werkgalerij]):
+ *  de kaarten vervagen kort (300 ms), de passende blijven over en de layout
+ *  wordt opnieuw verdeeld: de eerste zichtbare kaart wordt groot, data-aantal
+ *  volgt het aantal. De keuze blijft staan tot je een andere kiest. */
+function initGalerij() {
+  const blok = $('[data-werkgalerij-filters]');
+  const werkgalerij = $('[data-werkgalerij]');
+  if (!blok || !werkgalerij) return;
+  const knoppen = $$('.filter', blok);
+  const keuze = $('[data-filter-keuze]', blok);
+  const status = $('[data-filter-status]', blok);
+  const leeg = $('[data-werkgalerij-leeg]');
+  const kaarten = $$('.werkgalerij__kaart', werkgalerij);
+
+  function toon(filter) {
+    const zichtbaar = kaarten.filter((k) => filter === 'alles' || (k.dataset.categorie || '').split(' ').includes(filter));
+    kaarten.forEach((k) => {
+      const aan = zichtbaar.includes(k);
+      k.hidden = !aan;
+      k.classList.remove('werkgalerij__kaart--groot', 'werkgalerij__kaart--breed');
+      if (aan) k.classList.add('in');
+    });
+    if (zichtbaar[0]) zichtbaar[0].classList.add('werkgalerij__kaart--groot');
+    if (zichtbaar.length === 4) zichtbaar[3].classList.add('werkgalerij__kaart--breed');
+    werkgalerij.dataset.aantal = String(zichtbaar.length);
+    werkgalerij.classList.toggle('gefilterd', filter !== 'alles');
+    if (leeg) leeg.hidden = zichtbaar.length > 0;
+    knoppen.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
+    if (keuze) keuze.value = filter;
+    if (status) status.textContent = `${zichtbaar.length} project${zichtbaar.length === 1 ? '' : 'en'} getoond`;
+  }
+  function kies(filter) {
+    if (rustig) return toon(filter);
+    werkgalerij.classList.add('wisselt');
+    setTimeout(() => { toon(filter); requestAnimationFrame(() => werkgalerij.classList.remove('wisselt')); }, 300);
+  }
+  knoppen.forEach((b) => b.addEventListener('click', () => kies(b.dataset.filter)));
+  if (keuze) keuze.addEventListener('change', () => kies(keuze.value));
+}
+
 /* -- vakmanschap: showcase met tabs ---------------------------------------- */
 /** Vijf technieken als tabs (roving tabindex): klik, Enter/spatie of de
  *  pijltoetsen (en Home/End) kiezen een techniek; de bijbehorende foto vloeit
@@ -523,6 +564,7 @@ initReveal();
 initStappen();
 initFilters();
 initVakmanschap();
+initGalerij();
 initVoorNa();
 initLichtbak();
 initSiteGegevens();

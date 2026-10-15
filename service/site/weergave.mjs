@@ -63,6 +63,9 @@ export const MATEN = {
   split: '(min-width: 60em) 58vw, 100vw',
   // Werkwijze op de homepage: foto naast de titel, binnen de wrap.
   werkwijze: '(min-width: 90em) 48rem, (min-width: 64em) 55vw, calc(100vw - 2.5rem)',
+  // Projectgalerij op de homepage: de grote kaart en de kleine kaarten.
+  galerijGroot: '(min-width: 64em) 50vw, 100vw',
+  galerijKlein: '(min-width: 64em) 25vw, (min-width: 40em) 50vw, 100vw',
   // Vakmanschap: de grote detailfoto rechts (60 % van de wrap), mobiel de volle breedte.
   vak: '(min-width: 90em) 50rem, (min-width: 60em) 55vw, calc(100vw - 2.5rem)',
   galerij: '(min-width: 40em) 50vw, 100vw',
@@ -227,7 +230,60 @@ export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
    * <!-- gen:projecten ... -->: uitgelicht | alle | categorie=<c>, plus filters.
    * Op /projecten/ (alle) laadt de eerste kaart direct.
    */
+  /**
+   * De projectgalerij van de homepage (gen:projecten uitgelicht galerij):
+   * maximaal vijf uitgelichte projecten, de eerste groot. Filters alleen voor
+   * categorieën die in de getoonde projecten voorkomen, en pas vanaf twee
+   * projecten en twee categorieën; op mobiel als keuzelijst. Eén project:
+   * één grote kaart met (als die er zijn) twee extra foto's van dat project.
+   * Geen projecten: de melding dat ze binnenkort komen.
+   */
+  function galerijBlok(lijstIn) {
+    const uitgelicht = lijstIn.filter((p) => p.uitgelicht);
+    const lijst = (uitgelicht.length ? uitgelicht : lijstIn).slice(0, 5);
+    if (!lijst.length) return `<p class="ph-blok">Hier komen binnenkort projecten van De Koning Tegelwerken.</p>`;
+    const kaart = (p, i, { groot = false, breed = false } = {}) => {
+      const meta = [p.plaats, p.type].filter(Boolean).map(tekstOfPh).join(' · ');
+      const binnen = beeld(p.kaartBeeld, { maat: groot ? 'galerijGroot' : 'galerijKlein', sfeer: true, laden: 'lazy', label: 'Projectfoto volgt' })
+        + `<span class="werkgalerij__info">`
+        + (p.placeholder ? `<span class="werkgalerij__badge">Voorbeeldkaart</span>` : '')
+        + `<span class="werkgalerij__naam">${tekstOfPh(p.naam)}</span>`
+        + (meta ? `<span class="werkgalerij__meta">${meta}</span>` : '')
+        + `</span>` + (p.pagina ? `<span class="werkgalerij__pijl" aria-hidden="true">${icoon('pijl')}</span>` : '');
+      const klassen = ['werkgalerij__kaart', 'reveal', groot ? 'werkgalerij__kaart--groot' : '', breed ? 'werkgalerij__kaart--breed' : ''].filter(Boolean).join(' ');
+      return `<li class="${klassen}" data-categorie="${esc(p.categorieen.join(' '))}">`
+        + (p.pagina ? `<a class="werkgalerij__link" href="/projecten/${esc(p.slug)}/">${binnen}</a>` : `<div class="werkgalerij__link">${binnen}</div>`)
+        + `</li>`;
+    };
+
+    if (lijst.length === 1) {
+      const p = lijst[0];
+      const extra = (p.fotos || []).slice(0, 2);
+      const extraHtml = p.pagina ? extra.map((f) => `<li class="werkgalerij__kaart reveal"><a class="werkgalerij__link" href="/projecten/${esc(p.slug)}/" tabindex="-1" aria-hidden="true">${beeld(f, { maat: 'galerijKlein', sfeer: true })}</a></li>`).join('') : '';
+      return `<ul class="werkgalerij werkgalerij--een${extraHtml ? ' werkgalerij--met-extra' : ''}" role="list" data-werkgalerij>${kaart(p, 0, { groot: true })}${extraHtml}</ul>`;
+    }
+
+    const aanwezig = FILTERS.slice(1).filter(([k]) => lijst.some((p) => p.categorieen.includes(k)));
+    let html = '';
+    if (aanwezig.length >= 2) {
+      const keuzes = [['alles', 'Alles'], ...aanwezig];
+      html += `<div class="werkgalerij-filters" data-werkgalerij-filters>`
+        + `<div class="filters" role="group" aria-label="Filter projecten op soort">`
+        + keuzes.map(([k, label], i) => `<button class="filter" type="button" data-filter="${k}" aria-pressed="${i === 0}">${label}</button>`).join('')
+        + `</div>`
+        + `<label class="werkgalerij-filters__keuze"><span class="visueel-verborgen">Filter projecten op soort</span><select data-filter-keuze>`
+        + keuzes.map(([k, label]) => `<option value="${k}">${label}</option>`).join('')
+        + `</select></label>`
+        + `<p class="filters-status visueel-verborgen" role="status" data-filter-status></p></div>`;
+    }
+    html += `<ul class="werkgalerij" role="list" data-werkgalerij data-aantal="${lijst.length}">`
+      + lijst.map((p, i) => kaart(p, i, { groot: i === 0, breed: lijst.length === 4 && i === 3 })).join('')
+      + `</ul><p class="werkgalerij__leeg" data-werkgalerij-leeg hidden>Voor deze soort zijn er nog geen projecten.</p>`;
+    return html;
+  }
+
   function projectenBlok(args, { projecten: lijstIn = statischeProjecten } = {}) {
+    if (args.includes('galerij')) return galerijBlok(lijstIn);
     const filters = args.includes('filters');
     const cat = (args.find((a) => a.startsWith('categorie=')) || '').split('=')[1];
     let lijst = lijstIn;
@@ -251,9 +307,20 @@ export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
     return html;
   }
 
-  function dienstkaartenBlok() {
+  function dienstkaartenBlok(args = []) {
     // De zes specialismen uit §6, in die volgorde.
     const volgorde = ['badkamer-tegelen', 'vloer-betegelen', 'grootformaat-tegels', 'toilet-betegelen', 'visgraat-tegels', 'natuursteen'];
+    // Homepage: editorial portfoliogrid, zes even grote kaarten (4:3) met titel,
+    // korte tekst en pijl op de foto; de hele kaart is de link.
+    if (args.includes('portfolio')) {
+      return `<ul class="portfolio" role="list">` + volgorde.map((slug) => {
+        const d = dienstPerSlug[slug];
+        return `<li class="portfolio__kaart reveal"><a class="portfolio__link" href="/${slug}/">`
+          + beeld(d.beeld, { maat: 'dienstkaart' })
+          + `<span class="portfolio__info"><span class="portfolio__titel">${esc(d.kaartTitel)}</span><span class="portfolio__tekst">${esc(d.kaartTekst)}</span></span>`
+          + `<span class="portfolio__pijl" aria-hidden="true">${icoon('pijl')}</span></a></li>`;
+      }).join('') + `</ul>`;
+    }
     return `<ul class="dienstkaarten" role="list">` + volgorde.map((slug, i) => {
       const d = dienstPerSlug[slug];
       return `<li class="dienstkaart reveal" data-vertraging="${i % 3}"><a href="/${slug}/">`
@@ -296,7 +363,7 @@ export function maakWeergave({ root, ssi = false, projecten = null } = {}) {
       // argument de eenvoudige tijdlijn van de dienstpagina's.
       case 'werkwijze': return args.includes('stappen') ? PARTIALS().stappen : PARTIALS().werkwijze;
       case 'eind': return PARTIALS().eind;
-      case 'dienstkaarten': return dienstkaartenBlok();
+      case 'dienstkaarten': return dienstkaartenBlok(args);
       case 'projecten': {
         const html = projectenBlok(args);
         return ssi ? ssiProjecten(args, html) : html;

@@ -39,15 +39,19 @@ controleer('sticky CTA zichtbaar na de hero', await b.evalueer(`document.querySe
 controleer('sticky balk heeft een offerteknop van minstens 48 px', await b.evalueer(`document.querySelector('.stickycta__offerte').getBoundingClientRect().height >= 48`));
 controleer('header mobiel: alleen logo en menuknop zichtbaar', await b.evalueer(`[...document.querySelectorAll('.kop__acties > *')].filter(e=>getComputedStyle(e).display!=='none').every(e=>e.matches('[data-menu-open]'))`));
 
-// -- filters -------------------------------------------------------------------
-const zichtbaar = `[...document.querySelectorAll('[data-projectgrid] .projectkaart')].filter(k=>!k.hidden).length`;
+// -- filters (projectgalerij op de homepage) ---------------------------------
+const zichtbaar = `[...document.querySelectorAll('[data-werkgalerij] .werkgalerij__kaart')].filter(k=>!k.hidden).length`;
 const totaal = await b.evalueer(zichtbaar);
-await b.evalueer(`document.querySelector('[data-filter="toilet"]').click()`);
+controleer('werkgalerij: hooguit vijf projecten, de eerste groot', totaal >= 2 && totaal <= 5 && await b.evalueer(`document.querySelector('[data-werkgalerij] .werkgalerij__kaart').classList.contains('werkgalerij__kaart--groot')`), String(totaal));
+controleer('werkgalerij: alleen filters voor categorieën die er zijn', await b.evalueer(`[...document.querySelectorAll('[data-werkgalerij-filters] .filter')].every(f=>f.dataset.filter==='alles'||[...document.querySelectorAll('[data-werkgalerij] .werkgalerij__kaart')].some(k=>k.dataset.categorie.split(' ').includes(f.dataset.filter)))`));
+await b.evalueer(`document.querySelector('[data-werkgalerij-filters] [data-filter="toilet"]').click()`);
+await wacht(450);
 const n = await b.evalueer(zichtbaar);
-controleer('filter Toiletten toont alleen toiletkaarten', n >= 1 && n < totaal, n + ' van ' + totaal);
-controleer('filterknop krijgt aria-pressed', await b.evalueer(`document.querySelector('[data-filter="toilet"]').getAttribute('aria-pressed')==='true'`));
-controleer('asymmetrie opnieuw verdeeld', await b.evalueer(`[...document.querySelectorAll('[data-projectgrid] .projectkaart')].filter(k=>!k.hidden).every(k=>k.dataset.vorm)`));
-await b.evalueer(`document.querySelector('[data-filter="alles"]').click()`);
+controleer('filter Toiletten toont alleen toiletkaarten', n >= 1 && n < totaal && await b.evalueer(`[...document.querySelectorAll('[data-werkgalerij] .werkgalerij__kaart')].filter(k=>!k.hidden).every(k=>k.dataset.categorie.split(' ').includes('toilet'))`), n + ' van ' + totaal);
+controleer('filterknop krijgt aria-pressed en de keuzelijst volgt', await b.evalueer(`document.querySelector('[data-werkgalerij-filters] [data-filter="toilet"]').getAttribute('aria-pressed')==='true' && document.querySelector('[data-filter-keuze]').value==='toilet'`));
+controleer('eerste zichtbare kaart wordt groot, data-aantal volgt', await b.evalueer(`(()=>{const z=[...document.querySelectorAll('[data-werkgalerij] .werkgalerij__kaart')].filter(k=>!k.hidden);return z[0].classList.contains('werkgalerij__kaart--groot')&&document.querySelector('[data-werkgalerij]').dataset.aantal===String(z.length)})()`));
+await b.evalueer(`document.querySelector('[data-werkgalerij-filters] [data-filter="alles"]').click()`);
+await wacht(450);
 controleer('Alles toont weer alles', (await b.evalueer(zichtbaar)) === totaal);
 
 // -- details ---------------------------------------------------------------------
@@ -128,7 +132,7 @@ controleer('telefoonlink gevuld', await b.evalueer(`document.querySelector('[dat
 controleer('lege velden weg in productiemodus', await b.evalueer(`!document.querySelector('[data-veld-blok="werkgebied"]') && !document.querySelector('[data-veld-blok="kvk"]')`));
 controleer('reviewsectie weg zonder reviews in productiemodus', await b.evalueer(`!document.querySelector('[data-reviews-sectie]')`));
 // Projectkaarten tellen niet mee: die placeholders komen uit data/projecten.json, niet uit site.json.
-const resterend = `[...document.querySelectorAll('.ph')].filter(e=>!e.closest('[data-projectgrid]'))`;
+const resterend = `[...document.querySelectorAll('.ph')].filter(e=>!e.closest('[data-projectgrid], [data-werkgalerij]'))`;
 controleer('geen site.json-placeholders meer in productiemodus', await b.evalueer(`${resterend}.length === 0`), String(await b.evalueer(`${resterend}.map(e=>e.textContent).join(', ')`)));
 
 // -- offertewizard (mobiel, 390 px) ---------------------------------------------
