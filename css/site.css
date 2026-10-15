@@ -638,27 +638,22 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
 
 /* 7. Secties van de homepage ----------------------------------------------- */
 
-/* Hero: fullscreen editorial. De tekst in een linkerkolom (± 45 %) over een
-   donker verloop dat links blijft; de badkamer rechts blijft helder. Desktop
-   hoogstens ± 880 px, mobiel ± 78svh. Bij het laden zoomt de foto rustig van
-   1,04 naar 1 (1,5 s) en verschijnen bovenregel, kop, specialismen en knop na
-   elkaar. Geen slider. */
+/* Hero: fullscreen editorial (mockup Bob, 15 okt 2026). Grid met twee rijen:
+   de inhoud (links, over een donker verloop) en onderin de balk met vier
+   specialismen. Rechts blijft de badkamer helder; "Ontdek meer" rechtsonder.
+   Bij het laden zoomt de foto van 1,04 naar 1 en verschijnt de tekst na
+   elkaar. Mobiel: compact, één grote knop, geen specialismenbalk. */
 .hero {
   position: relative;
-  min-height: 78svh;
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 82svh;
   color: var(--licht);
   background: var(--antraciet);
   isolation: isolate;
   overflow: hidden;
 }
-.hero__beeld {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  aspect-ratio: auto;
-}
+.hero__beeld { position: absolute; inset: 0; z-index: -1; aspect-ratio: auto; }
 .hero__beeld .foto__vlak {
   --foto-tegel: clamp(6rem, 12vw, 11rem);
   padding-top: calc(var(--kop-hoogte) + var(--r-3));
@@ -666,92 +661,142 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
   align-items: flex-end;
   text-align: right;
 }
-.hero__beeld img { object-position: 50% 40%; }   /* douche en wand in beeld op smalle schermen */
-@media (min-width: 40em) { .hero__beeld img { object-position: 62% 50%; } }
+.hero__beeld img { object-position: 50% 40%; }
+@media (min-width: 40em) { .hero__beeld img { object-position: 60% 50%; } }
 .hero__beeld::after {
   content: "";
   position: absolute;
   inset: 0;
-  /* alleen links donker, waar de tekst staat; rechts blijft de foto helder */
-  background: linear-gradient(90deg, rgba(30, 29, 27, 0.74) 0%, rgba(30, 29, 27, 0.62) 30%, rgba(30, 29, 27, 0.22) 48%, rgba(30, 29, 27, 0) 60%);
+  background:
+    linear-gradient(90deg, rgba(30, 29, 27, 0.8) 0%, rgba(30, 29, 27, 0.68) 30%, rgba(30, 29, 27, 0.3) 46%, rgba(30, 29, 27, 0) 60%),
+    linear-gradient(180deg, rgba(30, 29, 27, 0) 70%, rgba(30, 29, 27, 0.35) 100%);
   pointer-events: none;
 }
 @media (max-width: 39.99em) {
   .hero__beeld::after {
-    /* boven helder; het donkere deel begint waar de kop staat */
-    background: linear-gradient(180deg, rgba(30, 29, 27, 0) 0%, rgba(30, 29, 27, 0.12) 18%, rgba(30, 29, 27, 0.6) 38%, rgba(30, 29, 27, 0.72) 60%, rgba(30, 29, 27, 0.8) 100%);
+    background: linear-gradient(180deg, rgba(30, 29, 27, 0.05) 0%, rgba(30, 29, 27, 0.2) 18%, rgba(30, 29, 27, 0.62) 38%, rgba(30, 29, 27, 0.76) 60%, rgba(30, 29, 27, 0.82) 100%);
   }
 }
 .hero__inhoud {
+  align-self: center;
   padding-top: calc(var(--kop-hoogte) + var(--r-5));
-  padding-bottom: clamp(2.5rem, 1.5rem + 4vw, 6rem);
+  padding-bottom: var(--r-5);
 }
 .hero__boven {
+  display: grid;
+  grid-template-columns: 2.5rem auto;
+  justify-content: start;
+  gap: 0 1rem;
+  margin-bottom: var(--r-3);
   font-size: var(--t-xs);
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1.8;
   text-transform: uppercase;
-  color: var(--brons-licht);
-  margin-bottom: var(--r-2);
+  color: var(--licht);
 }
-.hero h1 { max-width: 11ch; font-weight: 440; line-height: 1.02; }   /* iets voller dan de andere koppen: staat op een foto */
-.hero__specialismen {
+.hero__boven::before { content: ""; grid-row: 1 / span 2; width: 2.5rem; height: 1px; margin-top: 0.9em; background: var(--brons-licht); }
+.hero__boven span { grid-column: 2; }
+.hero h1 { max-width: 11ch; font-weight: 440; line-height: 1; }
+.hero__intro { margin-top: var(--r-3); max-width: 31rem; font-size: var(--t-l); line-height: 1.6; color: rgba(237, 230, 218, 0.92); }
+.hero__acties { display: flex; flex-wrap: wrap; align-items: center; gap: var(--r-2); margin-top: var(--r-4); }
+.hero .hero__offerte { min-height: 3.5rem; padding: 0.7rem 1.75rem; font-size: 1.0625rem; }
+.hero .hero__projecten { min-height: 3.5rem; padding: 0.4rem 1.5rem 0.4rem 0.6rem; gap: 0.75rem; font-size: 1.0625rem; }
+.hero__rondje {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.hero__rondje .icoon { width: 0.9rem; height: 0.9rem; }
+.hero .hero__projecten:hover .hero__rondje .icoon { transform: translateX(3px); }
+.hero__usps { display: flex; flex-wrap: wrap; gap: var(--r-2) 0; margin-top: var(--r-5); }
+.hero__usps li {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0;
-  margin-top: var(--r-3);
-  font-size: var(--t-m);
-  font-weight: 500;
-  line-height: 1.6;
-  color: var(--licht);
-}
-/* scheidingsteken achter het woord: breekt de regel af, dan begint de volgende nooit met een • */
-.hero__specialismen li:not(:last-child)::after {
-  content: "•";
-  margin-inline: 0.45rem;
-  color: var(--brons-licht);
-}
-.hero__acties { display: flex; flex-wrap: wrap; align-items: center; gap: var(--r-2) var(--r-4); margin-top: var(--r-4); }
-.hero .hero__offerte { min-height: 3.375rem; padding: 0.7rem 1.6rem; font-size: 1.0625rem; }   /* 54 px */
-.hero__projecten {
-  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  min-height: var(--tik);
-  color: var(--licht);
-  font-weight: 500;
-  text-decoration: none;
+  gap: 0.75rem;
+  padding-right: var(--r-3);
+  font-size: var(--t-s);
+  line-height: 1.35;
 }
-.hero__projecten span { text-decoration: underline; text-decoration-color: rgba(237, 230, 218, 0.45); text-decoration-thickness: 1px; text-underline-offset: 0.3em; }
-.hero__projecten .icoon { width: 1rem; height: 1rem; transition: transform var(--duur) var(--ease); }
-.hero__projecten:hover { color: var(--brons-licht); }
-.hero__projecten:hover .icoon { transform: translateX(5px); }
-/* scrollindicator: een dun lijntje dat zacht op en neer beweegt (desktop) */
-.hero__scroll { display: none; }
+.hero__usps li + li { padding-left: var(--r-3); border-left: 1px solid rgba(237, 230, 218, 0.28); }
+.hero__usps .icoon { flex: none; width: 1.75rem; height: 1.75rem; color: var(--brons-licht); }
+.hero__usps span { max-width: 6.5rem; }
+
+/* "Ontdek meer" rechtsonder, boven de balk */
+.hero__ontdek { display: none; }
 @media (min-width: 60em) {
-  .hero { min-height: min(100svh, 55rem); align-items: center; }
-  .hero__inhoud { padding-top: calc(var(--kop-hoogte) + var(--r-4)); padding-bottom: var(--r-6); }
-  .hero__inhoud > * { max-width: min(42rem, 45vw); }
-  .hero h1 { font-size: clamp(4.75rem, 2rem + 4.2vw, 5.625rem); }   /* 76–90 px */
-  .hero__specialismen { font-size: var(--t-l); }
-  .hero__specialismen li:not(:last-child)::after { margin-inline: 0.65rem; }
-  .hero__acties { margin-top: var(--r-5); }
-  .hero__scroll {
+  .hero__ontdek {
     position: absolute;
-    left: 50%;
-    bottom: var(--r-3);
+    right: var(--rand);
+    bottom: calc(var(--hero-balk, 6.5rem) + var(--r-4));
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+    color: var(--licht);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+  .hero__ontdek-rondje {
     display: grid;
     place-items: center;
-    width: var(--tik);
-    height: var(--tik);
-    transform: translateX(-50%);
+    width: 3.75rem;
+    height: 3.75rem;
+    border: 1px solid rgba(237, 230, 218, 0.75);
+    border-radius: 50%;
   }
-  .hero__scroll span { display: block; width: 1px; height: 2.25rem; background: rgba(237, 230, 218, 0.7); animation: hero-scroll 2.4s var(--ease) infinite; }
+  .hero__ontdek-rondje .icoon { width: 1.25rem; height: 1.25rem; transform: rotate(90deg); animation: hero-ontdek 2.4s var(--ease) infinite; }
+  .hero__ontdek:hover .hero__ontdek-rondje { border-color: var(--brons-licht); color: var(--brons-licht); }
 }
-@keyframes hero-scroll { 0%, 100% { transform: translateY(-4px); opacity: 0.5; } 50% { transform: translateY(4px); opacity: 1; } }
+@keyframes hero-ontdek { 0%, 100% { transform: rotate(90deg) translateX(-3px); } 50% { transform: rotate(90deg) translateX(3px); } }
+
+/* Balk met vier specialismen onderin */
+.hero__diensten { display: none; }
+@media (min-width: 40em) {
+  .hero__diensten {
+    display: block;
+    background: rgba(30, 29, 27, 0.9);
+    border-top: 1px solid rgba(237, 230, 218, 0.12);
+  }
+  .hero__diensten ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-block: 0; padding-block: 0; padding-inline: var(--rand); list-style: none; }
+  .hero__diensten li { padding: 0.9rem 0; }
+  .hero__dienst {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--r-3);
+    color: var(--licht);
+    text-decoration: none;
+  }
+  .hero__dienst img { width: 6rem; height: 4.25rem; object-fit: cover; border-radius: var(--hoek); }
+  .hero__dienst span { padding-block: 0.6rem; border-bottom: 1px solid rgba(237, 230, 218, 0.3); font-size: var(--t-l); }
+  .hero__dienst .icoon { width: 1.1rem; height: 1.1rem; transition: transform var(--duur) var(--ease); }
+  .hero__dienst:hover span { color: var(--brons-licht); }
+  .hero__dienst:hover .icoon { transform: translateX(5px); }
+  .hero__dienst:focus-visible { outline: 2px solid var(--brons-licht); outline-offset: 4px; }
+}
+@media (min-width: 64em) {
+  .hero__diensten ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hero__diensten li { padding: 1.1rem var(--r-4); }
+  .hero__diensten li:first-child { padding-left: 0; }
+  .hero__diensten li:last-child { padding-right: 0; }
+  .hero__diensten li + li { border-left: 1px solid rgba(237, 230, 218, 0.14); }
+}
+
+@media (min-width: 60em) {
+  .hero { min-height: min(100svh, 58rem); }
+  .hero__inhoud { padding-top: calc(var(--kop-hoogte) + var(--r-4)); padding-bottom: var(--r-4); }
+  .hero__inhoud > * { max-width: min(40rem, 46vw); }
+  .hero h1 { font-size: clamp(4.75rem, 1rem + 5.4vw, 6.75rem); }
+  .hero__intro { font-size: 1.3rem; }
+}
 @media (min-width: 40em) and (max-width: 59.99em) {
   .hero__inhoud > * { max-width: 34rem; }
-  .hero__specialismen { font-size: var(--t-l); }
 }
 
 /* Laden: foto zoomt rustig uit, tekst verschijnt na elkaar. */
@@ -761,32 +806,38 @@ html.menu-open, html.menu-open body { overflow: hidden; }   /* geen achtergronds
 .hero__beeld img { animation: hero-zoom 1500ms var(--ease) both; }
 .hero__boven { animation: hero-in 500ms var(--ease) 150ms both; }
 .hero h1 { animation: hero-op 650ms var(--ease) 200ms both; }
-.hero__specialismen { animation: hero-in 500ms var(--ease) 400ms both; }
+.hero__intro { animation: hero-in 500ms var(--ease) 400ms both; }
 .hero__acties { animation: hero-in 500ms var(--ease) 550ms both; }
+.hero__usps, .hero__diensten { animation: hero-in 600ms var(--ease) 700ms both; }
 @media (prefers-reduced-motion: reduce) {
-  .hero__beeld img, .hero__boven, .hero h1, .hero__specialismen, .hero__acties, .hero__scroll span { animation: none; }
+  .hero__beeld img, .hero__boven, .hero h1, .hero__intro, .hero__acties, .hero__usps, .hero__diensten, .hero__ontdek-rondje .icoon { animation: none; }
 }
 
-/* Mobiel: compacte hero als portfolio-opening, één grote knop en
-   "Bekijk projecten" als tekstlink eronder. */
+/* Mobiel: compacte hero, één grote knop, "Bekijk projecten" als tekstlink,
+   de drie vertrouwenspunten klein op één rij. */
 .alleen-mobiel { display: none; }
 @media (max-width: 39.99em) {
   .alleen-mobiel { display: inline; }
-  .hero { min-height: 78svh; }
-  .hero__inhoud { padding-top: calc(var(--kop-hoogte) + var(--r-5)); padding-bottom: calc(var(--r-3) + 1.5rem); }
-  .hero__boven { margin-bottom: var(--r-1); font-size: 0.6875rem; }
-  .hero h1 { font-size: clamp(2.5rem, 1.6rem + 4.6vw, 3rem); line-height: 1.04; }   /* 40–48 px */
-  .hero__specialismen { margin-top: var(--r-2); font-size: 0.9375rem; }
+  .hero { min-height: 82svh; }
+  .hero__inhoud { align-self: end; padding-top: calc(var(--kop-hoogte) + var(--r-5)); padding-bottom: var(--r-3); }
+  .hero__boven { display: flex; align-items: center; margin-bottom: var(--r-2); font-size: 0.6875rem; gap: 0 0.75rem; }
+  .hero__boven::before { flex: none; width: 1.75rem; margin-top: 0; }
+  .hero__boven span + span { margin-left: -0.4rem; }
+  .hero h1 { font-size: clamp(2.5rem, 1.6rem + 4.6vw, 3rem); line-height: 1.04; }
+  .hero__intro { margin-top: var(--r-2); font-size: 0.9375rem; }
   .hero__acties { display: grid; gap: 0.25rem; margin-top: var(--r-3); }
   .hero .hero__offerte { width: 100%; min-height: 3.25rem; padding: 0.6rem 1rem; gap: 0.6rem; white-space: nowrap; }
-  .hero__projecten { justify-self: center; }
-  .hero__projecten .icoon { transform: rotate(90deg); }
-  .hero__projecten:hover .icoon { transform: rotate(90deg) translateX(5px); }
+  .hero .hero__projecten { --knop-bg: transparent; --knop-rand: transparent; justify-self: center; min-height: var(--tik); padding: 0.25rem 0.5rem; font-weight: 500; }
+  .hero .hero__projecten:hover { --knop-bg: transparent; --knop-rand: transparent; --knop-tekst: var(--brons-licht); }
+  .hero__rondje { width: 1.75rem; height: 1.75rem; }
+  .hero__rondje .icoon { transform: rotate(90deg); }
+  .hero__usps { flex-wrap: nowrap; margin-top: var(--r-3); }
+  .hero__usps li { flex: 1 1 0; gap: 0.4rem; padding-right: 0.5rem; font-size: 0.75rem; }
+  .hero__usps li + li { padding-left: 0.5rem; }
+  .hero__usps .icoon { width: 1.25rem; height: 1.25rem; }
 }
 @media (max-width: 23.99em) {
-  .hero .hero__offerte { font-size: var(--t-m); }   /* 360 px: past op één regel */
-  .hero__specialismen { font-size: var(--t-s); }
-  .hero__specialismen li:not(:last-child)::after { margin-inline: 0.35rem; }
+  .hero .hero__offerte { font-size: var(--t-m); }
 }
 
 /* Vertrouwenspunten direct onder de hero */

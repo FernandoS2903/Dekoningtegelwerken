@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#f3eee6">
 <link rel="preload" href="/assets/fonts/fraunces-latin-opsz-wght.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/site.css?v=15a4c8cb94">
+<link rel="stylesheet" href="/css/site.css?v=17d4cfe869">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta property="og:image" content="https://dekoningtegelwerken.nl/assets/og-image.jpg">
@@ -117,48 +117,40 @@
 
 <main id="inhoud">
 
-  <!-- §3 Hero -->
+  <!-- §3 Hero: fullscreen editorial (mockup Bob, 15 okt 2026). Links de tekst
+       over een donker verloop, rechts de badkamer; onderin een balk met vier
+       specialismen. De vertrouwenspunten (bevestigd door Bob, 3 okt 2026) staan
+       in de hero zelf. -->
   <section class="hero" aria-labelledby="hero-kop" data-hero>
     <!-- gen:beeld id=hero mobiel=hero-mobiel maat=vol klasse=hero__beeld prioriteit donker label=Hero-foto_volgt -->
 <div class="foto foto--donker hero__beeld" data-soort="sfeerbeeld"><picture><source media="(min-width: 40em)" srcset="/assets/beelden/hero-960.webp 960w, /assets/beelden/hero-1600.webp 1600w, /assets/beelden/hero-2400.webp 2400w" sizes="100vw" width="2400" height="1340"><img src="/assets/beelden/hero-mobiel-800.webp" srcset="/assets/beelden/hero-mobiel-480.webp 480w, /assets/beelden/hero-mobiel-800.webp 800w, /assets/beelden/hero-mobiel-1080.webp 1080w" sizes="100vw" width="1080" height="1341" alt="Sfeerbeeld: ruime badkamer met XXL-tegels in warme travertinlook, doorlopende tekening van wand naar vloer en een vrijstaand bad in laag middaglicht" fetchpriority="high" loading="eager" decoding="async"></picture></div>
 <!-- /gen:beeld -->
     <div class="wrap hero__inhoud">
       <!-- Werkgebied bevestigd door Bob (3 okt 2026); ook in data/site.json. -->
-      <p class="hero__boven">Tegelwerk in IJmuiden en omgeving</p>
+      <p class="hero__boven"><span>Tegelwerk</span> <span>in IJmuiden en omgeving</span></p>
       <h1 id="hero-kop">Tegelwerk tot in detail.</h1>
-      <ul class="hero__specialismen" role="list" aria-label="Specialismen">
-        <li>Badkamers</li><li>Vloeren</li><li>XXL</li><li>Natuursteen</li>
-      </ul>
+      <p class="hero__intro">Badkamers, vloeren, XXL, natuursteen en meer. Van eerste idee tot laatste voeg, met aandacht voor elk detail.</p>
       <div class="hero__acties">
         <a class="knop knop--licht hero__offerte" href="/offerte/">Vraag vrijblijvend offerte aan <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
-        <a class="hero__projecten" href="#werk"><span>Bekijk projecten</span> <svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a>
+        <a class="knop knop--lijn hero__projecten" href="#werk"><span class="hero__rondje" aria-hidden="true"><svg class="icoon"><use href="/assets/iconen/iconen.svg#pijl"/></svg></span> Bekijk projecten</a>
       </div>
+      <ul class="hero__usps" role="list" aria-label="Waarom De Koning Tegelwerken">
+        <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#persoon"/></svg><span>Persoonlijk contact</span></li>
+        <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#waterpas"/></svg><span>Strakke afwerking</span></li>
+        <li><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#afspraak"/></svg><span>Duidelijke afspraken</span></li>
+      </ul>
       <!-- Vertrouwenselementen uit data/site.json; js/site.js vult ze. Leeg = weggelaten. -->
       <ul class="vertrouwen" role="list" data-vertrouwen hidden></ul>
     </div>
-    <a class="hero__scroll" href="#werk" aria-label="Scroll naar de projecten"><span aria-hidden="true"></span></a>
-  </section>
-
-  <!-- Vertrouwenspunten direct onder de hero. Alleen punten die Bob heeft bevestigd
-       (3 okt 2026): persoonlijk contact, strakke afwerking, duidelijke afspraken. -->
-  <section class="usps" aria-label="Waarom De Koning Tegelwerken">
-    <ul class="wrap usps__lijst" role="list">
-      <li class="usp">
-        <svg class="icoon usp__icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#persoon"/></svg>
-        <svg class="icoon usp__vink" aria-hidden="true"><use href="/assets/iconen/iconen.svg#vink"/></svg>
-        <p class="usp__titel"><span class="usp__lang">Persoonlijk contact</span><span class="usp__kort" aria-hidden="true">Persoonlijk</span></p>
-      </li>
-      <li class="usp">
-        <svg class="icoon usp__icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#waterpas"/></svg>
-        <svg class="icoon usp__vink" aria-hidden="true"><use href="/assets/iconen/iconen.svg#vink"/></svg>
-        <p class="usp__titel"><span class="usp__lang">Strakke afwerking</span><span class="usp__kort" aria-hidden="true">Strak afgewerkt</span></p>
-      </li>
-      <li class="usp">
-        <svg class="icoon usp__icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#afspraak"/></svg>
-        <svg class="icoon usp__vink" aria-hidden="true"><use href="/assets/iconen/iconen.svg#vink"/></svg>
-        <p class="usp__titel"><span class="usp__lang">Duidelijke afspraken</span><span class="usp__kort" aria-hidden="true">Duidelijk</span></p>
-      </li>
-    </ul>
+    <a class="hero__ontdek" href="#werk"><span class="hero__ontdek-rondje" aria-hidden="true"><svg class="icoon"><use href="/assets/iconen/iconen.svg#pijl"/></svg></span><span>Ontdek meer</span></a>
+    <nav class="hero__diensten" aria-label="Specialismen">
+      <ul class="wrap" role="list">
+        <li><a class="hero__dienst" href="/badkamer-tegelen/"><img src="/assets/beelden/dienst-badkamer-480.webp" width="480" height="596" alt="Sfeerbeeld: badkamer" loading="lazy" decoding="async"><span>Badkamers</span><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a></li>
+        <li><a class="hero__dienst" href="/vloer-betegelen/"><img src="/assets/beelden/dienst-vloer-480.webp" width="480" height="596" alt="Sfeerbeeld: tegelvloer" loading="lazy" decoding="async"><span>Vloeren</span><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a></li>
+        <li><a class="hero__dienst" href="/xxl-tegels/"><img src="/assets/beelden/dienst-xxl-480.webp" width="480" height="596" alt="Sfeerbeeld: XXL-tegel" loading="lazy" decoding="async"><span>XXL</span><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a></li>
+        <li><a class="hero__dienst" href="/natuursteen/"><img src="/assets/beelden/dienst-natuursteen-480.webp" width="480" height="596" alt="Sfeerbeeld: natuursteen" loading="lazy" decoding="async"><span>Natuursteen</span><svg class="icoon" aria-hidden="true"><use href="/assets/iconen/iconen.svg#pijl"/></svg></a></li>
+      </ul>
+    </nav>
   </section>
 
   <!-- §4 Projecten direct na de hero: editorial galerij (max. vijf, één groot) -->
